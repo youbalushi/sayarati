@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F6F8">
+<title>سيارتي · My Car — Design System</title>
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="preload" href="assets/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components.css">
+<style>
+/* Showcase-only styles (not part of the design system) */
+.ds-head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);padding:var(--space-5) 0 var(--space-2)}
+.ds-brand{display:flex;align-items:center;gap:var(--space-3);flex:1}
+.ds-mark{width:48px;height:48px;border-radius:var(--radius-md);background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;flex:none}
+.ds-mark .mc-icon{width:28px;height:28px}
+.ds-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2);width:100%}
+.ds-sec{padding-block:var(--space-5);border-block-start:1px solid var(--color-border)}
+.ds-sec>h2{margin-block-end:var(--space-1)}
+.ds-sec>p.mc-muted{margin:0 0 var(--space-4)}
+.ds-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--space-2)}
+.ds-sw{display:flex;gap:var(--space-2);align-items:center;padding:var(--space-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface)}
+.ds-sw i{width:36px;height:36px;border-radius:var(--radius-xs);flex:none;border:1px solid var(--color-border)}
+.ds-sw b{display:block;font-size:var(--fs-caption);line-height:16px;font-weight:600}
+.ds-sw code{font-size:11px;color:var(--color-text-secondary);direction:ltr;unicode-bidi:isolate}
+.ds-type{display:grid;gap:var(--space-2)}
+.ds-type>div{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);border-block-end:1px dashed var(--color-border);padding-block-end:var(--space-2)}
+.ds-type code,.ds-spec{font-size:11px;color:var(--color-text-secondary);direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.ds-spaces{display:grid;gap:6px}
+.ds-spaces>div{display:flex;align-items:center;gap:var(--space-3)}
+.ds-spaces span{height:12px;border-radius:3px;background:var(--color-primary)}
+.ds-radii{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+.ds-radii>div{width:64px;height:64px;background:var(--color-primary-soft);border:2px solid var(--color-primary);display:grid;place-items:center;font-size:11px}
+.ds-static{position:static!important;transform:none!important;opacity:1!important}
+.ds-frame{border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;background:var(--color-bg)}
+.ds-frame .mc-bottomnav{position:relative;padding-bottom:0}
+.ds-frame .mc-appbar{position:relative}
+.ds-overlay-demo{position:relative;border-radius:var(--radius-lg);overflow:hidden;background:var(--color-scrim);padding:var(--space-6) var(--space-3) 0;display:flex;align-items:flex-end;justify-content:center}
+.ds-overlay-demo .mc-sheet{transform:none;max-width:100%}
+.ds-overlay-demo.center{align-items:center;padding:var(--space-6)}
+.ds-overlay-demo.center .mc-sheet{border-radius:var(--radius-xl)}
+.ds-toast-demo .mc-toast{animation:none}
+</style>
+<script>
+/* Set theme/lang before first paint (no flash) */
+(function(){var q=new URLSearchParams(location.search),g=function(k){try{return localStorage.getItem(k)}catch(e){return null}};
+var l=q.get('lang')||g('mc-lang')||'ar',th=q.get('theme')||g('mc-theme')||'auto';
+var d=th==='dark'||(th==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
+document.documentElement.lang=l==='en'?'en':'ar';document.documentElement.dir=l==='en'?'ltr':'rtl';document.documentElement.dataset.theme=d?'dark':'light'})();
+</script>
+</head>
+<body class="mc">
+<main class="mc-container" id="app" aria-live="polite"></main>
+
+<script type="module">
+import { initPrefs, setLang, setTheme, getLang, getThemePref, t, esc, icon, button, iconButton, field, badge, progress, listItem, stat, emptyState, alertBox, skeletonRow, openSheet, closeSheet, confirmDialog, toast, num, parseNum } from './js/ui.js';
+
+/* Demo copy for the showcase only */
+const D = {
+  ar: { title: 'نظام التصميم', sub: 'المكونات المشتركة لتطبيق سيارتي',
+    colors: 'الألوان', colorsSub: 'ألوان الهوية المعتمدة كما تظهر في الوضع الحالي.',
+    type: 'الخطوط', typeSub: 'IBM Plex Sans Arabic للعربية و IBM Plex Sans للإنجليزية، في عائلة واحدة.',
+    space: 'المسافات والزوايا', spaceSub: 'شبكة 4px، وأزرار لا تقل عن 44px.',
+    buttons: 'الأزرار', inputs: 'حقول الإدخال', cards: 'البطاقات والإحصاءات', lists: 'القوائم', badges: 'الشارات والتقدّم',
+    nav: 'التنقل', overlays: 'النوافذ المنبثقة', states: 'التحميل والأخطاء والبيانات الفارغة',
+    sample: 'سجل سيارتك بدون إعلانات', odometer: 'عداد المسافة',
+    primary: 'حفظ التعبئة', tonal: 'إضافة تذكير', outline: 'تصدير', ghost: 'عرض الكل', danger: 'حذف السجل', disabled: 'غير متاح', loading: 'جارٍ الحفظ',
+    liters: 'اللترات', price: 'سعر اللتر', station: 'المحطة', note: 'ملاحظة', notePh: 'اكتب ملاحظة اختيارية…', odoErr: 'القراءة أقل من آخر تعبئة (79,072 كم)', fuelType: 'نوع الوقود', searchPh: 'بحث في السجل…',
+    fullTank: 'تعبئة الخزان بالكامل', remindMe: 'نبّهني قبل الموعد',
+    thisMonth: 'مصروف هذا الشهر', costKm: 'تكلفة الكيلومتر', avg: 'متوسط الاستهلاك', distance: 'المسافة', vsLast: 'عن الشهر الماضي',
+    oil: 'تغيير زيت المحرك', oilSub: 'بعد 1,240 كم · 12 يناير 2027', ins: 'تأمين السيارة', insSub: 'ينتهي بعد 9 أيام',
+    r1: 'M91 · 35.47 لتر', r1s: '13 نوفمبر · 78,690 كم · شل', r2: 'تغيير زيت المحرك', r2s: '31 أكتوبر · 77,827 كم', r3: 'غسيل', r3s: '28 أكتوبر', r4: 'توصيل', r4s: '20 أكتوبر',
+    recent: 'آخر السجلات', seeAll: 'عرض الكل',
+    good: 'جيد', soon: 'قريبًا', due: 'مستحق', synced: 'محفوظ', info: 'معلومة',
+    tabs: ['الكل', 'وقود', 'صيانة', 'مصروف'], periods: ['3 أشهر', '6 أشهر', 'سنة', 'الكل'],
+    sheetTitle: 'إضافة تعبئة', openSheet: 'فتح نافذة سفلية', openDialog: 'فتح نافذة تأكيد', showToast: 'إظهار تنبيه',
+    delTitle: 'حذف هذا السجل؟', delText: 'سيُحذف السجل نهائيًا من هذا الجهاز.', toastMsg: 'تم حذف السجل', saved: 'تم الحفظ',
+    alertInfo: 'آخر نسخة احتياطية قبل 16 يومًا', alertInfoT: 'احفظ نسخة في Google Drive لحماية بياناتك.',
+    alertOk: 'تم الحفظ', alertOkT: 'أُضيفت التعبئة وحُدّث الاستهلاك.',
+    alertWarn: 'قراءة العداد غير معتادة', alertWarnT: 'قفزة 20,927 كم عن آخر تعبئة — تأكد من الرقم.',
+    alertErr: 'تعذّر قراءة الملف', alertErrT: 'الملف ليس نسخة احتياطية صالحة من سيارتي.',
+    skeleton: 'هيكل التحميل', spinner: 'مؤشر التحميل', empty: 'لا توجد بيانات', error: 'خطأ',
+    theme: 'المظهر', lang: 'اللغة' },
+  en: { title: 'Design System', sub: 'Shared components for My Car',
+    colors: 'Colors', colorsSub: 'Approved brand colors as resolved in the current theme.',
+    type: 'Typography', typeSub: 'IBM Plex Sans Arabic for Arabic and IBM Plex Sans for English, in one family.',
+    space: 'Spacing & radius', spaceSub: '4px grid, touch targets of at least 44px.',
+    buttons: 'Buttons', inputs: 'Inputs', cards: 'Cards & stats', lists: 'Lists', badges: 'Badges & progress',
+    nav: 'Navigation', overlays: 'Overlays', states: 'Loading, errors & empty states',
+    sample: 'Your car log, without ads', odometer: 'Odometer',
+    primary: 'Save fill-up', tonal: 'Add reminder', outline: 'Export', ghost: 'See all', danger: 'Delete record', disabled: 'Unavailable', loading: 'Saving',
+    liters: 'Liters', price: 'Price per liter', station: 'Station', note: 'Note', notePh: 'Add an optional note…', odoErr: 'Lower than the last fill-up (79,072 km)', fuelType: 'Fuel type', searchPh: 'Search the log…',
+    fullTank: 'Filled the tank completely', remindMe: 'Remind me before the date',
+    thisMonth: 'Spent this month', costKm: 'Cost per km', avg: 'Average consumption', distance: 'Distance', vsLast: 'vs last month',
+    oil: 'Engine oil change', oilSub: 'In 1,240 km · 12 Jan 2027', ins: 'Car insurance', insSub: 'Expires in 9 days',
+    r1: 'M91 · 35.47 L', r1s: '13 Nov · 78,690 km · Shell', r2: 'Engine oil change', r2s: '31 Oct · 77,827 km', r3: 'Car wash', r3s: '28 Oct', r4: 'Delivery', r4s: '20 Oct',
+    recent: 'Recent records', seeAll: 'See all',
+    good: 'Good', soon: 'Soon', due: 'Due', synced: 'Saved', info: 'Info',
+    tabs: ['All', 'Fuel', 'Service', 'Expense'], periods: ['3 months', '6 months', 'Year', 'All'],
+    sheetTitle: 'Add fill-up', openSheet: 'Open bottom sheet', openDialog: 'Open confirm dialog', showToast: 'Show toast',
+    delTitle: 'Delete this record?', delText: 'The record will be permanently removed from this device.', toastMsg: 'Record deleted', saved: 'Saved',
+    alertInfo: 'Last backup was 16 days ago', alertInfoT: 'Save a copy to Google Drive to protect your data.',
+    alertOk: 'Saved', alertOkT: 'Fill-up added and consumption updated.',
+    alertWarn: 'Unusual odometer reading', alertWarnT: 'A jump of 20,927 km since the last fill-up — check the number.',
+    alertErr: 'Couldn’t read the file', alertErrT: 'This isn’t a valid My Car backup file.',
+    skeleton: 'Skeleton', spinner: 'Spinner', empty: 'Empty', error: 'Error',
+    theme: 'Theme', lang: 'Language' }
+};
+const d = k => D[getLang()][k];
+const omr = x => `${num(x, 3)} ${t('unit.currency')}`;
+
+const COLOR_TOKENS = [['--color-primary', 'Primary'], ['--color-bg', 'Background'], ['--color-surface', 'Surface'], ['--color-surface-elevated', 'Elevated'],
+  ['--color-text', 'Text'], ['--color-text-secondary', 'Text 2'], ['--color-border', 'Border'], ['--color-primary-text', 'Primary text'],
+  ['--color-success', 'Success'], ['--color-warning', 'Warning'], ['--color-danger', 'Danger'], ['--color-info', 'Info']];
+const hex = v => { const c = document.createElement('canvas').getContext('2d'); c.fillStyle = v; return c.fillStyle.toUpperCase(); };
+
+function sheetBody() {
+  return `<div class="mc-grid-2">${field({ id: 's-l', label: d('liters'), inputmode: 'decimal', value: '35.47', unit: t('unit.liter') })}${field({ id: 's-p', label: d('price'), inputmode: 'decimal', value: '0.233', unit: t('unit.currency') })}</div>
+    ${field({ id: 's-o', label: t('unit.km') === 'km' ? 'Odometer' : 'العداد', inputmode: 'numeric', value: '78690', unit: t('unit.km'), lead: 'gauge' })}
+    <label class="mc-switch"><span>${esc(d('fullTank'))}</span><input type="checkbox" checked></label>`;
+}
+
+function render() {
+  const L = getLang(), th = document.documentElement.dataset.theme, pref = getThemePref();
+  document.title = `${t('appName')} — ${d('title')}`;
+  document.getElementById('app').innerHTML = `
+  <header class="ds-head">
+    <div class="ds-brand"><div class="ds-mark">${icon('car')}</div>
+      <div><h1 class="mc-h2">${t('appName')} <span class="mc-muted mc-title" style="font-weight:500">· ${t('appNameAlt')}</span></h1><div class="mc-small mc-muted">${d('title')} — ${d('sub')}</div></div></div>
+    <div class="ds-controls">
+      <div class="mc-seg" role="group" aria-label="${d('theme')}">${['light', 'dark', 'auto'].map(k => `<button type="button" data-theme-set="${k}" aria-pressed="${pref === k}">${t('theme.' + k)}</button>`).join('')}</div>
+      <div class="mc-seg" role="group" aria-label="${d('lang')}">${['ar', 'en'].map(k => `<button type="button" data-lang-set="${k}" aria-pressed="${L === k}">${t('lang.' + k)}</button>`).join('')}</div>
+    </div>
+  </header>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('colors')}</h2><p class="mc-small mc-muted">${d('colorsSub')}</p>
+    <div class="ds-swatches">${COLOR_TOKENS.map(([v, n]) => { const val = getComputedStyle(document.documentElement).getPropertyValue(v).trim(); return `<div class="ds-sw"><i style="background:var(${v})"></i><div><b>${n}</b><code>${esc(hex(val))}</code></div></div>`; }).join('')}</div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('type')}</h2><p class="mc-small mc-muted">${d('typeSub')}</p>
+    <div class="ds-type">
+      <div><span class="mc-display mc-num">79,072</span><code>Display 40/44 · 700</code></div>
+      <div><span class="mc-h1">${t('appName')}</span><code>H1 30/38 · 700</code></div>
+      <div><span class="mc-h2">${d('sample')}</span><code>H2 24/32 · 700</code></div>
+      <div><span class="mc-h3">${d('recent')}</span><code>H3 20/28 · 600</code></div>
+      <div><span class="mc-title">${d('oil')}</span><code>Title 18/26 · 600</code></div>
+      <div><span class="mc-body">${d('alertOkT')}</span><code>Body 16/24 · 400</code></div>
+      <div><span class="mc-label">${d('liters')}</span><code>Label 14/20 · 500</code></div>
+      <div><span class="mc-small mc-muted">${d('r1s')}</span><code>Small 14/20 · 400</code></div>
+      <div><span class="mc-caption mc-muted">${d('vsLast')}</span><code>Caption 12/16 · 400</code></div>
+    </div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('space')}</h2><p class="mc-small mc-muted">${d('spaceSub')}</p>
+    <div class="ds-spaces">${[1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map(n => `<div><code class="ds-spec" style="width:72px">space-${n}</code><span style="width:var(--space-${n})"></span><span class="mc-caption mc-muted mc-num" style="background:none">${n * 4}px</span></div>`).join('')}</div>
+    <div class="ds-radii" style="margin-top:var(--space-4)">${[['xs', 6], ['sm', 10], ['md', 14], ['lg', 20], ['xl', 28], ['full', 999]].map(([k, v]) => `<div style="border-radius:var(--radius-${k})"><span class="mc-num">${k}</span></div>`).join('')}</div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('buttons')}</h2>
+    <div class="mc-stack">
+      <div class="mc-row">${button(d('primary'), { variant: 'primary', icon: 'check' })}${button(d('tonal'), { variant: 'tonal', icon: 'calendar-plus' })}${button(d('outline'), { variant: 'outline', icon: 'download' })}</div>
+      <div class="mc-row">${button(d('ghost'), { variant: 'ghost', iconEnd: 'chevron-right' })}${button(d('danger'), { variant: 'danger', icon: 'trash-2' })}${button(d('disabled'), { disabled: true })}</div>
+      <div class="mc-row">${button(t('action.save'), { variant: 'primary', size: 'sm' })}${button(t('action.save'), { variant: 'primary' })}${button(t('action.save'), { variant: 'primary', size: 'lg' })}${button(d('loading'), { variant: 'primary', busy: true })}</div>
+      ${button(d('primary'), { variant: 'primary', size: 'lg', block: true })}
+      <div class="mc-row">${iconButton('search', 'search')}${iconButton('pencil', t('action.edit'), { filled: true })}${iconButton('ellipsis-vertical', t('action.more'), { filled: true })}${iconButton('arrow-left', t('action.back'), { filled: true })}<button class="mc-fab" type="button" aria-label="${t('nav.add')}">${icon('plus')}</button></div>
+    </div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('inputs')}</h2>
+    <div class="mc-stack">
+      <div class="mc-grid-2">${field({ id: 'f-l', label: d('liters'), inputmode: 'decimal', value: '35.47', unit: t('unit.liter') })}${field({ id: 'f-p', label: d('price'), inputmode: 'decimal', placeholder: '0.000', unit: t('unit.currency') })}</div>
+      ${field({ id: 'f-o', label: t('unit.km') === 'km' ? 'Odometer' : 'العداد', inputmode: 'numeric', value: '78450', unit: t('unit.km'), lead: 'gauge', error: d('odoErr') })}
+      <div class="mc-grid-2">${field({ id: 'f-t', label: d('fuelType'), options: ['M91', 'M95', L === 'ar' ? 'ديزل' : 'Diesel'], value: 'M91' })}${field({ id: 'f-s', label: d('station'), lead: 'map-pin', value: L === 'ar' ? 'شل' : 'Shell' })}</div>
+      ${field({ id: 'f-n', label: d('note'), rows: 2, placeholder: d('notePh'), hint: L === 'ar' ? 'اختياري' : 'Optional' })}
+      <div class="mc-inputgroup">${icon('search')}<input class="mc-input" type="search" placeholder="${esc(d('searchPh'))}" aria-label="${esc(d('searchPh'))}"></div>
+      <div class="mc-card" style="padding-block:var(--space-1)"><label class="mc-switch"><span>${d('fullTank')}</span><input type="checkbox" checked></label>
+        <label class="mc-switch"><span>${d('remindMe')}</span><input type="checkbox"></label></div>
+      <label class="mc-check"><input type="checkbox" checked><span>${d('fullTank')}</span></label>
+      <div class="mc-seg" role="group">${d('periods').map((p, i) => `<button type="button" aria-pressed="${i === 1}">${p}</button>`).join('')}</div>
+      <div class="mc-chips" role="group">${d('tabs').map((p, i) => `<button type="button" class="mc-chip" aria-pressed="${i === 0}">${p}</button>`).join('')}</div>
+    </div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('cards')}</h2>
+    <div class="mc-stack">
+      <div class="mc-grid-2">${stat(d('thisMonth'), omr(34.158), `−12% ${d('vsLast')}`, 'down')}${stat(d('costKm'), omr(0.034))}${stat(d('avg'), `${num(12.4, 1)} <span class="mc-small mc-muted">${t('unit.kmpl')}</span>`, '+4%', 'up')}${stat(d('distance'), `${num(3284)} <span class="mc-small mc-muted">${t('unit.km')}</span>`)}</div>
+      <div class="mc-card mc-card--elevated">
+        <div class="mc-card__head"><div class="mc-row" style="gap:var(--space-3)"><span class="mc-list-item__lead mc-tone-service">${icon('wrench')}</span><div><div class="mc-title">${d('oil')}</div><div class="mc-small mc-muted">${d('oilSub')}</div></div></div>${badge(d('soon'), 'warning')}</div>
+        ${progress(76, 'warning')}
+        <div class="mc-row" style="margin-top:var(--space-3)">${button(L === 'ar' ? 'تمّت' : 'Done', { variant: 'primary', size: 'sm', icon: 'check' })}${button(L === 'ar' ? 'أضف لتقويم الهاتف' : 'Add to phone calendar', { variant: 'tonal', size: 'sm', icon: 'calendar-plus' })}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('lists')}</h2>
+    <div class="mc-section-head"><h3 class="mc-title">${d('recent')}</h3>${button(d('seeAll'), { variant: 'ghost', size: 'sm', iconEnd: 'chevron-right' })}</div>
+    <div class="mc-list">
+      ${listItem({ title: d('r1'), sub: d('r1s'), lead: 'fuel', tone: 'fuel', trail: omr(8.265) })}
+      ${listItem({ title: d('r2'), sub: d('r2s'), lead: 'wrench', tone: 'service', trail: omr(18.5) })}
+      ${listItem({ title: d('r3'), sub: d('r3s'), lead: 'receipt', tone: 'expense', trail: omr(3) })}
+      ${listItem({ title: d('r4'), sub: d('r4s'), lead: 'wallet', tone: 'income', trail: `<span style="color:var(--color-success-text)">+${omr(12)}</span>` })}
+      ${listItem({ title: t('nav.settings'), sub: t('lang.ar') + ' · ' + t('theme.auto'), lead: 'settings', tone: 'fuel', chevron: true })}
+    </div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('badges')}</h2>
+    <div class="mc-row" style="margin-bottom:var(--space-4)">${badge(d('good'), 'success')}${badge(d('soon'), 'warning')}${badge(d('due'), 'danger')}${badge(d('info'), 'info')}${badge(d('synced'), 'primary')}${badge('M91')}</div>
+    <div class="mc-stack">${progress(30, 'success')}${progress(76, 'warning')}${progress(100, 'danger')}${progress(55)}</div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('nav')}</h2>
+    <div class="ds-frame">
+      <div class="mc-appbar">${iconButton('arrow-left', t('action.back'))}<div class="mc-appbar__title">${d('sheetTitle')}</div>${iconButton('ellipsis-vertical', t('action.more'))}</div>
+      <div style="padding:var(--space-4)">
+        <div class="mc-tabs" role="tablist">${d('tabs').map((p, i) => `<button class="mc-tab" role="tab" aria-selected="${i === 1}">${p}</button>`).join('')}</div>
+        <div style="height:56px"></div>
+      </div>
+      <nav class="mc-bottomnav" aria-label="nav"><div class="mc-bottomnav__inner">
+        <a class="mc-navitem" href="#" aria-current="page"><span class="mc-navitem__pill">${icon('house')}</span>${t('nav.home')}</a>
+        <a class="mc-navitem" href="#"><span class="mc-navitem__pill">${icon('list')}</span>${t('nav.log')}</a>
+        <button class="mc-fab" type="button" aria-label="${t('nav.add')}">${icon('plus')}</button>
+        <a class="mc-navitem" href="#"><span class="mc-navitem__pill">${icon('bell')}</span>${t('nav.reminders')}</a>
+        <a class="mc-navitem" href="#"><span class="mc-navitem__pill">${icon('chart-column')}</span>${t('nav.reports')}</a>
+      </div></nav>
+    </div>
+    <p class="mc-caption mc-muted">${L === 'ar' ? 'من عرض 900px يتحول الشريط السفلي إلى شريط جانبي بنفس العناصر.' : 'From 900px wide, the bottom bar becomes a side rail with the same items.'}</p>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('overlays')}</h2>
+    <div class="mc-row" style="margin-bottom:var(--space-4)">${button(d('openSheet'), { variant: 'tonal', attrs: 'data-demo="sheet"' })}${button(d('openDialog'), { variant: 'outline', attrs: 'data-demo="dialog"' })}${button(d('showToast'), { variant: 'outline', attrs: 'data-demo="toast"' })}</div>
+    <div class="mc-stack">
+      <div class="ds-overlay-demo"><div class="mc-sheet" role="presentation"><div class="mc-sheet__grab"></div>
+        <div class="mc-sheet__head"><h3 class="mc-sheet__title">${d('sheetTitle')}</h3>${iconButton('x', t('action.close'))}</div>
+        <div class="mc-sheet__body">${sheetBody()}</div>
+        <div class="mc-sheet__foot">${button(t('action.cancel'), { variant: 'outline' })}${button(t('action.save'), { variant: 'primary' })}</div></div></div>
+      <div class="ds-overlay-demo center"><div class="mc-sheet mc-dialog" role="presentation"><div class="mc-sheet__body"><div class="mc-dialog__icon mc-tone-danger">${icon('trash-2')}</div><h3 class="mc-title">${d('delTitle')}</h3><p class="mc-small mc-muted" style="margin:0">${d('delText')}</p></div>
+        <div class="mc-sheet__foot">${button(t('action.cancel'), { variant: 'outline' })}${button(t('action.delete'), { variant: 'danger' })}</div></div></div>
+      <div class="ds-toast-demo"><div class="mc-toast"><span class="mc-toast__msg">${d('toastMsg')}</span><button class="mc-toast__action" type="button">${t('action.undo')}</button></div></div>
+      <div class="ds-toast-demo"><div class="mc-toast mc-toast--success">${icon('circle-check')}<span class="mc-toast__msg">${d('saved')}</span></div></div>
+    </div>
+  </section>
+
+  <section class="ds-sec"><h2 class="mc-h3">${d('states')}</h2>
+    <div class="mc-stack">
+      <div class="mc-caption mc-muted">${d('skeleton')}</div>
+      <div class="mc-list">${skeletonRow()}${skeletonRow()}${skeletonRow()}</div>
+      <div class="mc-row"><div class="mc-spinner" role="status" aria-label="${t('state.loading')}"></div><span class="mc-small mc-muted">${t('state.loading')}</span></div>
+      <div class="mc-card">${emptyState({ icon: 'fuel', title: t('state.emptyTitle'), text: t('state.emptyText'), action: button(d('primary'), { variant: 'primary', icon: 'plus' }) })}</div>
+      <div class="mc-card">${emptyState({ icon: 'circle-alert', tone: 'error', title: t('state.errorTitle'), text: t('state.errorText'), action: button(t('action.retry'), { variant: 'outline', icon: 'refresh-cw' }) })}</div>
+      ${alertBox({ tone: 'info', title: d('alertInfo'), text: d('alertInfoT') })}
+      ${alertBox({ tone: 'success', title: d('alertOk'), text: d('alertOkT') })}
+      ${alertBox({ tone: 'warning', title: d('alertWarn'), text: d('alertWarnT') })}
+      ${alertBox({ tone: 'danger', title: d('alertErr'), text: d('alertErrT') })}
+    </div>
+  </section>
+  <p class="mc-caption mc-muted" style="padding-block:var(--space-6)">Icons: Lucide (ISC) · Fonts: IBM Plex (OFL)</p>`;
+}
+
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button,a'); if (!b) return;
+  if (b.matches('a[href="#"]')) e.preventDefault();
+  if (b.dataset.themeSet) setTheme(b.dataset.themeSet);
+  else if (b.dataset.langSet) setLang(b.dataset.langSet);
+  else if (b.dataset.demo === 'sheet') {
+    const root = openSheet({ title: d('sheetTitle'), body: sheetBody(), footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'data-ok' }) });
+    root.querySelector('[data-ok]').addEventListener('click', () => { closeSheet(); toast(d('saved'), { tone: 'success' }); });
+  } else if (b.dataset.demo === 'dialog') {
+    if (await confirmDialog({ title: d('delTitle'), text: d('delText'), confirmText: t('action.delete') })) toast(d('toastMsg'), { action: t('action.undo'), onAction: () => toast(d('saved'), { tone: 'success' }) });
+  } else if (b.dataset.demo === 'toast') toast(d('toastMsg'), { action: t('action.undo') });
+});
+document.addEventListener('mc:lang', render);
+document.addEventListener('mc:theme', render);
+initPrefs();
+render();
+window.__mcParse = parseNum; // exposed for tests
+</script>
+</body>
+</html>
