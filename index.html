@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>سيارتي — سجل السيارة</title>
+<meta name="theme-color" content="#c62a1f">
+<meta name="description" content="سيارتي — سجل مصاريف ووقود وصيانة السيارة، بدون إعلانات">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="سيارتي">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: practical, confident garage logbook — no ads, no noise
+   IDEA: a fuel-pump receipt meeting a car's instrument cluster
+   PICTURE: odometer drum on the pump-red band + consumption gauge
+   COLOUR and TYPE: pump red, asphalt ink, paper ground; IBM Plex Sans Arabic
+   LAYOUT: phone-first app column, bottom tab bar, bottom sheets for forms */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4f2ee,#111316);--card:light-dark(#ffffff,#1b1e22);--ink:light-dark(#16181b,#ecebe6);--mut:light-dark(#62666d,#9ca1a8);--line:light-dark(#e4e0d8,#2b2f35);--soft:light-dark(#f8f6f2,#16191c);
+--red:light-dark(#c62a1f,#e4473b);--redd:light-dark(#a3211a,#b9362c);--blue:light-dark(#2d5b8a,#6f9fd0);--ochre:light-dark(#9a6b12,#d6a64a);--green:light-dark(#2c7a4f,#5cbf86);--amber:#f2b705}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans Arabic",Tahoma,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.app{max-width:640px;margin:0 auto;min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.top{background:var(--red);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 18px}
+.bar{display:flex;align-items:center;gap:10px}
+.chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border:0;border-radius:999px;padding:8px 14px;min-height:44px;color:#fff;cursor:pointer;flex:1;max-width:max-content}
+.chip svg{width:22px;height:22px;flex:none}
+.chip b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip small{opacity:.8;white-space:nowrap}
+.ib{width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none;margin-inline-start:auto}
+.ib svg,.nav svg,.dot svg,.qa svg{width:22px;height:22px}
+.sync{font-size:13px;opacity:.85;margin-top:6px;min-height:20px}
+.odo{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:14px}
+.odo .lbl{font-size:13px;opacity:.85}
+.drum{display:flex;gap:3px;direction:ltr}
+.drum i{font-style:normal;font-weight:700;font-size:clamp(26px,8vw,40px);line-height:1;background:#1a1b1e;color:#fff;padding:8px 5px 7px;border-radius:6px;min-width:1.05em;text-align:center;box-shadow:inset 0 -10px 12px rgba(255,255,255,.07),inset 0 8px 10px rgba(0,0,0,.5);font-variant-numeric:tabular-nums}
+.drum i:last-child{background:#fff;color:var(--redd)}
+main{padding:0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:14px}
+.hero{margin-top:-2px;border-top-left-radius:0;border-top-right-radius:0;border-top:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;align-items:center}
+.gauge{text-align:center}
+.gauge svg{width:100%;max-width:220px;height:auto;display:block;margin:0 auto}
+.gauge .big{font-size:30px;font-weight:700;line-height:1.1}
+.gauge small,.mut{color:var(--mut);font-size:13px}
+.kpis{display:grid;gap:10px}
+.kpi{border-inline-start:3px solid var(--line);padding-inline-start:10px}
+.kpi small{display:block;color:var(--mut);font-size:13px}
+.kpi b{font-size:18px}
+h2{font-size:20px;margin:22px 4px 8px;line-height:1.2;display:flex;align-items:center;justify-content:space-between;gap:10px}
+h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;background:none;border:0;cursor:pointer;padding:8px 4px}
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.qa{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 4px;display:grid;justify-items:center;gap:4px;cursor:pointer;font-size:14px;min-height:72px}
+.qa span{color:var(--c)}
+.list{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:start;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 14px;cursor:pointer;min-height:64px}
+.row:last-child{border-bottom:0}
+.dot{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent)}
+.rt{flex:1;display:grid}
+.rt b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt small{color:var(--mut);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.amt{font-weight:700;white-space:nowrap}
+.amt.in{color:var(--green)}
+.mh{display:flex;justify-content:space-between;padding:16px 6px 6px;color:var(--mut);font-size:14px;font-weight:500}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:14px 0 4px;scrollbar-width:none}
+.filters button{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;min-height:40px;cursor:pointer}
+.filters button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.search{width:100%;margin-top:8px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-size:16px}
+.rem{padding:14px;border-bottom:1px solid var(--line)}
+.rem:last-child{border-bottom:0}
+.rem .h{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rem b{font-weight:500}
+.meter{height:8px;border-radius:99px;background:var(--soft);border:1px solid var(--line);overflow:hidden;margin:10px 0 6px}
+.meter i{display:block;height:100%;background:var(--c,var(--blue));border-radius:99px}
+.tag{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c)}
+.rem .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.rem .acts .btn{padding:8px 12px;color:var(--ink);font-size:14px;white-space:nowrap}.rem .acts .btn.pri{color:#fff}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 16px;min-height:44px;cursor:pointer;font-weight:500}
+.btn.pri{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.dan{color:var(--red)}
+.btn.full{width:100%}
+.btn:focus-visible,.qa:focus-visible,.row:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav a:focus-visible,.fab:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.stat small{display:block;color:var(--mut);font-size:13px}
+.stat b{font-size:20px;line-height:1.3}
+.cols{display:flex;align-items:flex-end;gap:6px;height:190px;padding-top:22px}
+.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative}
+.col .seg{width:100%;}
+.col .seg:first-child{border-radius:6px 6px 0 0}
+.col .v{position:absolute;inset-inline:0;text-align:center;font-size:11px;color:var(--mut);white-space:nowrap}
+.xl{display:flex;gap:6px;margin-top:6px}
+.xl span{flex:1;text-align:center;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--mut);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-inline-end:6px}
+.hb{display:grid;grid-template-columns:7.5em minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;font-size:14px}
+.hb .t{height:10px;border-radius:99px;background:var(--soft)}
+.hb .t i{display:block;height:100%;border-radius:99px;background:var(--c)}
+.hb span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fig{position:relative;min-height:200px}
+.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.seg-ctl{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin-top:14px}
+.seg-ctl button{flex:1;border:0;background:none;border-radius:9px;padding:8px 4px;min-height:40px;cursor:pointer;font-size:14px}
+.seg-ctl button.on{background:var(--ink);color:var(--bg)}
+.empty{text-align:center;padding:36px 18px}
+.empty svg{width:120px;height:auto;color:var(--red)}
+.empty h1{font-size:28px;line-height:1.15;margin:10px 0 6px;text-wrap:balance}
+.empty p{color:var(--mut);margin:0 0 18px}
+.nav{position:fixed;inset-inline:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+.nav div{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
+.nav a{display:grid;justify-items:center;gap:2px;padding:8px 0 10px;color:var(--mut);text-decoration:none;font-size:12px;min-height:58px}
+.nav a.on{color:var(--red);font-weight:700}
+.fab{justify-self:center;width:58px;height:58px;border-radius:50%;border:0;background:var(--red);color:#fff;display:grid;place-items:center;cursor:pointer;margin-top:-26px;box-shadow:0 6px 18px color-mix(in srgb,var(--red) 40%,transparent)}
+.fab svg{width:28px;height:28px}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.ov[hidden]{display:none}
+.ov.on{opacity:1}
+.sheet{background:var(--card);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(30px);transition:transform .2s}
+.ov.on .sheet{transform:none}
+.grab{width:42px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 10px}
+.sheet h3{font-size:22px;margin:4px 0 14px;display:flex;justify-content:space-between;align-items:center}
+.fl{display:grid;gap:12px}
+.fl label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
+.fl input,.fl select,.fl textarea{font-size:16px;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:100%;min-height:46px}
+.fl textarea{min-height:70px;resize:vertical}
+.tg{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink)!important;grid-template-columns:none!important}
+.tg input{width:24px;height:24px;min-height:0;accent-color:var(--red)}
+.hint{font-size:13px;color:var(--mut);margin-top:-4px}
+.ferr{color:var(--red);font-size:14px;min-height:20px}
+.types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.types .qa{min-height:90px;font-size:16px}
+.vlist button{display:flex;justify-content:space-between;align-items:center;width:100%;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--soft);margin-bottom:8px;cursor:pointer;min-height:56px;text-align:start}
+.vlist button.on{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
+.toast{position:fixed;inset-inline:14px;bottom:calc(92px + env(safe-area-inset-bottom));max-width:600px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:20;font-size:15px}
+.toast button{background:none;border:0;color:var(--amber);font-weight:700;cursor:pointer;min-height:36px}
+.set .row{cursor:default}
+.set select,.set input{border:1px solid var(--line);background:var(--soft);border-radius:10px;padding:8px 10px;font-size:16px;max-width:9em}
+.note{font-size:13px;color:var(--mut);padding:8px 4px}
+@media(max-width:420px){.hero{grid-template-columns:minmax(0,1fr)}.quick .qa{font-size:13px}.cols .v{display:none}}
+@media(prefers-reduced-motion:reduce){.ov,.sheet{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top" id="top"></header>
+  <main id="main"></main>
+</div>
+<nav class="nav"><div>
+  <a href="#home" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>الرئيسية</a>
+  <a href="#log" data-tab="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>السجل</a>
+  <button class="fab" data-act="fab" aria-label="إضافة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <a href="#remind" data-tab="remind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg>التذكيرات</a>
+  <a href="#reports" data-tab="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>التقارير</a>
+</div></nav>
+<div class="ov" id="ov" hidden><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="body"></div></div></div>
+<div id="toast"></div>
+<script>
+{
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uidg=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const iso=dt=>{const z=new Date(dt);z.setMinutes(z.getMinutes()-z.getTimezoneOffset());return z.toISOString().slice(0,10)};
+const today=()=>iso(new Date());
+const MON=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const IC={
+ fuel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10M14 8l3 3v6a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>',
+ service:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></svg>',
+ expense:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6M9 15h4"/></svg>',
+ income:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M8.5 10.5L12 7l3.5 3.5"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+ car:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2M7 17h10"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>'
+};
+const T={fuel:{n:'وقود',c:'var(--red)'},service:{n:'صيانة',c:'var(--blue)'},expense:{n:'مصروف',c:'var(--ochre)'},income:{n:'دخل',c:'var(--green)'}};
+const CATS={service:['تغيير زيت المحرك','فلتر هواء','فلتر مكيف','إطارات','ترصيص وميزان','فرامل','بطارية','زيت القير','سائل التبريد','بواجي','فحص دوري','تصليح عطل','أخرى'],
+ expense:['تأمين','تجديد الملكية','غسيل','مواقف','مخالفة مرورية','قطع غيار','إكسسوارات','تظليل','أخرى'],
+ income:['توصيل','رحلة','تأجير','أخرى']};
+const FUELS=['M91','M95','ديزل'];
+const defS=()=>({vehicles:[],cur:null,reminders:[],cats:JSON.parse(JSON.stringify(CATS)),set:{cur:'ر.ع',dec:3,unit:'kmpl',wa:'',autoDrive:false,lastDrive:''}});
+const cats=t=>(S.cats&&Array.isArray(S.cats[t])?S.cats[t]:CATS[t])||[];
+const addDays=(d,k)=>iso(new Date(new Date(d+'T00:00:00').getTime()+k*864e5));
+let S=defS(),E={};
+const LS='sayarati-v1',LS_OLD='mishwari-v1';
+
+/* ---------- helpers ---------- */
+const veh=id=>S.vehicles.find(v=>v.id===id);
+const all=()=>Object.values(E).flat();
+const items=v=>all().filter(x=>x.v===v).sort((a,b)=>b.d.localeCompare(a.d)||(+b.odo||0)-(+a.odo||0));
+const n=(x,d=0)=>(+x||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=x=>`<span class="num">${n(x,S.set.dec)}</span> ${esc(S.set.cur)}`;
+const consF=k=>k?(S.set.unit==='l100'?`<span class="num">${n(100/k,1)}</span> ل/100كم`:`<span class="num">${n(k,1)}</span> كم/لتر`):'—';
+const fdate=d=>{if(!d)return '';const p=d.split('-');return `${+p[2]} ${MON[p[1]-1]} ${p[0]}`};
+const curOdo=v=>Math.max(+(veh(v)?.odo0)||0,...all().filter(x=>x.v===v).map(x=>+x.odo||0));
+const monthStart=k=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-k);return iso(d).slice(0,8)+'01'};
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+function stats(v,since=''){
+  const it=items(v),inP=it.filter(x=>x.d>=since);
+  const fuel=it.filter(x=>x.t==='fuel'&&+x.odo).sort((a,b)=>a.odo-b.odo||a.d.localeCompare(b.d));
+  const cons=[];let lf=null,acc=0;
+  for(const f of fuel){
+    if(lf){acc+=+f.liters||0;if(f.full){const dist=f.odo-lf.odo;if(dist>0&&acc>0)cons.push({d:f.d,k:dist/acc,dist,l:acc});lf=f;acc=0}}
+    else if(f.full){lf=f;acc=0}
+  }
+  const cp=cons.filter(c=>c.d>=since);
+  const dist=cp.reduce((s,c)=>s+c.dist,0),lit=cp.reduce((s,c)=>s+c.l,0);
+  const by={fuel:0,service:0,expense:0,income:0};inP.forEach(x=>by[x.t]+=(+x.cost||0));
+  const spend=by.fuel+by.service+by.expense;
+  const odos=inP.map(x=>+x.odo).filter(Boolean);
+  const span=odos.length>1?Math.max(...odos)-Math.min(...odos):0;
+  const ds=inP.map(x=>x.d).sort();
+  const days=ds.length>1?(new Date(ds[ds.length-1])-new Date(ds[0]))/864e5:0;
+  const fp=inP.filter(x=>x.t==='fuel'),L=fp.reduce((s,x)=>s+(+x.liters||0),0);
+  const ks=cp.map(c=>c.k);
+  return {it,inP,cons:cp,allCons:cons,avg:lit?dist/lit:0,by,spend,span,cpk:span?spend/span:0,kmDay:days>6?span/days:0,L,ppl:L?by.fuel/L:0,fills:fp.length,
+    best:ks.length?Math.max(...ks):0,worst:ks.length?Math.min(...ks):0,lastFuel:fuel[fuel.length-1],odoDate:(it.filter(x=>+x.odo).sort((a,b)=>b.odo-a.odo)[0]||{}).d||today()};
+}
+function rstat(r,st){
+  const odo=curOdo(r.v);let km=null,days=null;
+  if(+r.km)km=(+r.lastOdo||0)+(+r.km)-odo;
+  if(r.date){days=Math.round((new Date(r.date)-new Date(today()))/864e5)}
+  else if(+r.months){const d=new Date(r.lastDate||today());d.setMonth(d.getMonth()+(+r.months));days=Math.round((d-new Date(today()))/864e5)}
+  let pct=0;if(km!=null)pct=Math.max(pct,1-km/r.km);if(days!=null)pct=Math.max(pct,1-days/((+r.months||1)*30.4));
+  const due=(km!=null&&km<=0)||(days!=null&&days<=0);
+  const soon=!due&&((km!=null&&km<=Math.min(1000,r.km*.15))||(days!=null&&days<=14));
+  st=st||stats(r.v);
+  const eta=km!=null&&km>0&&st.kmDay>0?Math.round(km/st.kmDay):null;
+  let dueDate=days!=null?addDays(today(),days):null;
+  if(km!=null){const kd=km<=0?st.odoDate:(st.kmDay>0?addDays(st.odoDate,Math.round(km/st.kmDay)):null);if(kd&&(!dueDate||kd<dueDate))dueDate=kd}
+  return {km,days,pct:Math.min(1,Math.max(0,pct)),due,soon,eta,dueDate};
+}
+
+/* ---------- storage: local cache + private cloud doc ---------- */
+let db=null,gRef=null,yCol=null,dirty=new Set(),pt=0,syncMsg='محفوظ على هذا الجهاز';
+const qs={};
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({S,E}))}catch(e){}}
+function loadLocal(){try{const x=JSON.parse(localStorage.getItem(LS)||localStorage.getItem(LS_OLD)||'null');if(x&&x.S){S=Object.assign(defS(),x.S);S.set=Object.assign(defS().set,x.S.set||{});E=x.E||{}}}catch(e){}}
+function persist(keys){saveLocal();if(!db)return;keys.forEach(k=>dirty.add(k));clearTimeout(pt);pt=setTimeout(flush,500)}
+function flush(){
+  for(const k of [...dirty]){
+    dirty.delete(k);
+    const ref=k==='g'?gRef:yCol.doc('y'+k);
+    const body=k==='g'?clone(S):{items:clone(E[k]||[])};
+    qs[k]=(qs[k]||Promise.resolve()).then(()=>ref.set(body)).catch(err=>{
+      if(err&&err.code==='unavailable'){setTimeout(()=>persist([k]),1500+Math.random()*1000)}
+      else if(err&&err.code==='quota_exceeded'){toast('مساحة التخزين السحابي ممتلئة — صدّر نسخة احتياطية')}
+      else if(err&&err.code==='invalid_argument'){db=null;setSync('محفوظ على هذا الجهاز فقط')}
+    });
+  }
+}
+function setSync(m){syncMsg=m;const el=$('#sync');if(el)el.textContent=m;const e2=$('#sync2');if(e2)e2.textContent=m}
+function connect(){}
+
+/* ---------- UI bits ---------- */
+let tt=0;
+function toast(msg,undo){
+  const el=$('#toast');clearTimeout(tt);
+  el.innerHTML=`<div class="toast"><span>${esc(msg)}</span>${undo?'<button data-act="undo">تراجع</button>':''}</div>`;
+  toast.undo=undo;tt=setTimeout(()=>{el.innerHTML='';toast.undo=null},undo?6000:3000);
+}
+function openSheet(html,mount){const ov=$('#ov');$('.body',ov).innerHTML=html;ov.hidden=false;requestAnimationFrame(()=>ov.classList.add('on'));if(mount)mount($('.body',ov))}
+function closeSheet(){const ov=$('#ov');ov.classList.remove('on');setTimeout(()=>{ov.hidden=true;$('.body',ov).innerHTML=''},180)}
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)closeSheet()});
+
+const tab=()=>{const h=location.hash.slice(1);return ['home','log','remind','reports','settings'].includes(h)?h:'home'};
+
+function header(){
+  const V=veh(S.cur);
+  const odo=V?curOdo(V.id):0;
+  const digs=String(Math.round(odo)).padStart(6,'0').split('').map(d=>`<i>${d}</i>`).join('');
+  return `<div class="bar">
+    <button class="chip" data-act="pickveh">${IC.car}<b>${V?esc(V.name):'سيارتي'}</b>${V&&V.plate?`<small>${esc(V.plate)}</small>`:''}</button>
+    <a class="ib" href="#settings" aria-label="الإعدادات">${IC.gear}</a></div>
+    <div class="sync" id="sync">${backupNudge()}</div>
+    ${V&&tab()==='home'?`<div class="odo"><span class="lbl">عداد المسافة<br><b style="font-size:15px">كم</b></span><div class="drum" aria-label="${n(odo)} كم">${digs}</div></div>`:''}`;
+}
+function backupNudge(){if(!all().length)return 'بدون إعلانات · محفوظ على جهازك';const l=S.set.lastDrive?new Date(S.set.lastDrive):0;const d=l?Math.floor((Date.now()-l)/864e5):null;
+  return d==null?'<a href="#settings" style="color:#fff">لم تأخذ نسخة احتياطية بعد — احفظ نسخة في Drive</a>':d>14?`<a href="#settings" style="color:#fff">آخر نسخة احتياطية قبل ${d} يوم — احفظ نسخة جديدة</a>`:'محفوظ على جهازك · آخر نسخة احتياطية قبل '+(d?d+' يوم':'اليوم')}
+function gauge(st){
+  const c=st.allCons.slice(-12);
+  if(!c.length)return `<div class="gauge"><svg viewBox="0 0 120 70"><path d="M12 62A48 48 0 0 1 108 62" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"/></svg><small>سجّل تعبئتين بخزان ممتلئ لحساب الاستهلاك</small></div>`;
+  const ks=c.map(x=>x.k),mn=Math.min(...ks)*.95,mx=Math.max(...ks)*1.05,avg=c.reduce((s,x)=>s+x.dist,0)/c.reduce((s,x)=>s+x.l,0);
+  const p=Math.max(0,Math.min(1,(avg-mn)/((mx-mn)||1))),th=Math.PI*(1-p);
+  const nx=60+38*Math.cos(th),ny=62-38*Math.sin(th);
+  const last=c[c.length-1].k,diff=avg?((last-avg)/avg*100):0;
+  return `<div class="gauge"><svg viewBox="0 0 120 70" aria-hidden="true">
+   <defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="var(--red)"/><stop offset=".55" stop-color="var(--amber)"/><stop offset="1" stop-color="var(--green)"/></linearGradient></defs>
+   <path d="M12 62A48 48 0 0 1 108 62" fill="none" stroke="url(#gg)" stroke-width="10" stroke-linecap="round"/>
+   <line x1="60" y1="62" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>
+   <circle cx="60" cy="62" r="6" fill="var(--ink)"/></svg>
+   <div class="big">${consF(avg)}</div>
+   <small>متوسط آخر ${c.length} تعبئات · الأخيرة ${diff>=0?'أفضل':'أسوأ'} بـ <span class="num">${n(Math.abs(diff),0)}%</span></small></div>`;
+}
+function row(x){
+  const ttl=x.t==='fuel'?`<span class="num">${n(x.liters,2)}</span> لتر ${esc(x.fuel||'')}`:esc(x.cat||T[x.t].n);
+  const sub=[fdate(x.d),x.odo?`<span class="num">${n(x.odo)}</span> كم`:'',x.t==='fuel'&&!x.full?'خزان غير ممتلئ':'',esc(x.place||'')].filter(Boolean).join(' · ');
+  return `<button class="row" data-act="edit" data-id="${esc(x.id)}"><span class="dot" style="--c:${T[x.t].c}">${IC[x.t]}</span><span class="rt"><b>${ttl}</b><small>${sub}</small></span><span class="amt ${x.t==='income'?'in':''}">${x.t==='income'?'+':''}${money(x.cost)}</span></button>`;
+}
+function emptyState(){
+  return `<div class="empty card">${IC.car.replace('<svg','<svg aria-hidden="true"')}
+   <h1>سجل سيارتك، بدون إعلانات</h1>
+   <p>تابع الوقود والصيانة والمصاريف، واعرف استهلاك سيارتك وتكلفة كل كيلومتر، مع تذكيرات ذكية بالصيانة.</p>
+   <button class="btn pri full" data-act="addveh">أضف سيارتك الأولى</button>
+   <p style="margin-top:12px"><button class="link" data-act="demo">أو جرّب التطبيق ببيانات نموذجية</button></p></div>`;
+}
+function remCard(r,st){
+  const s=rstat(r,st);const c=s.due?'var(--red)':s.soon?'var(--ochre)':'var(--blue)';
+  const parts=[];
+  if(s.km!=null)parts.push(s.km<=0?`متأخر <span class="num">${n(-s.km)}</span> كم`:`بعد <span class="num">${n(s.km)}</span> كم`);
+  if(s.days!=null)parts.push(s.days<=0?`متأخر ${n(-s.days)} يوم`:`بعد ${n(s.days)} يوم`);
+  if(s.eta!=null&&(s.days==null||s.eta<s.days))parts.push(`متوقع خلال ~${n(s.eta)} يوم حسب قيادتك`);
+  if(s.dueDate)parts.push('الموعد: '+fdate(s.dueDate));
+
+  return `<div class="rem"><div class="h"><b>${esc(r.name)}</b><span class="tag" style="--c:${c}">${s.due?'مستحق':s.soon?'قريبًا':'جيد'}</span></div>
+   <div class="meter" style="--c:${c}"><i style="width:${Math.round(s.pct*100)}%"></i></div>
+   <div class="mut">${parts.join(' · ')}</div>
+   <div class="acts"><button class="btn pri" data-act="donerem" data-id="${esc(r.id)}">تمّت ✓</button><button class="btn" data-act="editrem" data-id="${esc(r.id)}">تعديل</button>${s.dueDate?`<button class="btn" data-act="ics" data-id="${esc(r.id)}">أضف لتقويم الهاتف</button>`:''}</div></div>`;
+}
+
+/* ---------- screens ---------- */
+function home(){
+  if(!S.vehicles.length)return emptyState();
+  const v=S.cur,st=stats(v),sm=stats(v,today().slice(0,8)+'01');
+  const rem=S.reminders.filter(r=>r.v===v).map(r=>({r,s:rstat(r,st)})).sort((a,b)=>b.s.pct-a.s.pct).slice(0,2);
+  const last=st.it.slice(0,5);
+  const lf=st.lastFuel;
+  return `<section class="card hero">${gauge(st)}
+   <div class="kpis">
+    <div class="kpi" style="border-color:var(--red)"><small>مصروف هذا الشهر</small><b>${money(sm.spend)}</b></div>
+    <div class="kpi" style="border-color:var(--blue)"><small>تكلفة الكيلومتر</small><b>${st.cpk?money(st.cpk):'—'}</b></div>
+    <div class="kpi" style="border-color:var(--ochre)"><small>آخر تعبئة</small><b>${lf?`${money(lf.cost)}`:'—'}</b>${lf?`<small>${fdate(lf.d)}</small>`:''}</div>
+   </div></section>
+   <div class="quick">${['fuel','service','expense','income'].map(t=>`<button class="qa" data-act="add" data-t="${t}"><span style="--c:${T[t].c}">${IC[t]}</span>${T[t].n}</button>`).join('')}</div>
+   <h2>التذكيرات <a href="#remind">الكل</a></h2>
+   ${rem.length?`<div class="list">${rem.map(x=>remCard(x.r,st)).join('')}</div>`:`<div class="card mut">لا توجد تذكيرات بعد. <button class="link" data-act="addrem">أضف تذكير صيانة</button></div>`}
+   <h2>آخر السجلات <a href="#log">عرض الكل</a></h2>
+   ${last.length?`<div class="list">${last.map(row).join('')}</div>`:`<div class="card mut">ابدأ بإضافة أول تعبئة وقود من زر +</div>`}`;
+}
+let LF={t:'all',q:''};
+function logList(){
+  const q=LF.q.trim();
+  const it=items(S.cur).filter(x=>(LF.t==='all'||x.t===LF.t)&&(!q||[x.cat,x.place,x.note,x.fuel,T[x.t].n].join(' ').includes(q)));
+  if(!it.length)return `<div class="card mut" style="text-align:center">لا توجد سجلات مطابقة</div>`;
+  const g={};it.forEach(x=>{(g[x.d.slice(0,7)]=g[x.d.slice(0,7)]||[]).push(x)});
+  return Object.entries(g).map(([m,xs])=>{const sp=xs.filter(x=>x.t!=='income').reduce((s,x)=>s+(+x.cost||0),0);
+    return `<div class="mh"><span>${MON[+m.slice(5)-1]} ${m.slice(0,4)}</span><span>${money(sp)}</span></div><div class="list">${xs.map(row).join('')}</div>`}).join('');
+}
+function log(){
+  if(!S.vehicles.length)return emptyState();
+  const f=[['all','الكل'],['fuel','وقود'],['service','صيانة'],['expense','مصروف'],['income','دخل']];
+  return `<div class="filters">${f.map(([k,l])=>`<button class="${LF.t===k?'on':''}" data-act="filter" data-t="${k}">${l}</button>`).join('')}</div>
+   <input class="search" id="q" type="search" placeholder="بحث: محطة، صنف، ملاحظة…" value="${esc(LF.q)}">
+   <div id="loglist">${logList()}</div>`;
+}
+function remind(){
+  if(!S.vehicles.length)return emptyState();
+  const st=stats(S.cur);
+  const rs=S.reminders.filter(r=>r.v===S.cur).map(r=>({r,s:rstat(r,st)})).sort((a,b)=>b.s.pct-a.s.pct);
+  return `<h2>تذكيرات الصيانة <button class="link" data-act="addrem">+ تذكير جديد</button></h2>
+   ${rs.length?`<div class="list">${rs.map(x=>remCard(x.r,st)).join('')}</div>`:`<div class="card mut">أضف تذكيرًا بالمسافة (مثلاً كل 5,000 كم) أو بالمدة (كل 12 شهرًا) أو كليهما — يتحدّث تلقائيًا عند تسجيل صيانة بنفس الاسم.</div>`}
+   <p class="note">عند تسجيل صيانة بنفس اسم التذكير، يُعاد ضبطه تلقائيًا. التوقّع بالأيام محسوب من معدل قيادتك الفعلي. إذا تغيّر موعد تذكير، أضفه للتقويم مرة أخرى.</p>`;
+}
+let RP=6;
+function reports(){
+  if(!S.vehicles.length)return emptyState();
+  const since=RP?monthStart(RP-1):'';const st=stats(S.cur,since);
+  let months=[];
+  const first=st.inP.length?st.inP[st.inP.length-1].d.slice(0,7):today().slice(0,7);
+  const cnt=RP||Math.min(24,Math.max(1,(new Date(today()).getFullYear()-+first.slice(0,4))*12+(new Date(today()).getMonth()+1-+first.slice(5))+1));
+  for(let k=cnt-1;k>=0;k--)months.push(monthStart(k).slice(0,7));
+  const mt=months.map(m=>{const xs=st.inP.filter(x=>x.d.startsWith(m));const o={m};['fuel','service','expense'].forEach(t=>o[t]=xs.filter(x=>x.t===t).reduce((s,x)=>s+(+x.cost||0),0));o.tot=o.fuel+o.service+o.expense;return o});
+  const mx=Math.max(1,...mt.map(o=>o.tot));
+  const showEvery=months.length>8?Math.ceil(months.length/6):1;
+  const cats={};st.inP.filter(x=>x.t!=='income').forEach(x=>{const k=x.t==='fuel'?'وقود '+(x.fuel||''):(x.cat||T[x.t].n);cats[k]=cats[k]||{v:0,t:x.t};cats[k].v+=+x.cost||0});
+  const ce=Object.entries(cats).sort((a,b)=>b[1].v-a[1].v).slice(0,8),cm=Math.max(1,...ce.map(e=>e[1].v));
+  const per=[[3,'3 أشهر'],[6,'6 أشهر'],[12,'سنة'],[0,'الكل']];
+  return `<div class="seg-ctl">${per.map(([k,l])=>`<button class="${RP===k?'on':''}" data-act="rp" data-k="${k}">${l}</button>`).join('')}</div>
+   <div class="grid2" style="margin-top:14px">
+    <div class="stat"><small>إجمالي المصروف</small><b>${money(st.spend)}</b></div>
+    <div class="stat"><small>تكلفة الكيلومتر</small><b>${st.cpk?money(st.cpk):'—'}</b></div>
+    <div class="stat"><small>المسافة المقطوعة</small><b><span class="num">${n(st.span)}</span> كم</b></div>
+    <div class="stat"><small>متوسط الاستهلاك</small><b>${consF(st.avg)}</b></div>
+    <div class="stat"><small>متوسط سعر اللتر</small><b>${st.ppl?money(st.ppl):'—'}</b></div>
+    <div class="stat"><small>معدل القيادة اليومي</small><b>${st.kmDay?`<span class="num">${n(st.kmDay)}</span> كم`:'—'}</b></div>
+   </div>
+   <h2>المصروف الشهري</h2>
+   <div class="card"><div class="cols">${mt.map(o=>`<div class="col" title="${esc(moneyTxt(o.tot))}">${o.tot?`<span class="v" style="bottom:${(o.tot/mx*100).toFixed(1)}%">${n(o.tot,0)}</span>`:''}${['expense','service','fuel'].map(t=>o[t]?`<div class="seg" style="height:${(o[t]/mx*100).toFixed(2)}%;background:${T[t].c}"></div>`:'').join('')}</div>`).join('')}</div>
+    <div class="xl">${mt.map((o,i)=>`<span>${i%showEvery===0?MON[+o.m.slice(5)-1].slice(0,3):''}</span>`).join('')}</div>
+    <div class="legend">${['fuel','service','expense'].map(t=>`<span><i style="--c:${T[t].c}"></i>${T[t].n} ${money(st.by[t])}</span>`).join('')}</div></div>
+   <h2>توزيع المصاريف</h2>
+   <div class="card">${ce.length?ce.map(([k,o])=>`<div class="hb"><span>${esc(k)}</span><span class="t"><i style="width:${(o.v/cm*100).toFixed(1)}%;--c:${T[o.t].c}"></i></span><span>${money(o.v)}</span></div>`).join(''):'<span class="mut">لا توجد بيانات في هذه الفترة</span>'}</div>
+   <h2>اتجاه الاستهلاك</h2>
+   <div class="card">${st.cons.length>1?`<div class="fig" id="consfig"><svg></svg></div>`:'<span class="mut">تحتاج تعبئتين على الأقل بخزان ممتلئ في هذه الفترة</span>'}</div>
+   <h2>أرقام الوقود</h2>
+   <div class="grid2">
+    <div class="stat"><small>عدد التعبئات</small><b class="num">${n(st.fills)}</b></div>
+    <div class="stat"><small>إجمالي اللترات</small><b><span class="num">${n(st.L,1)}</span> لتر</b></div>
+    <div class="stat"><small>أفضل استهلاك</small><b>${consF(S.set.unit==='l100'?st.best:st.best)}</b></div>
+    <div class="stat"><small>أسوأ استهلاك</small><b>${consF(st.worst)}</b></div>
+    <div class="stat"><small>متوسط التعبئة</small><b>${st.fills?money(st.by.fuel/st.fills):'—'}</b></div>
+    <div class="stat"><small>الدخل</small><b>${money(st.by.income)}</b></div>
+   </div>`;
+}
+const moneyTxt=x=>n(x,S.set.dec)+' '+S.set.cur;
+function settings(){
+  return `<h2>السيارات <button class="link" data-act="addveh">+ إضافة سيارة</button></h2>
+   <div class="list set">${S.vehicles.length?S.vehicles.map(v=>`<button class="row" style="cursor:pointer" data-act="editveh" data-id="${esc(v.id)}"><span class="dot" style="--c:var(--red)">${IC.car}</span><span class="rt"><b>${esc(v.name)}</b><small>${esc([v.plate,v.fuel,v.tank?v.tank+' لتر':''].filter(Boolean).join(' · '))}</small></span><span class="mut">تعديل</span></button>`).join(''):'<div class="row mut">لا توجد سيارات</div>'}</div>
+   <h2>التفضيلات</h2>
+   <div class="list set">
+    <label class="row"><span class="rt"><b>رمز العملة</b></span><input id="s-cur" value="${esc(S.set.cur)}" maxlength="6"></label>
+    <label class="row"><span class="rt"><b>الخانات العشرية</b></span><select id="s-dec"><option value="3" ${S.set.dec==3?'selected':''}>3 (بيسة)</option><option value="2" ${S.set.dec==2?'selected':''}>2</option><option value="0" ${S.set.dec==0?'selected':''}>بدون</option></select></label>
+    <label class="row"><span class="rt"><b>وحدة الاستهلاك</b></span><select id="s-unit"><option value="kmpl" ${S.set.unit==='kmpl'?'selected':''}>كم/لتر</option><option value="l100" ${S.set.unit==='l100'?'selected':''}>لتر/100كم</option></select></label>
+   </div>
+   <h2>الأصناف</h2>
+   <div class="seg-ctl" style="margin-top:0">${[['service','صيانة'],['expense','مصروف'],['income','دخل']].map(([k,l])=>`<button class="${CT===k?'on':''}" data-act="ct" data-t="${k}">${l}</button>`).join('')}</div>
+   <div class="list set" style="margin-top:10px">${cats(CT).map((c,i)=>`<div class="row"><span class="rt"><b>${esc(c)}</b></span><button class="link" data-act="catedit" data-i="${i}">تعديل</button><button class="link" data-act="catdel" data-i="${i}" style="color:var(--mut)">حذف</button></div>`).join('')||'<div class="row mut">لا توجد أصناف</div>'}</div>
+   <button class="btn full" style="margin-top:10px" data-act="catadd">+ صنف جديد</button>
+   <h2>النسخ الاحتياطي</h2>
+   <div class="card"><div class="mut" style="margin-bottom:12px">${S.set.lastDrive?'آخر نسخة احتياطية: '+fdate(S.set.lastDrive.slice(0,10)):'لم تأخذ نسخة احتياطية بعد'}</div>
+    <button class="btn pri full" data-act="drvsave">حفظ نسخة في Google Drive</button>
+    <div class="hint" style="margin:6px 0 12px">تفتح قائمة المشاركة في جوالك — اختر «Drive» واحفظ الملف.</div>
+    <label class="btn full" style="display:block;text-align:center">استرجاع نسخة<input type="file" id="imp" accept=".json,application/json" hidden></label>
+    <div class="hint" style="margin:6px 0 12px">اختر ملف النسخة من Google Drive أو من ملفات الجوال.</div>
+    <div class="grid2"><button class="btn" data-act="expcsv">تصدير Excel (CSV)</button><button class="btn" data-act="demo">بيانات نموذجية</button></div>
+    <button class="btn dan full" style="margin-top:10px" data-act="wipe">حذف كل البيانات</button></div>
+   ${installBox()}
+   <p class="note">سيارتي — بدون إعلانات وبدون تتبّع. بياناتك محفوظة على جهازك فقط، ولا تُرسل لأي خادم.</p>`;
+}
+const SCR={home,log,remind,reports,settings};
+let CT='service';
+
+/* ---------- categories ---------- */
+function catSheet(i){
+  const old=i==null?null:cats(CT)[i];
+  openSheet(`<h3>${old?'تعديل الصنف':'صنف جديد'}</h3><form class="fl" id="cf" novalidate><label>الاسم<input name="nm" value="${esc(old||'')}"></label>
+   ${old?'<div class="hint">تغيير الاسم يحدّث كل السجلات والتذكيرات المرتبطة به.</div>':''}<div class="ferr"></div><button class="btn pri full" type="submit">حفظ</button></form>`,b=>{
+    const f=$('#cf',b);f.nm.focus();
+    f.addEventListener('submit',e=>{e.preventDefault();const nm=f.nm.value.trim();
+      if(!nm){$('.ferr',f).textContent='أدخل الاسم';return}
+      if(cats(CT).some((c,j)=>c===nm&&j!==i)){$('.ferr',f).textContent='الصنف موجود مسبقًا';return}
+      S.cats=S.cats||clone(CATS);S.cats[CT]=[...cats(CT)];const keys=new Set(['g']);
+      if(old){S.cats[CT][i]=nm;
+        Object.keys(E).forEach(k=>E[k].forEach(x=>{if(x.t===CT&&x.cat===old){x.cat=nm;keys.add(k)}}));
+        S.reminders.forEach(r=>{if(r.name===old)r.name=nm});
+      }else S.cats[CT].push(nm);
+      persist([...keys]);closeSheet();render();toast(old?'تم تعديل الصنف':'أُضيف الصنف')});
+  });
+}
+
+/* ---------- phone calendar ---------- */
+function calSheet(r){
+  const s=rstat(r);if(!s.dueDate)return;const V=veh(r.v),d=s.dueDate.replace(/-/g,''),bd=+(r.before??7)||0;
+  const ttl=(V?V.name+' - ':'')+r.name;
+  const det=`تذكير من تطبيق سيارتي`+(s.km!=null?` — المتبقي ${n(s.km)} كم`:'');
+  const g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(ttl)+'&dates='+d+'T090000/'+d+'T093000&details='+encodeURIComponent(det);
+  openSheet(`<h3>أضف لتقويم الهاتف</h3><p class="mut" style="margin-top:0">${esc(ttl)} · ${fdate(s.dueDate)}${bd?` · تنبيه قبله بـ ${n(bd)} يوم`:''}</p>
+   <div class="fl"><button class="btn pri full" data-act="icsfile" data-id="${esc(r.id)}">ملف تقويم (iPhone وكل التقويمات)</button>
+   <div class="hint">يفتح الملف في تطبيق التقويم مع تنبيه قبل الموعد وتنبيه يوم الموعد.</div>
+   <a class="btn full" style="text-align:center;text-decoration:none;color:var(--ink)" href="${esc(g)}" target="_blank" rel="noopener">فتح في تقويم Google</a>
+   <div class="hint">في تقويم Google يُضاف الموعد بتنبيهك الافتراضي — يمكنك تعديله هناك.</div></div>`);
+}
+function icsFor(r){
+  const s=rstat(r);if(!s.dueDate)return;const V=veh(r.v),d=s.dueDate.replace(/-/g,''),b=+(r.before??7)||0;
+  const ttl=((V?V.name+' - ':'')+r.name).replace(/[,;\\]/g,' ');
+  const alarm=t=>['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+ttl,'TRIGGER:'+t,'END:VALARM'];
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Sayarati//AR','BEGIN:VEVENT','UID:'+r.id+'-'+d+'@sayarati','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z','DTSTART:'+d+'T090000','DTEND:'+d+'T093000','SUMMARY:'+ttl,...(b?alarm('-P'+b+'D'):[]),...alarm('PT0M'),'END:VEVENT','END:VCALENDAR'];
+  give('sayarati-reminder-'+d+'.ics',L.join('\r\n'),'text/calendar');
+}
+/* ---------- backup via share sheet (Google Drive) ---------- */
+const backupText=()=>JSON.stringify({app:'sayarati',v:1,S,E});
+async function driveSave(){
+  const name='sayarati-backup-'+today()+'.json',text=backupText();
+  const file=new File([text],name,{type:'application/json'});
+  const done=()=>{S.set.lastDrive=new Date().toISOString();persist(['g']);render()};
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'نسخة سيارتي'});done();toast('تم — تأكد أنك اخترت Google Drive');return}
+    catch(e){if(e&&e.name==='AbortError')return}
+  }
+  download(name,text,'application/json');done();toast('نُزّلت النسخة — ارفعها إلى Google Drive');
+}
+let ro=null;
+function render(){
+  if(S.vehicles.length&&!veh(S.cur))S.cur=S.vehicles[0].id;
+  const t=tab();
+  $('#top').innerHTML=header();
+  $('#main').innerHTML=SCR[t]();
+  $$('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.tab===t));
+  drawCons();
+}
+function drawCons(){
+  if(ro){ro.disconnect();ro=null}
+  const f=$('#consfig');if(!f)return;
+  const since=RP?monthStart(RP-1):'';const c=stats(S.cur,since).cons;
+  const svg=$('svg',f);
+  const draw=()=>{
+    const W=f.clientWidth,H=f.clientHeight;if(!W)return;
+    const l100=S.set.unit==='l100',val=x=>l100?100/x.k:x.k;
+    const vs=c.map(val),mn=Math.min(...vs),mx=Math.max(...vs),pad=(mx-mn)*.15||1,lo=mn-pad,hi=mx+pad;
+    const L=34,R=10,Tp=14,B=24,iw=W-L-R,ih=H-Tp-B;
+    const X=i=>L+(c.length<2?iw/2:i/(c.length-1)*iw),Y=v=>Tp+(1-(v-lo)/(hi-lo))*ih;
+    const avg=vs.reduce((a,b)=>a+b,0)/vs.length;
+    const pts=vs.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+    const ticks=[lo+pad,(lo+hi)/2,hi-pad];
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    svg.innerHTML=`${W>=320?ticks.map(t=>`<line x1="${L}" x2="${W-R}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(t)+4}" font-size="11" fill="var(--mut)" text-anchor="end" direction="ltr">${t.toFixed(1)}</text>`).join(''):''}
+     <line x1="${L}" x2="${W-R}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="var(--amber)" stroke-dasharray="4 4"/>
+     <polyline points="${pts}" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linejoin="round"/>
+     ${vs.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="var(--card)" stroke="var(--red)" stroke-width="2"><title>${fdate(c[i].d)}: ${v.toFixed(1)}</title></circle>`).join('')}
+     <text x="${L}" y="${H-6}" font-size="11" fill="var(--mut)">${esc(fdate(c[0].d))}</text>
+     <text x="${W-R}" y="${H-6}" font-size="11" fill="var(--mut)" text-anchor="end">${esc(fdate(c[c.length-1].d))}</text>`;
+  };
+  ro=new ResizeObserver(draw);ro.observe(f);
+}
+
+/* ---------- forms ---------- */
+function opts(list,sel){return list.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join('')}
+function openEntry(t,x){
+  if(!S.vehicles.length){openVeh();return}
+  const old=x||null;x=x?{...x}:{t,d:today(),v:S.cur,full:true,fuel:veh(S.cur)?.fuel||'M91'};
+  const odoNow=curOdo(x.v);
+  const lastP=stats(x.v).lastFuel;
+  const fuelF=`<div class="grid2"><label>اللترات<input name="liters" inputmode="decimal" value="${esc(x.liters??'')}" placeholder="0.00"></label>
+     <label>سعر اللتر<input name="ppl" inputmode="decimal" value="${esc(x.ppl??(lastP?.ppl||''))}" placeholder="0.000"></label></div>
+     <label>المبلغ الإجمالي (${esc(S.set.cur)})<input name="cost" inputmode="decimal" value="${esc(x.cost??'')}" placeholder="يُحسب تلقائيًا"></label>
+     <label class="tg">تعبئة الخزان بالكامل <input type="checkbox" name="full" ${x.full?'checked':''}></label>
+     <div class="hint">الاستهلاك يُحسب بين تعبئتين ممتلئتين — بنفس طريقة Drivvo لكن أدق مع التعبئات الجزئية.</div>
+     <div class="grid2"><label>نوع الوقود<select name="fuel">${opts(FUELS,x.fuel)}</select></label><label>المحطة<input name="place" value="${esc(x.place||'')}" list="places"></label></div>`;
+  const otherF=`<label>${x.t==='income'?'نوع الدخل':'الصنف'}<select name="cat">${opts(cats(x.t).includes(x.cat)||!x.cat?cats(x.t):[x.cat,...cats(x.t)],x.cat)}</select></label>
+     <label>المبلغ (${esc(S.set.cur)})<input name="cost" inputmode="decimal" value="${esc(x.cost??'')}"></label>
+     <label>${x.t==='service'?'الورشة / المكان':'المكان'}<input name="place" value="${esc(x.place||'')}" list="places"></label>`;
+  const places=[...new Set(all().map(y=>y.place).filter(Boolean))];
+  openSheet(`<h3>${old?'تعديل':'إضافة'} ${T[x.t].n}<span class="dot" style="--c:${T[x.t].c}">${IC[x.t]}</span></h3>
+   <form class="fl" id="ef" novalidate>
+    <div class="grid2"><label>التاريخ<input type="date" name="d" value="${esc(x.d)}" max="${today()}"></label>
+    <label>العداد (كم)<input name="odo" inputmode="numeric" value="${esc(x.odo??'')}" placeholder="${odoNow?n(odoNow):''}"></label></div>
+    <div class="hint">آخر قراءة مسجّلة: <span class="num">${n(odoNow)}</span> كم</div>
+    ${x.t==='fuel'?fuelF:otherF}
+    <label>ملاحظة<textarea name="note">${esc(x.note||'')}</textarea></label>
+    <datalist id="places">${places.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
+    <div class="ferr"></div>
+    <button class="btn pri full" type="submit">حفظ</button>
+    ${old?'<button class="btn dan full" type="button" data-act="delentry">حذف السجل</button>':''}
+   </form>`,b=>{
+    const f=$('#ef',b);let lastEd='';
+    if(x.t==='fuel'){
+      const L=f.liters,P=f.ppl,C=f.cost;const num=e=>parseFloat(String(e.value).replace(',','.'));
+      const dec=S.set.dec;
+      L.addEventListener('input',()=>{lastEd='l';if(num(L)>0&&num(P)>0)C.value=(num(L)*num(P)).toFixed(dec)});
+      P.addEventListener('input',()=>{if(lastEd==='c'&&num(C)>0&&num(P)>0)L.value=(num(C)/num(P)).toFixed(2);else if(num(L)>0&&num(P)>0)C.value=(num(L)*num(P)).toFixed(dec)});
+      C.addEventListener('input',()=>{lastEd='c';if(num(C)>0&&num(P)>0)L.value=(num(C)/num(P)).toFixed(2)});
+    }
+    f.addEventListener('submit',e=>{e.preventDefault();saveEntry(f,old,x)});
+    const del=$('[data-act=delentry]',f);if(del)del.addEventListener('click',()=>{delEntry(old);closeSheet()});
+  });
+}
+function saveEntry(f,old,base){
+  const g=k=>f[k]?String(f[k].value).trim().replace(',','.'):'';
+  const x={id:old?old.id:uidg(),v:base.v,t:base.t,d:g('d')||today(),odo:+g('odo')||0,cost:+g('cost')||0,place:g('place'),note:g('note')};
+  if(x.t==='fuel'){x.liters=+g('liters')||0;x.ppl=+g('ppl')||0;x.full=f.full.checked;x.fuel=g('fuel');if(!x.cost&&x.liters&&x.ppl)x.cost=+(x.liters*x.ppl).toFixed(S.set.dec);if(!x.ppl&&x.cost&&x.liters)x.ppl=+(x.cost/x.liters).toFixed(3)}
+  else x.cat=g('cat');
+  const err=[];
+  if(!(x.cost>0))err.push('أدخل المبلغ');
+  if(x.t==='fuel'&&!(x.liters>0))err.push('أدخل عدد اللترات');
+  if(x.t==='fuel'&&!(x.odo>0))err.push('أدخل قراءة العداد لحساب الاستهلاك');
+  if(err.length){$('.ferr',f).textContent=err.join(' · ');return}
+  const keys=new Set();
+  if(old){const oy=old.d.slice(0,4);E[oy]=(E[oy]||[]).filter(y=>y.id!==old.id);keys.add(oy)}
+  const y=x.d.slice(0,4);(E[y]=E[y]||[]).push(x);keys.add(y);
+  let msg=old?'تم تحديث السجل':'تمت الإضافة';
+  if(x.t!=='fuel'&&x.cat){S.reminders.filter(r=>r.v===x.v&&r.name===x.cat&&(!r.lastDate||x.d>=r.lastDate)).forEach(r=>{r.lastDate=x.d;if(x.odo)r.lastOdo=x.odo;if(r.date&&(+r.months||!r.km)){const d=new Date(x.d);d.setMonth(d.getMonth()+(+r.months||12));r.date=+r.months?'':iso(d)}keys.add('g');msg='تم الحفظ وإعادة ضبط تذكير «'+x.cat+'»'})}
+  if(x.t==='fuel'&&x.odo){const prev=items(x.v).filter(z=>z.t==='fuel'&&z.id!==x.id&&z.d<x.d&&+z.odo>x.odo);if(prev.length)msg+=' — تنبيه: قراءة العداد أقل من تعبئة سابقة';else{const lo=items(x.v).filter(z=>z.id!==x.id&&+z.odo&&z.d<=x.d)[0];if(lo&&x.odo-lo.odo>3000)msg+=' — تأكد من قراءة العداد (قفزة '+n(x.odo-lo.odo)+' كم)'}}
+  persist([...keys]);closeSheet();render();toast(msg);
+}
+function delEntry(x){
+  const y=x.d.slice(0,4);E[y]=(E[y]||[]).filter(z=>z.id!==x.id);persist([y]);render();
+  toast('تم حذف السجل',()=>{(E[y]=E[y]||[]).push(x);persist([y]);render()});
+}
+function openVeh(v){
+  const old=v||null;v=v||{fuel:'M91'};
+  openSheet(`<h3>${old?'تعديل السيارة':'سيارة جديدة'}</h3>
+   <form class="fl" id="vf" novalidate>
+    <label>اسم السيارة<input name="name" value="${esc(v.name||'')}" placeholder="مثال: لاندكروزر 2020"></label>
+    <div class="grid2"><label>رقم اللوحة<input name="plate" value="${esc(v.plate||'')}"></label><label>الوقود<select name="fuel">${opts(FUELS,v.fuel)}</select></label></div>
+    <div class="grid2"><label>سعة الخزان (لتر)<input name="tank" inputmode="numeric" value="${esc(v.tank||'')}"></label><label>قراءة العداد الحالية<input name="odo0" inputmode="numeric" value="${esc(v.odo0||'')}"></label></div>
+    <div class="ferr"></div>
+    <button class="btn pri full" type="submit">حفظ</button>
+    ${old?'<button class="btn dan full" type="button" id="vdel">حذف السيارة وكل سجلاتها</button>':''}
+   </form>`,b=>{
+    const f=$('#vf',b);
+    f.addEventListener('submit',e=>{e.preventDefault();
+      const name=f.name.value.trim();if(!name){$('.ferr',f).textContent='أدخل اسم السيارة';return}
+      const nv={id:old?old.id:uidg(),name,plate:f.plate.value.trim(),fuel:f.fuel.value,tank:+f.tank.value||0,odo0:+f.odo0.value||0};
+      if(old)S.vehicles=S.vehicles.map(z=>z.id===nv.id?nv:z);else{S.vehicles.push(nv);S.cur=nv.id}
+      persist(['g']);closeSheet();render();toast(old?'تم الحفظ':'أُضيفت السيارة — سجّل أول تعبئة');
+    });
+    const d=$('#vdel',b);if(d)d.addEventListener('click',()=>confirmSheet('حذف «'+old.name+'» وكل سجلاتها؟ لا يمكن التراجع.','حذف نهائي',()=>{
+      const keys=['g'];Object.keys(E).forEach(k=>{const before=E[k].length;E[k]=E[k].filter(z=>z.v!==old.id);if(E[k].length!==before)keys.push(k)});
+      S.vehicles=S.vehicles.filter(z=>z.id!==old.id);S.reminders=S.reminders.filter(r=>r.v!==old.id);S.cur=S.vehicles[0]?.id||null;
+      persist(keys);render();toast('تم حذف السيارة')}));
+  });
+}
+function openRem(r){
+  const old=r||null;const odo=curOdo(S.cur);r=r||{v:S.cur,name:'تغيير زيت المحرك',km:5000,months:6,lastOdo:odo,lastDate:today()};
+  openSheet(`<h3>${old?'تعديل التذكير':'تذكير صيانة جديد'}</h3>
+   <form class="fl" id="rf" novalidate>
+    <label>الصيانة<input name="name" list="rcats" value="${esc(r.name)}"></label>
+    <datalist id="rcats">${cats('service').concat(cats('expense')).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+    <div class="grid2"><label>كل (كم)<input name="km" inputmode="numeric" value="${esc(r.km||'')}" placeholder="اختياري"></label><label>أو كل (شهر)<input name="months" inputmode="numeric" value="${esc(r.months||'')}" placeholder="اختياري"></label></div>
+    <div class="grid2"><label>آخر مرة عند (كم)<input name="lastOdo" inputmode="numeric" value="${esc(r.lastOdo||'')}"></label><label>بتاريخ<input type="date" name="lastDate" value="${esc(r.lastDate||today())}"></label></div>
+    <label>أو تاريخ محدد (مثل انتهاء التأمين أو الملكية)<input type="date" name="date" value="${esc(r.date||'')}"></label>
+    <label>نبّهني قبل الموعد بـ (يوم)<input name="before" inputmode="numeric" value="${esc(r.before??7)}"></label>
+    <div class="hint">بعد الحفظ اضغط «أضف لتقويم الهاتف» ليذكّرك جوالك قبل الموعد بعدد الأيام هذا، ثم في يوم الموعد.</div>
+    <div class="ferr"></div>
+    <button class="btn pri full" type="submit">حفظ</button>
+    ${old?'<button class="btn dan full" type="button" id="rdel">حذف التذكير</button>':''}
+   </form>`,b=>{
+    const f=$('#rf',b);
+    f.addEventListener('submit',e=>{e.preventDefault();
+      const nr={id:old?old.id:uidg(),v:r.v,name:f.name.value.trim(),km:+f.km.value||0,months:+f.months.value||0,lastOdo:+f.lastOdo.value||0,lastDate:f.lastDate.value||today(),date:f.date.value||'',before:f.before.value===''?7:Math.max(0,+f.before.value||0)};
+      if(!nr.name||(!nr.km&&!nr.months&&!nr.date)){$('.ferr',f).textContent='أدخل الاسم ثم المسافة أو المدة أو تاريخًا محددًا';return}
+      if(old)S.reminders=S.reminders.map(z=>z.id===nr.id?nr:z);else S.reminders.push(nr);
+      persist(['g']);closeSheet();render();toast('تم حفظ التذكير');
+    });
+    const d=$('#rdel',b);if(d)d.addEventListener('click',()=>{const keep=old;S.reminders=S.reminders.filter(z=>z.id!==old.id);persist(['g']);closeSheet();render();toast('تم حذف التذكير',()=>{S.reminders.push(keep);persist(['g']);render()})});
+  });
+}
+function confirmSheet(msg,btn,fn){
+  openSheet(`<h3>تأكيد</h3><p>${esc(msg)}</p><div class="grid2"><button class="btn" id="cno">إلغاء</button><button class="btn pri" id="cyes">${esc(btn)}</button></div>`,b=>{
+    $('#cno',b).addEventListener('click',closeSheet);$('#cyes',b).addEventListener('click',()=>{closeSheet();fn()});});
+}
+function pickVeh(){
+  openSheet(`<h3>اختر السيارة</h3><div class="vlist">${S.vehicles.map(v=>`<button class="${v.id===S.cur?'on':''}" data-act="setveh" data-id="${esc(v.id)}"><span><b>${esc(v.name)}</b><br><small class="mut">${esc(v.plate||'')}</small></span><span class="num">${n(curOdo(v.id))} كم</span></button>`).join('')}</div>
+   <button class="btn full" data-act="addveh">+ إضافة سيارة</button>`);
+}
+function pickType(){
+  openSheet(`<h3>ماذا تريد أن تسجّل؟</h3><div class="types">${['fuel','service','expense','income'].map(t=>`<button class="qa" data-act="add" data-t="${t}"><span style="--c:${T[t].c}">${IC[t]}</span>${T[t].n}</button>`).join('')}</div>
+   <button class="btn full" style="margin-top:10px" data-act="addrem">تذكير صيانة جديد</button>`);
+}
+
+/* ---------- backup ---------- */
+function download(name,text,mime){
+  const u=URL.createObjectURL(new Blob([text],{type:mime}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
+}
+async function give(name,text,mime){
+  if(/calendar/.test(mime)){
+    const file=new File([text],name,{type:mime});
+    if(/iPhone|iPad|iPod/.test(navigator.userAgent)){location.href='data:text/calendar;charset=utf-8,'+encodeURIComponent(text);return}
+    download(name,text,mime);toast('افتح الملف المنزّل لإضافته للتقويم');return;
+  }
+  download(name,text,mime);toast('تم التصدير');
+}
+function csv(){
+  const head=['السيارة','النوع','التاريخ','العداد','الصنف/الوقود','اللترات','سعر اللتر','المبلغ','خزان ممتلئ','المكان','ملاحظة'];
+  const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+  const rows=all().sort((a,b)=>a.d.localeCompare(b.d)).map(x=>[veh(x.v)?.name,T[x.t].n,x.d,x.odo||'',x.t==='fuel'?x.fuel:x.cat,x.liters||'',x.ppl||'',x.cost,x.t==='fuel'?(x.full?'نعم':'لا'):'',x.place,x.note].map(q).join(','));
+  return '﻿'+[head.map(q).join(','),...rows].join('\n');
+}
+function importFile(file){const rd=new FileReader();rd.onload=()=>importText(rd.result);rd.readAsText(file)}
+function importText(text){
+  {try{const x=JSON.parse(text);if(!x||!x.S||!Array.isArray(x.S.vehicles)||typeof x.E!=='object')throw 0;
+    confirmSheet('استبدال بياناتك الحالية بالنسخة المستوردة؟','استيراد',()=>{
+      const keys=new Set(['g',...Object.keys(E)]);Object.keys(E).forEach(k=>E[k]=[]);
+      S=Object.assign(defS(),x.S);S.set=Object.assign(defS().set,x.S.set||{});
+      Object.entries(x.E).forEach(([k,v])=>{if(/^\d{4}$/.test(k)&&Array.isArray(v)){E[k]=v;keys.add(k)}});
+      persist([...keys]);render();toast('تم الاستيراد');});
+  }catch(e){toast('الملف غير صالح')}}
+}
+function demo(){
+  const v={id:uidg(),name:'تويوتا كامري 2021',plate:'نموذج',fuel:'M91',tank:60,odo0:62000};
+  S.vehicles.push(v);S.cur=v.id;const keys=new Set(['g']);
+  const push=x=>{x.id=uidg();x.v=v.id;const y=x.d.slice(0,4);(E[y]=E[y]||[]).push(x);keys.add(y)};
+  const d=new Date();d.setMonth(d.getMonth()-8);let odo=62000,lastOil=62000,i=0;
+  const places=['شل','المها','نفط عمان'];
+  push({t:'fuel',d:iso(d),odo,liters:52,ppl:.229,cost:11.908,full:true,fuel:'M91',place:'شل'});
+  const ins=new Date(d);ins.setDate(ins.getDate()+10);push({t:'expense',d:iso(ins),cat:'تأمين',cost:145,place:'شركة التأمين'});
+  push({t:'expense',d:iso(ins),cat:'تجديد الملكية',cost:25,place:'شرطة عمان السلطانية'});
+  while(true){
+    d.setDate(d.getDate()+5+(i*3)%4);if(d>new Date())break;
+    const km=380+((i*137)%170);odo+=km;const k=11.2+((i*53)%25)/10,L=+(km/k).toFixed(2),p=i<14?.229:.233;
+    push({t:'fuel',d:iso(d),odo,liters:L,ppl:p,cost:+(L*p).toFixed(3),full:i%5!==3,fuel:'M91',place:places[i%3]});
+    if(odo-lastOil>=5000){lastOil=odo;push({t:'service',d:iso(d),odo,cat:'تغيير زيت المحرك',cost:18.5,place:'مركز الخدمة'})}
+    if(i%6===2)push({t:'expense',d:iso(d),odo,cat:'غسيل',cost:3,place:'مغسلة'});
+    if(i===20)push({t:'service',d:iso(d),odo,cat:'ترصيص وميزان',cost:12,place:'محل الإطارات'});
+    i++;
+  }
+  let lastOilDate=today();all().forEach(x=>{if(x.v===v.id&&x.cat==='تغيير زيت المحرك')lastOilDate=x.d});
+  S.reminders.push({id:uidg(),v:v.id,name:'تغيير زيت المحرك',km:5000,months:6,lastOdo:lastOil,lastDate:lastOilDate});
+  S.reminders.push({id:uidg(),v:v.id,name:'تأمين',km:0,months:12,lastOdo:0,lastDate:iso(ins)});
+  S.reminders.push({id:uidg(),v:v.id,name:'إطارات',km:40000,months:48,lastOdo:50000,lastDate:'2025-03-01'});
+  persist([...keys]);location.hash='home';render();toast('أُضيفت سيارة نموذجية — احذفها من الإعدادات متى شئت');
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act,id=b.dataset.id;
+  if(a==='fab'){if(!S.vehicles.length)openVeh();else pickType()}
+  else if(a==='add')openEntry(b.dataset.t);
+  else if(a==='edit'){const x=all().find(z=>z.id===id);if(x)openEntry(x.t,x)}
+  else if(a==='pickveh'){if(S.vehicles.length)pickVeh();else openVeh()}
+  else if(a==='setveh'){S.cur=id;persist(['g']);closeSheet();render()}
+  else if(a==='addveh')openVeh();
+  else if(a==='editveh')openVeh(veh(id));
+  else if(a==='addrem'){if(!S.vehicles.length)openVeh();else openRem()}
+  else if(a==='editrem')openRem(S.reminders.find(r=>r.id===id));
+  else if(a==='donerem'){const r=S.reminders.find(z=>z.id===id);if(r){const isS=!cats('expense').includes(r.name);openEntry(isS?'service':'expense',null);setTimeout(()=>{const s=$('#ef select[name=cat]');if(s){if(![...s.options].some(o=>o.value===r.name))s.insertAdjacentHTML('afterbegin',`<option>${esc(r.name)}</option>`);s.value=r.name}const o=$('#ef input[name=odo]');if(o)o.value=curOdo(r.v)},0)}}
+  else if(a==='ct'){CT=b.dataset.t;render()}
+  else if(a==='catadd')catSheet(null);
+  else if(a==='catedit')catSheet(+b.dataset.i);
+  else if(a==='catdel'){const i=+b.dataset.i,c=cats(CT)[i];confirmSheet('حذف الصنف «'+c+'»؟ السجلات القديمة تبقى كما هي.','حذف',()=>{S.cats=S.cats||clone(CATS);S.cats[CT]=cats(CT).filter((_,j)=>j!==i);persist(['g']);render();toast('حُذف الصنف',()=>{S.cats[CT].splice(i,0,c);persist(['g']);render()})})}
+  else if(a==='ics'){const r=S.reminders.find(z=>z.id===id);if(r)calSheet(r)}
+  else if(a==='icsfile'){const r=S.reminders.find(z=>z.id===id);closeSheet();if(r)icsFor(r)}
+  else if(a==='drvsave')driveSave();
+  else if(a==='install')doInstall();
+  else if(a==='filter'){LF.t=b.dataset.t;render()}
+  else if(a==='rp'){RP=+b.dataset.k;render()}
+  else if(a==='undo'){const u=toast.undo;$('#toast').innerHTML='';toast.undo=null;if(u)u()}
+  else if(a==='expjson')give('sayarati-backup-'+today()+'.json',backupText(),'application/json');
+  else if(a==='expcsv')give('sayarati-'+today()+'.csv',csv(),'text/csv');
+  else if(a==='demo')demo();
+  else if(a==='wipe')confirmSheet('سيتم حذف كل السيارات والسجلات والتذكيرات. صدّر نسخة احتياطية أولًا إن أردت.','حذف الكل',()=>{
+    const keys=['g',...Object.keys(E)];Object.keys(E).forEach(k=>E[k]=[]);S=defS();persist(keys);location.hash='home';render();toast('تم حذف كل البيانات')});
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='q'){LF.q=e.target.value;$('#loglist').innerHTML=logList()}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='s-cur'){S.set.cur=t.value.trim()||'ر.ع';persist(['g'])}
+  else if(t.id==='s-dec'){S.set.dec=+t.value;persist(['g'])}
+  else if(t.id==='s-unit'){S.set.unit=t.value;persist(['g'])}
+  else if(t.id==='imp'&&t.files[0]){importFile(t.files[0]);t.value=''}
+});
+window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
+
+/* ---------- install (PWA) ---------- */
+let deferredPrompt=null;
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(tab()==='settings')render()});
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;toast('تم تثبيت سيارتي');render()});
+function installBox(){
+  if(standalone())return '';
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  return `<h2>تثبيت التطبيق</h2><div class="card">${deferredPrompt?'<button class="btn pri full" data-act="install">ثبّت سيارتي على الشاشة الرئيسية</button>':
+   ios?'<span class="mut">في Safari: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».</span>':'<span class="mut">من قائمة المتصفح (⋮) اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».</span>'}</div>`;
+}
+async function doInstall(){if(!deferredPrompt)return;deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch(e){}deferredPrompt=null;render()}
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+loadLocal();render();
+}
+</script>
+</body>
+</html>
