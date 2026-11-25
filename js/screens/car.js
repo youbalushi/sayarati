@@ -2,7 +2,7 @@
 // Reads/writes the existing data through ctx. New optional fields (all backward compatible):
 //   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img, added}]
 import { t, getLang, esc, icon, button, iconButton, field, badge, listItem, menu, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
-import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, photoFit, tintPhotos, carArt, mountCatalog } from '../vehicle.js';
+import { MAKES, MAKE_GROUPS, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, photoFit, tintPhotos, carArt, mountCatalog } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const DOC_TYPES = ['insurance', 'registration', 'inspection', 'license', 'other'];
@@ -117,10 +117,15 @@ export function openVehicleEditor(ctx, id = null) {
   const known = !!MAKES.find(m => m[0] === V.make);
   const nick0 = V.nick || (!V.make && !V.model ? V.name || '' : '');
   const yearNow = new Date().getFullYear();
-  const makeOpts = [['', t('car.choose')], ...MAKES.map(m => [m[0], makeLabel(m[0])]), ['__other', t('car.other')]];
+  // make list: grouped by origin, shown in the UI language, searchable by Arabic or English name
+  const fold = x => String(x || '').toLowerCase().replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\s\-&.]/g, '');
+  const makeHits = q => { const f = fold(q); return MAKES.filter(m => !f || fold(m[1]).includes(f) || fold(m[2]).includes(f)); };
+  const makeOptsHTML = (q, sel) => { const hits = makeHits(q), o = (v, l) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(l)}</option>`;
+    return o('', t('car.choose')) + MAKE_GROUPS.map(g => { const ms = hits.filter(m => m[4] === g); return ms.length ? `<optgroup label="${esc(t('car.origin.' + g))}">${ms.map(m => o(m[0], makeLabel(m[0]))).join('')}</optgroup>` : ''; }).join('') + o('__other', t('car.other')); };
+  const noList = mk => mk === '__other' || (!!mk && !modelsOf(mk).length); // makes without a model list: the model is typed
   const modelOpts = mk => [['', t('car.choose')], ...modelsOf(mk).map(x => [x[0], x[0]]), ['__other', t('car.other')]];
   const make0 = V.make ? (known ? V.make : '__other') : '';
-  const model0 = V.model ? (known && modelsOf(V.make).some(x => x[0] === V.model) ? V.model : '__other') : '';
+  const model0 = V.model || (known && noList(V.make)) ? (known && modelsOf(V.make).some(x => x[0] === V.model) ? V.model : '__other') : '';
   const formModel = () => { const r = s => root && root.querySelector(s); const mk = r('#ve-make') ? r('#ve-make').value : V.make, md = r('#ve-model') ? r('#ve-model').value : V.model; return [mk, md]; };
   let root = null;
   const preview = () => { if (photo) return photoFit(photo); const [mk, md] = formModel(); return photoCat && inCatalog(mk, md) ? carArt(bodyOf(mk, md), photoCat.color) : icon('car'); };
@@ -132,7 +137,9 @@ export function openVehicleEditor(ctx, id = null) {
         ${button(t('car.removePhoto'), { variant: 'ghost', size: 'sm', attrs: `id="ve-rm" ${photo || photoCat ? '' : 'hidden'}` })}</div>
     </div>
     <div class="mc-grid-2">
-      <div class="mc-stack" style="gap:var(--space-2)">${field({ id: 've-make', label: t('car.make'), options: makeOpts, value: make0 })}
+      <div class="mc-stack" style="gap:var(--space-2)"><div class="mc-field"><label class="mc-field__label" for="ve-make">${esc(t('car.make'))}</label>
+          <div class="mc-inputgroup">${icon('search')}<input class="mc-input" id="ve-make-q" type="search" autocomplete="off" placeholder="${esc(t('car.makeSearch'))}" aria-label="${esc(t('car.makeSearchLabel'))}" aria-controls="ve-make"></div>
+          <select class="mc-select" id="ve-make" name="ve-make"></select></div>
         <div id="ve-make-o" ${make0 === '__other' ? '' : 'hidden'}>${field({ id: 've-make-t', label: t('car.otherMake'), value: known ? '' : V.make || '' })}</div></div>
       <div class="mc-stack" style="gap:var(--space-2)"><div id="ve-model-w">${field({ id: 've-model', label: t('car.model'), options: modelOpts(known ? V.make : ''), value: model0 })}</div>
         <div id="ve-model-o" ${model0 === '__other' || make0 === '__other' ? '' : 'hidden'}>${field({ id: 've-model-t', label: t('car.otherModel'), value: model0 === '__other' || make0 === '__other' ? V.model || '' : '', placeholder: t('car.modelPh') })}</div></div>
@@ -148,6 +155,7 @@ export function openVehicleEditor(ctx, id = null) {
   root = openSheet({ title: t(old ? 'car.editTitle' : 'home.addCar'), body,
     footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'id="ve-save"' }) });
   const $ = s => root.querySelector(s);
+  $('#ve-make').innerHTML = makeOptsHTML('', make0);
   const showPhoto = () => { const html = preview(), has = !!photo || (photoCat && inCatalog(...formModel())); $('#ve-photo').className = 'cd-edit-photo__img' + (has ? '' : ' is-empty'); $('#ve-photo').innerHTML = html; $('#ve-rm').hidden = !(photo || photoCat);  tintPhotos($('#ve-photo')); };
   $('#ve-file').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
@@ -159,7 +167,7 @@ export function openVehicleEditor(ctx, id = null) {
   const syncMake = () => {
     const mk = $('#ve-make').value;
     $('#ve-make-o').hidden = mk !== '__other';
-    if (mk === '__other' || !mk) { $('#ve-model-w').hidden = mk === '__other'; $('#ve-model-o').hidden = mk !== '__other'; if (!mk) $('#ve-model').innerHTML = modelOpts('').map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(''); return; }
+    if (noList(mk) || !mk) { $('#ve-model-w').hidden = !!mk; $('#ve-model-o').hidden = !mk; if (mk) { $('#ve-model').innerHTML = modelOpts(mk).map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(''); $('#ve-model').value = '__other'; return; } if (!mk) $('#ve-model').innerHTML = modelOpts('').map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(''); return; }
     $('#ve-model-w').hidden = false;
     const cur = $('#ve-model').value;
     $('#ve-model').innerHTML = modelOpts(mk).map(([v, l]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`).join('');
@@ -167,7 +175,14 @@ export function openVehicleEditor(ctx, id = null) {
   };
   $('#ve-make').addEventListener('change', syncMake);
   $('#ve-model').addEventListener('change', () => { $('#ve-model-o').hidden = $('#ve-model').value !== '__other'; });
-  if (make0 === '__other') { $('#ve-model-w').hidden = true; }
+  if (noList(make0)) { $('#ve-model-w').hidden = true; $('#ve-model-o').hidden = false; $('#ve-model').value = '__other'; }
+  // search: filters the list by Arabic or English name; the first match is selected
+  $('#ve-make-q').addEventListener('input', e => {
+    const q = e.target.value, cur = $('#ve-make').value, hits = makeHits(q);
+    const keep = !q.trim() || cur === '__other' || hits.some(m => m[0] === cur) ? cur : (hits[0] ? hits[0][0] : '');
+    $('#ve-make').innerHTML = makeOptsHTML(q, keep);
+    if (keep !== cur) { syncMake(); followModel(); }
+  });
   // catalog view inside the same sheet (form state is kept)
   const foot = root.querySelector('.mc-sheet__foot'), head = root.querySelector('.mc-sheet__title');
   const backToForm = () => { $('#ve-catview').hidden = true; $('#ve-formview').hidden = false; foot.hidden = false; head.textContent = t(old ? 'car.editTitle' : 'home.addCar'); $('#ve-cat').focus(); };

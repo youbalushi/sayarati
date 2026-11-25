@@ -257,6 +257,18 @@ await p.selectOption('#ve-model', 'Land Cruiser'); await p.fill('#ve-year', '٢�
 ok('editor: edits saved (Arabic-digit year → 2021); name + year on the card', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.year === 2021 && v.model === 'Land Cruiser' && document.querySelector('.hm-car__name').textContent.trim() === 'تويوتا Land Cruiser' && document.querySelector('.hm-year').textContent.trim() === '2021'; }));
 await editCar(p); await p.fill('#ve-nick', 'سيارة العائلة'); await p.click('#ve-save'); await p.waitForTimeout(300); await goHome(p);
 ok('editor: nickname becomes the title', (await p.textContent('.hm-car__name')).trim() === 'سيارة العائلة');
+await editCar(p);
+ok('makes: 59 unique makes in 5 origin groups (jp, kr, us, eu, cn) + “Other”', await p.evaluate(() => { const o = [...document.querySelectorAll('#ve-make optgroup option')].map(x => x.value), g = [...document.querySelectorAll('#ve-make optgroup')].map(x => x.label); return o.length === 59 && new Set(o).size === 59 && g.length === 5 && g[0] === 'يابانية' && g[4] === 'صينية' && document.querySelector('#ve-make > option:last-child').value === '__other'; }));
+await p.fill('#ve-make-q', 'merc'); await p.waitForTimeout(80);
+ok('makes: English search “merc” → مرسيدس بنز, list filtered, “Other” kept', await p.evaluate(() => { const s = document.getElementById('ve-make'); return s.value === 'mercedesbenz' && s.querySelectorAll('optgroup option').length === 1 && !!s.querySelector('option[value=__other]'); }));
+await p.fill('#ve-make-q', 'بي ام'); await p.waitForTimeout(80);
+ok('makes: Arabic search “بي ام” (hamza-insensitive) → BMW; model typed (no list)', await p.evaluate(() => document.getElementById('ve-make').value === 'bmw' && document.getElementById('ve-model-w').hidden && !document.getElementById('ve-model-o').hidden));
+await p.fill('#ve-model-t', 'X5'); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(300); await goHome(p);
+ok('makes: new make saved by key, model as typed, name in Arabic', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.make === 'bmw' && v.model === 'X5' && document.querySelector('.hm-car__name').textContent.trim() === 'بي إم دبليو X5'; }));
+await editCar(p);
+ok('makes: reopening keeps the make + typed model; search cleared shows all', await p.evaluate(() => document.getElementById('ve-make').value === 'bmw' && document.getElementById('ve-model-t').value === 'X5' && document.getElementById('ve-model-w').hidden && document.querySelectorAll('#ve-make optgroup option').length === 59));
+ok('makes: English label follows the language', await p.evaluate(async () => { const m = await import('./js/vehicle.js'); return m.makeLabel('bmw', 'en') === 'BMW' && m.makeLabel('lynkco', 'en') === 'Lynk & Co' && m.makeLabel('lynkco', 'ar') === 'لينك آند كو' && m.makeLabel('Geely') === 'Geely'; }));
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 await editCar(p); await p.selectOption('#ve-make', '__other'); await p.fill('#ve-make-t', 'Geely'); await p.fill('#ve-model-t', 'Coolray'); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(300); await goHome(p);
 ok('editor: “Other” make/model saved as typed', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.make === 'Geely' && v.model === 'Coolray' && document.querySelector('.hm-car__name').textContent.trim() === 'Geely Coolray'; }));
 // give the second car a catalog drawing so the backup holds all three image kinds
