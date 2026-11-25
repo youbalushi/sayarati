@@ -171,7 +171,9 @@ await p.fill('#de-num', 'R-77'); await p.fill('#de-exp', '2027-03-14'); await p.
 ok('ownership: saved; row shows View (no more Add)', await p.evaluate(() => !!document.querySelector('.hm-docs [data-car=doc-open]') && !document.querySelector('.hm-docs [data-type=registration]')));
 ok('car card: plate sits on the name line, odometer on the expiry line; name at title size', await p.evaluate(() => { const mid = e => { const r = e.getBoundingClientRect(); return r.top + r.height / 2; };
   const [plate, odo] = document.querySelectorAll('.hm-id__end'), name = document.querySelector('.hm-car__name'), exp = document.querySelector('.hm-exp');
-  return Math.abs(mid(plate) - mid(name)) <= 2 && Math.abs(mid(odo) - mid(exp)) <= 2 && getComputedStyle(name).fontSize === getComputedStyle(document.documentElement).getPropertyValue('--fs-title').trim(); }));
+  const cx = e => { const r = e.getBoundingClientRect(); return r.left + r.width / 2; }, ic = document.querySelector('.hm-exp__ic'), arrow = document.querySelector('.hm-switch .mc-iconbtn'), txt = exp.querySelector('span:not(.hm-exp__ic)');
+  const startEdge = e => (document.documentElement.dir === 'rtl' ? e.getBoundingClientRect().right : e.getBoundingClientRect().left);
+  return Math.abs(mid(plate) - mid(name)) <= 2 && Math.abs(mid(odo) - mid(exp)) <= 2 && Math.abs(cx(ic) - cx(arrow)) <= 1 && Math.abs(startEdge(txt) - startEdge(name)) <= 1 && getComputedStyle(name).fontSize === getComputedStyle(document.documentElement).getPropertyValue('--fs-title').trim(); }));
 ok('car card: "expires" line comes from the ownership document', await p.evaluate(() => /14 مارس 2027/.test(document.querySelector('.hm-exp').textContent)));
 await p.click('.hm-docs [data-car=doc-open]'); await p.waitForTimeout(350);
 ok('viewer: image, expiry and a pencil in the header (no delete there)', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !!sc.querySelector('.cd-doc-full') && !!sc.querySelector('.mc-sheet__head #dv-edit') && !sc.querySelector('#dv-del') && /2027/.test(sc.textContent); }));

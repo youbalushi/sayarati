@@ -50,7 +50,7 @@ export function carHero(ctx, V) {
         <h1 class="hm-car__name">${title}</h1>${V.year ? `<span class="hm-year mc-num">${esc(V.year)}</span>` : ''}
       </div>
       <span class="hm-id__end">${V.plate ? `<span class="mc-num" dir="auto">${esc(V.plate)}</span>` : ''}</span>
-      <div class="hm-exp">${own && own.expiry ? `${icon('calendar')}<span>${fill2(t('home.expiresOn'), { d: `<b>${longDate(own.expiry)}</b>` })}</span>${st && st[0] !== 'success' ? badge(st[1], st[0]) : ''}` : ''}</div>
+      <div class="hm-exp">${own && own.expiry ? `<span class="hm-exp__ic">${icon('calendar')}</span><span>${fill2(t('home.expiresOn'), { d: `<b>${longDate(own.expiry)}</b>` })}</span>${st && st[0] !== 'success' ? badge(st[1], st[0]) : ''}` : ''}</div>
       <span class="hm-id__end"><span class="mc-num">${fmt(odo)}</span> ${t('unit.km')}</span>
     </div>
   </section>`;

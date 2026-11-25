@@ -20,8 +20,10 @@
 .hm-switch .mc-iconbtn{width:28px;height:28px;background:var(--color-surface-sunken)}
 .hm-switch .mc-iconbtn .mc-icon{width:18px;height:18px}
 .hm-switch .mc-menu{inset-inline-start:0;inset-inline-end:auto;min-width:240px}
-.hm-exp{display:flex;align-items:center;gap:var(--space-1);flex-wrap:wrap;min-height:var(--lh-small);font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary);padding-inline-start:calc(28px + var(--space-2))}
-.hm-exp>.mc-icon{width:16px;height:16px}
+.hm-exp{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;min-height:var(--lh-small);font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
+/* calendar sits in the same 28px slot as the switch arrow above it, so both lines' text starts at one edge */
+.hm-exp__ic{width:28px;flex:none;display:grid;place-items:center}
+.hm-exp__ic .mc-icon{width:18px;height:18px}
 .hm-exp b{color:var(--color-text);font-weight:var(--fw-semibold)}
 .hm-id__end{justify-self:end;text-align:end;white-space:nowrap;font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
 
