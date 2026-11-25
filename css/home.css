@@ -11,19 +11,19 @@
 .hm-hero{overflow:visible}
 .hm-hero .cd-photo{border-radius:var(--radius-lg) var(--radius-lg) 0 0}
 .hm-edit{position:absolute;inset-block-start:var(--space-3);inset-inline-end:var(--space-3);background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-2)}
-.hm-id{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-3);padding:var(--space-4)}
-.hm-id__main{display:grid;gap:2px;min-width:0}
+.hm-id{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:var(--space-3);row-gap:var(--space-1);padding:var(--space-4)}
+/* row 1: arrow · name · year | plate — row 2: expiry | odometer (each row shares one line) */
 .hm-id__name{display:flex;align-items:center;gap:var(--space-2);min-width:0}
-.hm-id__name h1{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hm-year{color:var(--color-text-secondary);font-size:var(--fs-body);flex:none}
-.hm-switch{flex:none}
+.hm-car__name{margin:0;font-size:var(--fs-title);line-height:var(--lh-title);font-weight:var(--fw-bold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-year{color:var(--color-text-secondary);font-size:var(--fs-body);line-height:var(--lh-body);flex:none}
+.hm-switch{flex:none;display:flex}
 .hm-switch .mc-iconbtn{width:28px;height:28px;background:var(--color-surface-sunken)}
 .hm-switch .mc-iconbtn .mc-icon{width:18px;height:18px}
 .hm-switch .mc-menu{inset-inline-start:0;inset-inline-end:auto;min-width:240px}
-.hm-exp{display:flex;align-items:center;gap:var(--space-1);flex-wrap:wrap;font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
+.hm-exp{display:flex;align-items:center;gap:var(--space-1);flex-wrap:wrap;min-height:var(--lh-small);font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary);padding-inline-start:calc(28px + var(--space-2))}
 .hm-exp>.mc-icon{width:16px;height:16px}
 .hm-exp b{color:var(--color-text);font-weight:var(--fw-semibold)}
-.hm-id__side{display:grid;gap:2px;justify-items:end;text-align:end;flex:none;font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
+.hm-id__end{justify-self:end;text-align:end;white-space:nowrap;font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
 
 /* Empty states */
 .hm-empty{padding-block:var(--space-6)}

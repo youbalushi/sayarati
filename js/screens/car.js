@@ -45,17 +45,13 @@ export function carHero(ctx, V) {
     <div class="cd-photo${img ? (isArt ? ' is-art' : '') : ' is-empty'}" role="img" aria-label="${title}">${img || `${icon('car')}<span class="mc-small">${t('car.noPhoto')}</span>`}
       ${iconButton('pencil', t('home.editCar'), { attrs: 'data-car="edit"' }).replace('class="mc-iconbtn', 'class="mc-iconbtn hm-edit')}</div>
     <div class="hm-id">
-      <div class="hm-id__main">
-        <div class="hm-id__name">
-          <div class="hm-switch">${menu({ id: 'hm-cars', label: t('home.switchCarLabel'), triggerIcon: 'chevron-down', items: [...cars, { sep: true }, { label: t('home.addCar'), icon: 'plus', action: 'hm-addcar' }] })}</div>
-          <h1 class="mc-h2 hm-car__name">${title}</h1>${V.year ? `<span class="hm-year mc-num">${esc(V.year)}</span>` : ''}
-        </div>
-        ${own && own.expiry ? `<div class="hm-exp">${icon('calendar')}<span>${fill2(t('home.expiresOn'), { d: `<b>${longDate(own.expiry)}</b>` })}</span>${st && st[0] !== 'success' ? badge(st[1], st[0]) : ''}</div>` : ''}
+      <div class="hm-id__name">
+        <div class="hm-switch">${menu({ id: 'hm-cars', label: t('home.switchCarLabel'), triggerIcon: 'chevron-down', items: [...cars, { sep: true }, { label: t('home.addCar'), icon: 'plus', action: 'hm-addcar' }] })}</div>
+        <h1 class="hm-car__name">${title}</h1>${V.year ? `<span class="hm-year mc-num">${esc(V.year)}</span>` : ''}
       </div>
-      <div class="hm-id__side">
-        ${V.plate ? `<span class="mc-num" dir="auto">${esc(V.plate)}</span>` : ''}
-        <span><span class="mc-num">${fmt(odo)}</span> ${t('unit.km')}</span>
-      </div>
+      <span class="hm-id__end">${V.plate ? `<span class="mc-num" dir="auto">${esc(V.plate)}</span>` : ''}</span>
+      <div class="hm-exp">${own && own.expiry ? `${icon('calendar')}<span>${fill2(t('home.expiresOn'), { d: `<b>${longDate(own.expiry)}</b>` })}</span>${st && st[0] !== 'success' ? badge(st[1], st[0]) : ''}` : ''}</div>
+      <span class="hm-id__end"><span class="mc-num">${fmt(odo)}</span> ${t('unit.km')}</span>
     </div>
   </section>`;
 }
