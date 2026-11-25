@@ -38,7 +38,7 @@
   --green-500:#35B77A; --green-700:#1E7F50;
   --amber-500:#F2B84B; --amber-700:#8F620E;
   --red-500:#EF6262;   --red-700:#C03636;
-  --blue-500:#5C9FF5;  --blue-700:#2C6FC9;
+  --brown-400:#A47A57; --brown-500:#8A5A3B; --brown-700:#6E4529; --brown-200:#D2AE8C;   /* warm accent that sits with the orange (replaces blue) */
 
   /* Typography */
   --font-sans:"MyCar Sans","IBM Plex Sans Arabic","IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
@@ -106,7 +106,7 @@
   --color-success:var(--green-500); --color-success-text:var(--green-700); --color-success-soft:rgba(53,183,122,.14);
   --color-warning:var(--amber-500); --color-warning-text:var(--amber-700); --color-warning-soft:rgba(242,184,75,.20);
   --color-danger:var(--red-500);    --color-danger-text:var(--red-700);    --color-danger-soft:rgba(239,98,98,.13);
-  --color-info:var(--blue-500);     --color-info-text:var(--blue-700);     --color-info-soft:rgba(92,159,245,.14);
+  --color-info:var(--brown-500);    --color-info-text:var(--brown-700);    --color-info-soft:rgba(138,90,59,.12);
 
   --color-scrim:rgba(17,19,24,.45);
   --color-skeleton:#E9ECF0; --color-skeleton-shine:#F6F7F9;
@@ -146,7 +146,7 @@
   --color-success:var(--green-500); --color-success-text:var(--green-500); --color-success-soft:rgba(53,183,122,.16);
   --color-warning:var(--amber-500); --color-warning-text:var(--amber-500); --color-warning-soft:rgba(242,184,75,.16);
   --color-danger:var(--red-500);    --color-danger-text:var(--red-500);    --color-danger-soft:rgba(239,98,98,.16);
-  --color-info:var(--blue-500);     --color-info-text:var(--blue-500);     --color-info-soft:rgba(92,159,245,.16);
+  --color-info:var(--brown-400);    --color-info-text:var(--brown-200);    --color-info-soft:rgba(164,122,87,.18);
 
   --color-scrim:rgba(0,0,0,.6);
   --color-skeleton:#232832; --color-skeleton-shine:#2C323D;
