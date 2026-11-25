@@ -103,11 +103,13 @@ await p.click('[data-set-cat=add]'); await p.waitForTimeout(250); await p.fill('
 ok('add category', await p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S.cats.service.includes('اختبار')));
 
 /* ---- home screen: car card · documents · upcoming reminders ---- */
+const editCar = async pg => { await pg.evaluate(() => { location.hash = 'settings'; }); await pg.waitForTimeout(300); const id = await pg.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S.cur); await pg.click(`.st [data-act=editveh][data-id="${id}"]`); await pg.waitForTimeout(350); };
+const goHome = async pg => { await pg.evaluate(() => { location.hash = 'home'; }); await pg.waitForTimeout(300); };
 const carMenu = async (sel) => { await p.click('[data-mc-menu=hm-cars]'); await p.waitForTimeout(150); await p.click(`#hm-cars ${sel}`); await p.waitForTimeout(400); };
 const S_ = () => p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S);
 await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(300);
 ok('home: greeting, car card with photo, name, year, plate + odometer', await p.evaluate(() => !!document.querySelector('.hm-greet h1') && !!document.querySelector('.hm-hero .cd-photo') && !!document.querySelector('.hm-car__name') && /2021/.test(document.querySelector('.hm-year').textContent) && document.querySelectorAll('.hm-id__end').length === 2));
-ok('home: no "change photo" button; a pencil edits the car', await p.evaluate(() => !document.querySelector('.hm [data-car=catalog]') && !!document.querySelector('.hm-hero .cd-photo [data-car=edit]')));
+ok('home: no "change photo" and no pencil on the photo (editing is in Settings → Vehicles)', await p.evaluate(() => !document.querySelector('.hm [data-car=catalog]') && !document.querySelector('.hm-hero .cd-photo button, .hm-hero [data-car=edit]')));
 const odoShown = await p.evaluate(() => document.querySelectorAll('.hm-id__end')[1].querySelector('.mc-num').textContent.replace(/,/g, ''));
 const odoData = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.cur; return String(Math.max(...Object.values(d.E).flat().filter(x => x.v === v).map(x => +x.odo || 0))); });
 ok('home: odometer equals highest recorded reading', odoShown === odoData, `${odoShown} vs ${odoData}`);
@@ -198,31 +200,41 @@ await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1'
 ok('older documents of other types: "Other documents" row lists them', await p.evaluate(() => !!document.querySelector('.hm-docs [data-type=other]')));
 await p.click('.hm-docs [data-type=other]'); await p.waitForTimeout(350);
 ok('… and opens them', await p.evaluate(() => document.querySelectorAll('.mc-scrim [data-car=doc-open]').length === 1)); await p.keyboard.press('Escape'); await p.waitForTimeout(250);
-/* ---- vehicle editor (pencil on the photo) ---- */
-await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300);
+/* ---- vehicle editor (Settings → Vehicles) ---- */
+await editCar(p);
 await p.click('#ve-cat'); await p.waitForTimeout(250);
 ok('editor catalog: shows only the car\'s make + model', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !sc.querySelector('[data-ct-make],[data-ct-model],[data-ct-q]') && /Camry/.test(sc.querySelector('.ct-locked__id').textContent) && sc.querySelectorAll('[data-ct-color]').length === 8; }));
-await p.click('.mc-scrim [data-ct-color=red]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200); await p.click('#ve-save'); await p.waitForTimeout(350);
+await p.click('.mc-scrim [data-ct-color=red]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200); await p.click('#ve-save'); await p.waitForTimeout(350); await goHome(p);
 ok('editor catalog: stores the car\'s own model + chosen color', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.photoCat && v.photoCat.model === 'Camry' && v.photoCat.body === 'sedan' && v.photoCat.color === 'red' && !v.photo && !!document.querySelector('.hm-hero .cd-photo .mc-carart'); }));
 await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); v.photoCat.body = 'pickup'; v.photoCat.model = 'Hilux'; localStorage.setItem('sayarati-v1', JSON.stringify(d)); }); await p.reload(); await p.waitForTimeout(400);
 ok('catalog: a mismatched saved drawing still renders the registered model (sedan)', await p.evaluate(() => !document.querySelector('.cd-photo .mc-carart path[d*="L298 74"]') && !!document.querySelector('.cd-photo .mc-carart')));
-await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300);
-await p.setInputFiles('#ve-file', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(600); await p.click('#ve-save'); await p.waitForTimeout(350);
+await editCar(p);
+await p.setInputFiles('#ve-file', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(600); await p.click('#ve-save'); await p.waitForTimeout(350); await goHome(p);
 ok('editor: photo from the device is stored and shown on Home', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return /^data:image\/jpeg;base64,/.test(v.photo) && !!document.querySelector('.hm-hero .cd-photo img'); }));
-await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300);
+// a tall photo (1:3) is kept whole: stored with its own proportions, shown uncropped over a blurred fill
+const tall = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 200; c.height = 600; const g = c.getContext('2d'); g.fillStyle = '#c33'; g.fillRect(0, 0, 200, 600); g.fillStyle = '#33c'; g.fillRect(0, 0, 200, 60); g.fillRect(0, 540, 200, 60); return c.toDataURL('image/png').split(',')[1]; });
+await editCar(p); await p.setInputFiles('#ve-file', { name: 'tall.png', mimeType: 'image/png', buffer: Buffer.from(tall, 'base64') }); await p.waitForTimeout(600);
+ok('photo fit: editor preview shows the whole photo (contain) over a blurred fill', await p.evaluate(() => { const ph = document.querySelector('#ve-photo img.ph'); return !!ph && getComputedStyle(ph).objectFit === 'contain' && !!document.querySelector('#ve-photo img.ph-bg'); }));
+await p.click('#ve-save'); await p.waitForTimeout(400); await goHome(p);
+ok('photo fit: stored photo keeps its 1:3 shape (nothing cut at upload)', await p.evaluate(async () => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); const i = new Image(); i.src = v.photo; await i.decode(); return Math.abs(i.naturalHeight / i.naturalWidth - 3) < 0.02; }));
+ok('photo fit: Home shows the whole photo inside the 16:9 frame (top and bottom stripes visible)', await p.evaluate(() => { const ph = document.querySelector('.hm-hero .cd-photo img.ph'), fr = document.querySelector('.hm-hero .cd-photo').getBoundingClientRect();
+  if (!ph || getComputedStyle(ph).objectFit !== 'contain') return false;
+  const r = ph.getBoundingClientRect(), k = Math.min(r.width / ph.naturalWidth, r.height / ph.naturalHeight), h = ph.naturalHeight * k, w = ph.naturalWidth * k;
+  return h <= fr.height + 0.5 && w <= fr.width + 0.5 && !!document.querySelector('.hm-hero .cd-photo img.ph-bg'); }));
+await editCar(p);
 await p.selectOption('#ve-make', ''); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(150);
 ok('editor: no make/model and no nickname is rejected', await p.evaluate(() => document.getElementById('ve-make').getAttribute('aria-invalid') === 'true' && !!document.querySelector('#ve-err [role=alert]')));
 await p.selectOption('#ve-make', 'toyota'); await p.waitForTimeout(100);
 ok('editor: model list follows the make', await p.evaluate(() => [...document.querySelectorAll('#ve-model option')].some(o => o.value === 'Land Cruiser')));
-await p.selectOption('#ve-model', 'Land Cruiser'); await p.fill('#ve-year', '٢٠٢١'); await p.click('#ve-save'); await p.waitForTimeout(300);
+await p.selectOption('#ve-model', 'Land Cruiser'); await p.fill('#ve-year', '٢٠٢١'); await p.click('#ve-save'); await p.waitForTimeout(300); await goHome(p);
 ok('editor: edits saved (Arabic-digit year → 2021); name + year on the card', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.year === 2021 && v.model === 'Land Cruiser' && document.querySelector('.hm-car__name').textContent.trim() === 'تويوتا Land Cruiser' && document.querySelector('.hm-year').textContent.trim() === '2021'; }));
-await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300); await p.fill('#ve-nick', 'سيارة العائلة'); await p.click('#ve-save'); await p.waitForTimeout(300);
+await editCar(p); await p.fill('#ve-nick', 'سيارة العائلة'); await p.click('#ve-save'); await p.waitForTimeout(300); await goHome(p);
 ok('editor: nickname becomes the title', (await p.textContent('.hm-car__name')).trim() === 'سيارة العائلة');
-await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300); await p.selectOption('#ve-make', '__other'); await p.fill('#ve-make-t', 'Geely'); await p.fill('#ve-model-t', 'Coolray'); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(300);
+await editCar(p); await p.selectOption('#ve-make', '__other'); await p.fill('#ve-make-t', 'Geely'); await p.fill('#ve-model-t', 'Coolray'); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(300); await goHome(p);
 ok('editor: “Other” make/model saved as typed', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.make === 'Geely' && v.model === 'Coolray' && document.querySelector('.hm-car__name').textContent.trim() === 'Geely Coolray'; }));
 // give the second car a catalog drawing so the backup holds all three image kinds
 await carMenu('[data-action=hm-car][aria-checked=false]');
-await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300); await p.click('#ve-cat'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200); await p.click('#ve-save'); await p.waitForTimeout(300);
+await editCar(p); await p.click('#ve-cat'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200); await p.click('#ve-save'); await p.waitForTimeout(300); await goHome(p);
 await carMenu('[data-action=hm-car][aria-checked=false]');
 const [bk2] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.evaluate(() => { location.hash = 'settings'; }).then(() => p.waitForTimeout(250)).then(() => p.click('[data-act=drvsave]'))]);
 const bkText = bk2 ? (await import('node:fs')).readFileSync(await bk2.path(), 'utf8') : '';
@@ -252,9 +264,9 @@ await ctx2.close();
   await r.goto(`${BASE}/index.html`); await r.waitForTimeout(400);
   ok('old data: home shows the saved name', (await r.textContent('.hm-car__name')).trim() === 'لاندكروزر 2015');
   ok('old data: card shows plate + odometer, no year, no expiry line', await r.evaluate(() => !document.querySelector('.hm-year') && !document.querySelector('.hm-exp').textContent.trim() && /1234/.test(document.querySelector('.hm-id').textContent)));
-  await r.click('[data-car=edit]'); await r.waitForTimeout(300);
+  await editCar(r);
   ok('old data: editor keeps the name as nickname, make empty', await r.evaluate(() => document.getElementById('ve-nick').value === 'لاندكروزر 2015' && document.getElementById('ve-make').value === ''));
-  await r.click('#ve-save'); await r.waitForTimeout(300);
+  await r.click('#ve-save'); await r.waitForTimeout(300); await goHome(r);
   ok('old data: saving unchanged keeps the same title', (await r.textContent('.hm-car__name')).trim() === 'لاندكروزر 2015');
   await c3.close();
 }

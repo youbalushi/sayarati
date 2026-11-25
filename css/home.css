@@ -6,11 +6,10 @@
 .hm-col{display:grid;gap:var(--space-3);align-content:start}
 .hm-col>section .mc-section-head{margin-block-start:var(--space-3)}
 
-/* Car card: photo (pencil = edit), name + year with the car-switch arrow, registration expiry;
+/* Car card: photo, name + year with the car-switch arrow, registration expiry;
    plate + odometer small and grey on the opposite side. Reuses .cd-photo from car.css. */
 .hm-hero{overflow:visible}
 .hm-hero .cd-photo{border-radius:var(--radius-lg) var(--radius-lg) 0 0}
-.hm-edit{position:absolute;inset-block-start:var(--space-3);inset-inline-end:var(--space-3);background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-2)}
 .hm-id{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:var(--space-3);row-gap:var(--space-1);padding:var(--space-4)}
 /* row 1: arrow · name · year | plate — row 2: expiry | odometer (each row shares one line) */
 .hm-id__name{display:flex;align-items:center;gap:var(--space-2);min-width:0}

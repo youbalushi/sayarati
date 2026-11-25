@@ -19,6 +19,7 @@ const watch = (p, tag) => {
 const store = p => p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')));
 const wait = (p, ms = 300) => p.waitForTimeout(ms);
 const go = async (p, h) => { await p.evaluate(x => { location.hash = x; }, h); await wait(p, 350); };
+const editCar = async p => { await go(p, 'settings'); const id = (await store(p)).S.cur; await p.click(`.st [data-act=editveh][data-id="${id}"]`); await wait(p, 400); }; // editing lives in Settings → Vehicles
 const esc = async p => { await p.keyboard.press('Escape'); await wait(p, 260); };
 
 /* ---------- 1. every screen + every sheet, AR/EN × light/dark × phone/desktop ---------- */
@@ -49,8 +50,9 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
   await go(p, 'home');
   await sheet('type picker', () => p.click(w < 900 ? '#nav-bottom [data-act=fab]' : '#nav-rail [data-act=fab]'), '[data-entry-type]');
   for (const ty of ['fuel', 'service', 'expense', 'income']) await sheet(`${ty} form`, async () => { await p.click(w < 900 ? '#nav-bottom [data-act=fab]' : '#nav-rail [data-act=fab]'); await wait(p, 300); await p.click(`.mc-scrim [data-entry-type=${ty}]`); }, '#en-form');
-  await go(p, 'home'); await sheet('vehicle editor', () => p.click('.hm-hero [data-car=edit]'), '#ve-form');
-  await sheet('catalog', async () => { await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-cat'); }, '.mc-scrim [data-ct-color]');
+  await sheet('vehicle editor', () => editCar(p), '#ve-form');
+  await sheet('catalog', async () => { await editCar(p); await p.click('#ve-cat'); }, '.mc-scrim [data-ct-color]');
+  await go(p, 'home');
   await sheet('document editor', () => p.click('.hm-docs [data-car=doc-add][data-type=insurance]'), '#de-form');
   await go(p, 'remind'); await sheet('reminder form', () => p.click('.rl [data-act=addrem]'), '#rm-form');
   await sheet('calendar', () => p.click('.rl-card [data-act=ics]'), '[data-act=icsfile]');
@@ -73,7 +75,7 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
   let S = (await store(p)).S;
   const v1 = S.vehicles[0];
   ok('vehicle: add saves make, model, year, plate, tank, odometer', S.vehicles.length === 1 && v1.make === 'toyota' && v1.model === 'Land Cruiser' && +v1.year === 2020 && v1.plate === '12345 أ ب' && +v1.tank === 90 && +v1.odo0 === 120000, JSON.stringify(v1));
-  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.fill('#ve-nick', 'سيارة العمل'); await p.fill('#ve-plate', '777'); await p.click('#ve-save'); await wait(p, 400);
+  await editCar(p); await p.fill('#ve-nick', 'سيارة العمل'); await p.fill('#ve-plate', '777'); await p.click('#ve-save'); await wait(p, 400); await go(p, 'home');
   S = (await store(p)).S;
   ok('vehicle: edit updates the same car', S.vehicles.length === 1 && S.vehicles[0].id === v1.id && S.vehicles[0].plate === '777' && /سيارة العمل/.test(await p.textContent('.hm-car__name')));
   await go(p, 'settings'); await p.click('.st [data-act=demo]'); await wait(p, 400);
@@ -87,10 +89,10 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
   let D = await store(p);
   const v2recs = Object.values(D.E).flat().filter(x => x.v === v2.id).length, v2rems = D.S.reminders.filter(r => r.v === v2.id).length;
   ok('vehicle: second car gets its own record + reminder', Object.values(D.E).flat().some(x => x.v === v1.id) && D.S.reminders.some(r => r.v === v1.id));
-  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-del'); await wait(p, 300);
+  await editCar(p); await p.click('#ve-del'); await wait(p, 300);
   await p.click('.mc-scrim [data-mc-close]'); await wait(p, 300);
   ok('vehicle: cancelling delete keeps everything', (await store(p)).S.vehicles.length === 2);
-  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-del'); await wait(p, 300); await p.click('[data-mc-ok]'); await wait(p, 500);
+  await editCar(p); await p.click('#ve-del'); await wait(p, 300); await p.click('[data-mc-ok]'); await wait(p, 500);
   D = await store(p);
   ok('vehicle: delete removes the car with its records, reminders and documents only', D.S.vehicles.length === 1 && D.S.vehicles[0].id === v2.id && !Object.values(D.E).flat().some(x => x.v === v1.id) && !D.S.reminders.some(r => r.v === v1.id) && !(D.S.docs || []).some(d => d.v === v1.id)
     && Object.values(D.E).flat().filter(x => x.v === v2.id).length === v2recs && D.S.reminders.filter(r => r.v === v2.id).length === v2rems);
@@ -151,7 +153,7 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
 {
   const c = await b.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true }); const p = await c.newPage(); watch(p, 'backup');
   await p.goto(`${BASE}/index.html`); await wait(p, 400); await p.click('[data-act=demo]'); await wait(p, 400);
-  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-cat'); await wait(p, 300); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await wait(p, 300); await p.click('#ve-save'); await wait(p, 400);
+  await editCar(p); await p.click('#ve-cat'); await wait(p, 300); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await wait(p, 300); await p.click('#ve-save'); await wait(p, 400);
   await go(p, 'settings');
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 5000 }).catch(() => null), p.click('[data-act=drvsave]')]);
   const file = dl && await dl.path(); const bk = file ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;

@@ -68,10 +68,12 @@ export function carArt(body = 'sedan', color = 'silver', { label = '' } = {}) {
 }
 
 const safeImg = p => (typeof p === 'string' && /^data:image\/(png|jpe?g|webp);base64,/.test(p) ? p : '');
+/** An uploaded photo fitted to any frame: shown whole (never cropped), with a soft blurred copy filling the spare space. */
+export const photoFit = src => `<img class="ph-bg" src="${src}" alt="" aria-hidden="true"><img class="ph" src="${src}" alt="">`;
 /** The vehicle's image: uploaded photo, else catalog drawing, else '' (caller shows a placeholder). */
 export function vehImage(V) {
   const p = safeImg(V.photo);
-  if (p) return `<img src="${p}" alt="">`;
+  if (p) return photoFit(p);
   // drawing always follows the car's registered make + model (only the color is chosen)
   if (V.photoCat && inCatalog(V.make, V.model)) return carArt(bodyOf(V.make, V.model), V.photoCat.color);
   return '';

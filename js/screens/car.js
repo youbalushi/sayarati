@@ -2,7 +2,7 @@
 // Reads/writes the existing data through ctx. New optional fields (all backward compatible):
 //   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img, added}]
 import { t, getLang, esc, icon, button, iconButton, field, badge, listItem, menu, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
-import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, carArt, mountCatalog } from '../vehicle.js';
+import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, photoFit, carArt, mountCatalog } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const DOC_TYPES = ['insurance', 'registration', 'inspection', 'license', 'other'];
@@ -35,15 +35,14 @@ export async function imageToDataURL(file, max, quality) {
 }
 
 /* ---------- Home: car card ----------
-   photo (pencil = edit car), then name + year with a small arrow to switch car, registration expiry
+   photo (editing lives in Settings → Vehicles), then name + year with a small arrow to switch car, registration expiry
    (from the ownership document) on the start side; plate + odometer, small and grey, on the end side. */
 export function carHero(ctx, V) {
   const { S } = ctx, img = vehImage(V), isArt = !safeImg(V.photo) && !!img, title = esc(vehTitle(V)), odo = ctx.curOdo(V.id);
   const own = docs(ctx, V.id).find(d => d.type === 'registration'), st = own && own.expiry ? docStatus(own) : null;
   const cars = S.vehicles.map(c => ({ label: vehTitle(c), sub: [c.year, c.plate ? `<span class="mc-num">${esc(c.plate)}</span>` : ''].filter(Boolean).join(' · '), icon: 'car', action: 'hm-car', value: c.id, checked: c.id === S.cur }));
   return `<section class="mc-card mc-card--flush hm-hero" aria-label="${title}">
-    <div class="cd-photo${img ? (isArt ? ' is-art' : '') : ' is-empty'}" role="img" aria-label="${title}">${img || `${icon('car')}<span class="mc-small">${t('car.noPhoto')}</span>`}
-      ${iconButton('pencil', t('home.editCar'), { attrs: 'data-car="edit"' }).replace('class="mc-iconbtn', 'class="mc-iconbtn hm-edit')}</div>
+    <div class="cd-photo${img ? (isArt ? ' is-art' : '') : ' is-empty'}" role="img" aria-label="${title}">${img || `${icon('car')}<span class="mc-small">${t('car.noPhoto')}</span>`}</div>
     <div class="hm-id">
       <div class="hm-id__name">
         <div class="hm-switch">${menu({ id: 'hm-cars', label: t('home.switchCarLabel'), triggerIcon: 'chevron-down', items: [...cars, { sep: true }, { label: t('home.addCar'), icon: 'plus', action: 'hm-addcar' }] })}</div>
@@ -88,7 +87,7 @@ export function openVehicleEditor(ctx, id = null) {
   const model0 = V.model ? (known && modelsOf(V.make).some(x => x[0] === V.model) ? V.model : '__other') : '';
   const formModel = () => { const r = s => root && root.querySelector(s); const mk = r('#ve-make') ? r('#ve-make').value : V.make, md = r('#ve-model') ? r('#ve-model').value : V.model; return [mk, md]; };
   let root = null;
-  const preview = () => { if (photo) return `<img src="${photo}" alt="">`; const [mk, md] = formModel(); return photoCat && inCatalog(mk, md) ? carArt(bodyOf(mk, md), photoCat.color) : icon('car'); };
+  const preview = () => { if (photo) return photoFit(photo); const [mk, md] = formModel(); return photoCat && inCatalog(mk, md) ? carArt(bodyOf(mk, md), photoCat.color) : icon('car'); };
   const body = `<div id="ve-formview"><form class="mc-stack" id="ve-form" novalidate>
     <div class="cd-edit-photo">
       <div class="cd-edit-photo__img${photo || photoCat ? '' : ' is-empty'}" id="ve-photo">${preview()}</div>
@@ -256,8 +255,7 @@ export function initCar(ctx) {
     const b = e.target.closest('[data-car]'); if (!b) return;
     const a = b.dataset.car, inSheet = !!b.closest('.mc-scrim');
     const go = fn => { if (inSheet) { closeSheet(true); } fn(); };
-    if (a === 'edit') openVehicleEditor(ctx, ctx.S.cur);
-    else if (a === 'doc-add') go(() => openDocEditor(ctx, null, b.dataset.type || null));
+    if (a === 'doc-add') go(() => openDocEditor(ctx, null, b.dataset.type || null));
     else if (a === 'doc-open') go(() => openDocViewer(ctx, b.dataset.id));
     else if (a === 'doc-list') openDocList(ctx, b.dataset.type);
   });
