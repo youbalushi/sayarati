@@ -17,8 +17,8 @@ export const STRINGS = {
     lang: { ar: 'العربية', en: 'English' },
     month: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
     catalog: {
-      title: 'كتالوج السيارات', search: 'ابحث عن شركة أو موديل…', makes: 'الشركات', models: 'الموديلات', allMakes: 'كل الشركات', color: 'اللون', none: 'لا توجد نتائج',
-      fromCatalog: 'من الكتالوج', fromDevice: 'رفع صورة من الجهاز', note: 'الرسومات توضيحية حسب شكل السيارة، وليست صورًا رسمية.',
+      title: 'كتالوج السيارات', color: 'اللون',
+      fromCatalog: 'من الكتالوج', fromDevice: 'رفع صورة من الجهاز', use: 'استخدام هذه الصورة', setModel: 'تحديد الشركة والموديل', needModel: 'الكتالوج يعرض صورة موديل سيارتك فقط', needModelText: 'اختر شركة وموديل من القائمة في بيانات السيارة أولًا، أو ارفع صورة من الجهاز.', note: 'الرسومات توضيحية حسب شكل السيارة، وليست صورًا رسمية.',
       bodies: { sedan: 'سيدان', hatch: 'هاتشباك', crossover: 'كروس أوفر', suv: 'دفع رباعي', pickup: 'بيك أب' },
       colors: { white: 'أبيض', silver: 'فضي', gray: 'رمادي', black: 'أسود', red: 'أحمر', blue: 'أزرق', beige: 'بيج', green: 'أخضر' }
     },
@@ -66,8 +66,8 @@ export const STRINGS = {
     lang: { ar: 'العربية', en: 'English' },
     month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     catalog: {
-      title: 'Car catalog', search: 'Search make or model…', makes: 'Makes', models: 'Models', allMakes: 'All makes', color: 'Color', none: 'No results',
-      fromCatalog: 'From catalog', fromDevice: 'Upload from device', note: 'Drawings illustrate the body shape; they are not official photos.',
+      title: 'Car catalog', color: 'Color',
+      fromCatalog: 'From catalog', fromDevice: 'Upload from device', use: 'Use this picture', setModel: 'Set make and model', needModel: 'The catalog only shows your car’s model', needModelText: 'Choose a listed make and model in the vehicle details first, or upload a photo from your device.', note: 'Drawings illustrate the body shape; they are not official photos.',
       bodies: { sedan: 'Sedan', hatch: 'Hatchback', crossover: 'Crossover', suv: 'SUV', pickup: 'Pickup' },
       colors: { white: 'White', silver: 'Silver', gray: 'Gray', black: 'Black', red: 'Red', blue: 'Blue', beige: 'Beige', green: 'Green' }
     },

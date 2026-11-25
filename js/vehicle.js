@@ -72,40 +72,35 @@ const safeImg = p => (typeof p === 'string' && /^data:image\/(png|jpe?g|webp);ba
 export function vehImage(V) {
   const p = safeImg(V.photo);
   if (p) return `<img src="${p}" alt="">`;
-  if (V.photoCat && V.photoCat.body) return carArt(V.photoCat.body, V.photoCat.color);
+  // drawing always follows the car's registered make + model (only the color is chosen)
+  if (V.photoCat && inCatalog(V.make, V.model)) return carArt(bodyOf(V.make, V.model), V.photoCat.color);
   return '';
 }
+export const inCatalog = (make, model) => !!makeRow(make) && modelsOf(make).some(x => x[0] === model);
 
-/* ---------- catalog picker (mounted inside a sheet body) ---------- */
-/** mountCatalog(el, {make, model, color}, onPick({make, model, body, color})) */
+/* ---------- catalog picker: locked to one make + model; the user picks a color ---------- */
+/** mountCatalog(el, {make, model, color}, onPick({make, model, body, color})) — returns false when the model isn't in the catalog. */
 export function mountCatalog(el, init, onPick) {
-  const st = { make: makeRow(init.make) ? init.make : '', color: init.color || 'silver', q: '', model: init.model || '' };
+  if (!inCatalog(init.make, init.model)) {
+    el.innerHTML = `<div class="mc-alert mc-tone-info" role="status">${icon('info')}<div><strong class="mc-alert__title">${t('catalog.needModel')}</strong>${t('catalog.needModelText')}</div></div>`;
+    return false;
+  }
+  const body = bodyOf(init.make, init.model);
+  let color = COLORS.some(c => c[0] === init.color) ? init.color : 'silver';
   const draw = () => {
-    const L = getLang(), q = st.q.trim().toLowerCase();
-    const colorRow = `<div class="mc-field"><span class="mc-field__label">${t('catalog.color')}</span><div class="ct-colors" role="radiogroup" aria-label="${esc(t('catalog.color'))}">${COLORS.map(([k, h]) =>
-      `<button type="button" class="ct-color" role="radio" aria-checked="${st.color === k}" aria-label="${esc(t('catalog.colors.' + k))}" title="${esc(t('catalog.colors.' + k))}" data-ct-color="${k}" style="--c:${h}">${st.color === k ? icon('check', { size: 'sm' }) : ''}</button>`).join('')}</div></div>`;
-    if (!st.make) {
-      const hits = MAKES.filter(m => !q || m[1].includes(q) || m[2].toLowerCase().includes(q) || m[3].some(x => x[0].toLowerCase().includes(q)));
-      el.innerHTML = `<div class="mc-inputgroup">${icon('search')}<input class="mc-input" type="search" data-ct-q value="${esc(st.q)}" placeholder="${esc(t('catalog.search'))}" aria-label="${esc(t('catalog.search'))}"></div>
-        <div class="mc-overline">${t('catalog.makes')}</div>
-        ${hits.length ? `<div class="mc-list">${hits.map(m => `<button type="button" class="mc-list-item mc-list-item--compact" data-ct-make="${m[0]}"><span class="mc-list-item__body"><span class="mc-list-item__title">${esc(L === 'ar' ? m[1] : m[2])}</span><span class="mc-list-item__sub">${m[3].map(x => esc(x[0])).join(' · ')}</span></span><span class="mc-list-item__trail">${icon('chevron-right')}</span></button>`).join('')}</div>`
-          : `<p class="mc-muted">${t('catalog.none')}</p>`}`;
-      return;
-    }
-    const m = makeRow(st.make);
-    el.innerHTML = `<div class="ct-head"><button type="button" class="mc-btn mc-btn--ghost mc-btn--sm" data-ct-back>${icon('arrow-left')}<span>${t('catalog.allMakes')}</span></button><h3 class="mc-title">${esc(L === 'ar' ? m[1] : m[2])}</h3></div>
-      ${colorRow}
-      <div class="mc-overline">${t('catalog.models')}</div>
-      <div class="ct-grid">${m[3].map(([name, body]) => `<button type="button" class="ct-card${st.model === name ? ' is-current' : ''}" data-ct-model="${esc(name)}" data-ct-body="${body}">
-        <span class="ct-card__art">${carArt(body, st.color)}</span><span class="ct-card__name">${esc(name)}</span><span class="ct-card__body">${t('catalog.bodies.' + body)}</span></button>`).join('')}</div>`;
+    el.innerHTML = `<div class="ct-locked">
+      <div class="ct-locked__art">${carArt(body, color, { label: `${makeLabel(init.make)} ${init.model}` })}</div>
+      <div class="ct-locked__id"><strong class="mc-title">${esc(makeLabel(init.make))} ${esc(init.model)}</strong><span class="mc-small mc-muted">${t('catalog.bodies.' + body)}</span></div>
+    </div>
+    <div class="mc-field"><span class="mc-field__label" id="ct-color-l">${t('catalog.color')}</span><div class="ct-colors" role="radiogroup" aria-labelledby="ct-color-l">${COLORS.map(([k, h]) =>
+      `<button type="button" class="ct-color" role="radio" aria-checked="${color === k}" aria-label="${esc(t('catalog.colors.' + k))}" title="${esc(t('catalog.colors.' + k))}" data-ct-color="${k}" style="--c:${h}">${color === k ? icon('check', { size: 'sm' }) : ''}</button>`).join('')}</div></div>
+    <button type="button" class="mc-btn mc-btn--primary mc-btn--block" data-ct-use>${icon('check')}<span>${t('catalog.use')}</span></button>`;
   };
-  el.addEventListener('input', e => { if (e.target.matches('[data-ct-q]')) { st.q = e.target.value; const pos = e.target.selectionStart; draw(); const i = el.querySelector('[data-ct-q]'); i.focus(); i.setSelectionRange(pos, pos); } });
   el.addEventListener('click', e => {
-    const b = e.target.closest('[data-ct-make],[data-ct-back],[data-ct-color],[data-ct-model]'); if (!b) return;
-    if (b.dataset.ctMake) { st.make = b.dataset.ctMake; draw(); el.querySelector('[data-ct-back]')?.focus(); }
-    else if (b.hasAttribute('data-ct-back')) { st.make = ''; draw(); }
-    else if (b.dataset.ctColor) { st.color = b.dataset.ctColor; draw(); el.querySelector(`[data-ct-color="${st.color}"]`)?.focus(); }
-    else if (b.dataset.ctModel) onPick({ make: st.make, model: b.dataset.ctModel, body: b.dataset.ctBody, color: st.color });
+    const c = e.target.closest('[data-ct-color]');
+    if (c) { color = c.dataset.ctColor; draw(); el.querySelector(`[data-ct-color="${color}"]`)?.focus(); return; }
+    if (e.target.closest('[data-ct-use]')) onPick({ make: init.make, model: init.model, body, color });
   });
   draw();
+  return true;
 }

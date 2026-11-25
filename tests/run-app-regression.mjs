@@ -105,14 +105,14 @@ await p.focus('[data-car-tab=fuel]'); await p.keyboard.press(await p.evaluate(()
 ok('car: arrow keys move between tabs', await p.evaluate(() => document.activeElement.dataset.carTab === 'reminders' && document.querySelector('[data-car-tab=reminders]').getAttribute('aria-selected') === 'true'));
 // photo from gallery
 const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP4z8DAwMDAxMDAwMDAAAANHQEDK+mmyAAAAABJRU5ErkJggg==';
-// catalog: make → model → color
+// catalog: locked to the registered make + model; only the color is chosen
 await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
-ok('catalog: opens on the car\'s make with its models', await p.evaluate(() => document.querySelectorAll('.mc-scrim [data-ct-model]').length === 8 && !!document.querySelector('.mc-scrim [data-ct-model="Camry"].is-current')));
-await p.click('.mc-scrim [data-ct-back]'); await p.waitForTimeout(150);
-await p.fill('.mc-scrim [data-ct-q]', 'patrol'); await p.waitForTimeout(150);
-ok('catalog: search by model finds the make', await p.evaluate(() => [...document.querySelectorAll('.mc-scrim [data-ct-make]')].map(b => b.dataset.ctMake).join() === 'nissan'));
-await p.click('.mc-scrim [data-ct-make=nissan]'); await p.click('.mc-scrim [data-ct-color=red]'); await p.waitForTimeout(100); await p.click('.mc-scrim [data-ct-model=Patrol]'); await p.waitForTimeout(400);
-ok('catalog: picking stores body + color and shows the drawing', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.photoCat && v.photoCat.body === 'suv' && v.photoCat.color === 'red' && !v.photo && !!document.querySelector('.cd-photo .mc-carart'); }));
+ok('catalog: shows only the car\'s make + model', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !sc.querySelector('[data-ct-make],[data-ct-model],[data-ct-q]') && /Camry/.test(sc.querySelector('.ct-locked__id').textContent) && sc.querySelectorAll('[data-ct-color]').length === 8; }));
+await p.click('.mc-scrim [data-ct-color=red]'); await p.waitForTimeout(100); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(400);
+ok('catalog: stores the car\'s own model + chosen color', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.photoCat && v.photoCat.model === 'Camry' && v.photoCat.body === 'sedan' && v.photoCat.color === 'red' && !v.photo && !!document.querySelector('.cd-photo .mc-carart'); }));
+ok('catalog: a mismatched saved drawing still renders the registered model', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); v.photoCat.body = 'pickup'; v.photoCat.model = 'Hilux'; localStorage.setItem('sayarati-v1', JSON.stringify(d)); return true; }));
+await p.reload(); await p.waitForTimeout(400);
+ok('catalog: … drawn as the car\'s sedan, not the stored pickup', await p.evaluate(() => !document.querySelector('.cd-photo .mc-carart path[d*="L298 74"]') && !!document.querySelector('.cd-photo .mc-carart')));
 await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
 await p.setInputFiles('.mc-scrim [data-car=photo]', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(600);
 ok('car: photo from gallery is stored and shown', await p.evaluate(() => { const v = JSON.parse(localStorage.getItem('sayarati-v1')).S.vehicles.find(x => x.id === JSON.parse(localStorage.getItem('sayarati-v1')).S.cur); return /^data:image\/jpeg;base64,/.test(v.photo) && !v.photoCat && !!document.querySelector('.cd-photo img'); }));
@@ -123,11 +123,21 @@ ok('car: no make/model and no nickname is rejected', await p.evaluate(() => docu
 await p.selectOption('#ve-make', 'toyota'); await p.waitForTimeout(100);
 ok('car: model list follows the make', await p.evaluate(() => [...document.querySelectorAll('#ve-model option')].some(o => o.value === 'Land Cruiser')));
 await p.selectOption('#ve-model', 'Land Cruiser'); await p.fill('#ve-year', '٢٠٢١'); await p.click('#ve-save'); await p.waitForTimeout(300);
+await p.click('[data-car=edit]'); await p.waitForTimeout(300); await p.click('#ve-rm'); await p.click('#ve-cat'); await p.waitForTimeout(200);
+ok('editor catalog: locked to the selected model', await p.evaluate(() => /Land Cruiser/.test(document.querySelector('.mc-scrim .ct-locked__id').textContent)));
+await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200);
+await p.selectOption('#ve-model', 'Hilux'); await p.waitForTimeout(150);
+ok('editor: changing the model redraws the picture for the new model', await p.evaluate(() => !!document.querySelector('#ve-photo .mc-carart path[d*="L298 74"]')));
+await p.selectOption('#ve-model', 'Land Cruiser'); await p.click('#ve-save'); await p.waitForTimeout(300);
+ok('editor: saved drawing belongs to the saved model', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.photoCat && v.photoCat.model === 'Land Cruiser' && v.photoCat.body === 'suv' && !v.photo; }));
 ok('car: edits saved (Arabic-digit year → 2021)', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.year === 2021 && v.make === 'toyota' && v.model === 'Land Cruiser' && v.odo0 === 62000; }));
 ok('car: title and subtitle do not repeat', await p.evaluate(() => { const h = document.querySelector('.cd h1').textContent.trim(), sub = document.querySelector('.cd-id__meta').textContent; return h === 'تويوتا Land Cruiser' && !sub.includes('Land Cruiser') && sub.includes('2021'); }));
 await p.click('[data-car=edit]'); await p.waitForTimeout(300); await p.fill('#ve-nick', 'سيارة العائلة'); await p.click('#ve-save'); await p.waitForTimeout(300);
 ok('car: nickname becomes the title, make/model move to the subtitle', await p.evaluate(() => document.querySelector('.cd h1').textContent.trim() === 'سيارة العائلة' && /Land Cruiser · 2021/.test(document.querySelector('.cd-id__meta').textContent)));
 await p.click('[data-car=edit]'); await p.waitForTimeout(300); await p.selectOption('#ve-make', '__other'); await p.fill('#ve-make-t', 'Geely'); await p.fill('#ve-model-t', 'Coolray'); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(300);
+await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
+ok('catalog: model outside the catalog → guidance + set model button, nothing to pick', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !!sc.querySelector('.mc-alert') && !!sc.querySelector('[data-ct-setmodel]') && !sc.querySelector('[data-ct-use]'); }));
+await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 ok('car: “Other” make/model saved as typed', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.make === 'Geely' && v.model === 'Coolray' && document.querySelector('.cd h1').textContent.trim() === 'Geely Coolray'; }));
 // documents
 await p.click('[data-car-tab=docs]'); await p.waitForTimeout(200); await p.click('#cd-panel [data-car=doc-add]'); await p.waitForTimeout(300);
@@ -137,9 +147,12 @@ await p.setInputFiles('#de-file', { name: 'doc.png', mimeType: 'image/png', buff
 ok('car: documents saved, expired one first with danger badge', await p.evaluate(() => (JSON.parse(localStorage.getItem('sayarati-v1')).S.docs || []).length === 2 && /danger/.test(document.querySelector('#cd-panel .mc-badge').className)));
 await p.click('#cd-panel [data-car=doc-open]'); await p.waitForTimeout(300); await p.click('#dv-del'); await p.waitForTimeout(350); await p.click('[data-mc-ok]'); await p.waitForTimeout(300);
 ok('car: document delete (with confirm)', await p.evaluate(() => (JSON.parse(localStorage.getItem('sayarati-v1')).S.docs || []).length === 1));
+// first car: real photo from the device again (the editor tests above replaced it with a drawing)
+await p.evaluate(() => { location.hash = 'car'; }); await p.waitForTimeout(250); await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
+await p.setInputFiles('.mc-scrim [data-car=photo]', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(600);
 // give the second car a catalog drawing so the backup holds all three image kinds
 await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250); await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('.mc-scrim [data-car]:not([aria-current])'); await p.waitForTimeout(300);
-await p.evaluate(() => { location.hash = 'car'; }); await p.waitForTimeout(250); await p.click('[data-car=catalog]'); await p.waitForTimeout(300); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-model=Patrol]'); await p.waitForTimeout(300);
+await p.evaluate(() => { location.hash = 'car'; }); await p.waitForTimeout(250); await p.click('[data-car=catalog]'); await p.waitForTimeout(300); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(300);
 await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250); await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('.mc-scrim [data-car]:not([aria-current])'); await p.waitForTimeout(300);
 const [bk2] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.evaluate(() => { location.hash = 'settings'; }).then(() => p.waitForTimeout(250)).then(() => p.click('[data-act=drvsave]'))]);
 const bkText = bk2 ? (await import('node:fs')).readFileSync(await bk2.path(), 'utf8') : '';

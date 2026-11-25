@@ -2,7 +2,7 @@
 // Reads/writes the existing data through ctx. New optional fields (all backward compatible):
 //   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img, added}]
 import { t, getLang, esc, icon, iconTile, button, iconButton, field, badge, listItem, stat, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
-import { MAKES, makeLabel, modelsOf, bodyOf, vehTitle, vehSub, legacyName, vehImage, carArt, mountCatalog } from '../vehicle.js';
+import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, carArt, mountCatalog } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const DOC_TYPES = ['insurance', 'registration', 'inspection', 'license', 'other'];
@@ -146,7 +146,9 @@ export function openVehicleEditor(ctx, id = null) {
   const modelOpts = mk => [['', t('car.choose')], ...modelsOf(mk).map(x => [x[0], x[0]]), ['__other', t('car.other')]];
   const make0 = V.make ? (known ? V.make : '__other') : '';
   const model0 = V.model ? (known && modelsOf(V.make).some(x => x[0] === V.model) ? V.model : '__other') : '';
-  const preview = () => (photo ? `<img src="${photo}" alt="">` : photoCat ? carArt(photoCat.body, photoCat.color) : icon('car'));
+  const formModel = () => { const r = s => root && root.querySelector(s); const mk = r('#ve-make') ? r('#ve-make').value : V.make, md = r('#ve-model') ? r('#ve-model').value : V.model; return [mk, md]; };
+  let root = null;
+  const preview = () => { if (photo) return `<img src="${photo}" alt="">`; const [mk, md] = formModel(); return photoCat && inCatalog(mk, md) ? carArt(bodyOf(mk, md), photoCat.color) : icon('car'); };
   const body = `<div id="ve-formview"><form class="mc-stack" id="ve-form" novalidate>
     <div class="cd-edit-photo">
       <div class="cd-edit-photo__img${photo || photoCat ? '' : ' is-empty'}" id="ve-photo">${preview()}</div>
@@ -167,11 +169,11 @@ export function openVehicleEditor(ctx, id = null) {
     <div id="ve-err"></div>
     ${old ? `<div class="mc-divider"></div>${button(t('car.deleteCar'), { variant: 'danger', icon: 'trash-2', block: true, attrs: 'id="ve-del"' })}` : ''}
   </form></div>
-  <div id="ve-catview" class="mc-stack" hidden><div id="ve-ct" class="mc-stack"></div><p class="mc-caption mc-muted" style="margin:0">${t('catalog.note')}</p></div>`;
-  const root = openSheet({ title: t(old ? 'car.editTitle' : 'home.addCar'), body,
+  <div id="ve-catview" class="mc-stack" hidden><button type="button" class="mc-btn mc-btn--ghost mc-btn--sm" id="ve-catback" style="justify-self:start">${icon('arrow-left')}<span>${t('action.back')}</span></button><div id="ve-ct" class="mc-stack"></div><p class="mc-caption mc-muted" style="margin:0">${t('catalog.note')}</p></div>`;
+  root = openSheet({ title: t(old ? 'car.editTitle' : 'home.addCar'), body,
     footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'id="ve-save"' }) });
   const $ = s => root.querySelector(s);
-  const showPhoto = () => { $('#ve-photo').className = 'cd-edit-photo__img' + (photo || photoCat ? '' : ' is-empty'); $('#ve-photo').innerHTML = preview(); $('#ve-rm').hidden = !(photo || photoCat); };
+  const showPhoto = () => { const html = preview(), has = !!photo || (photoCat && inCatalog(...formModel())); $('#ve-photo').className = 'cd-edit-photo__img' + (has ? '' : ' is-empty'); $('#ve-photo').innerHTML = html; $('#ve-rm').hidden = !(photo || photoCat); };
   $('#ve-file').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
     try { photo = await imageToDataURL(f, 900, 0.82); photoCat = null; showPhoto(); }
@@ -193,12 +195,16 @@ export function openVehicleEditor(ctx, id = null) {
   if (make0 === '__other') { $('#ve-model-w').hidden = true; }
   // catalog view inside the same sheet (form state is kept)
   const foot = root.querySelector('.mc-sheet__foot'), head = root.querySelector('.mc-sheet__title');
+  const backToForm = () => { $('#ve-catview').hidden = true; $('#ve-formview').hidden = false; foot.hidden = false; head.textContent = t(old ? 'car.editTitle' : 'home.addCar'); $('#ve-cat').focus(); };
+  $('#ve-catback').addEventListener('click', backToForm);
+  // a catalog drawing belongs to one make+model: if the user changes them, the drawing follows (same color)
+  const followModel = () => { if (photoCat) showPhoto(); };
+  $('#ve-make').addEventListener('change', followModel); $('#ve-model').addEventListener('change', followModel);
   $('#ve-cat').addEventListener('click', () => {
     $('#ve-formview').hidden = true; $('#ve-catview').hidden = false; foot.hidden = true; head.textContent = t('catalog.title');
     const mk = $('#ve-make').value;
-    mountCatalog($('#ve-ct'), { make: mk && mk !== '__other' ? mk : '', model: $('#ve-model').value, color: photoCat ? photoCat.color : 'silver' }, pick => {
+    mountCatalog($('#ve-ct'), { make: mk, model: $('#ve-model').value, color: photoCat ? photoCat.color : 'silver' }, pick => {
       photoCat = pick; photo = '';
-      if (!$('#ve-make').value || $('#ve-make').value === pick.make) { $('#ve-make').value = pick.make; syncMake(); $('#ve-model').value = pick.model; $('#ve-model-o').hidden = true; }
       $('#ve-catview').hidden = true; $('#ve-formview').hidden = false; foot.hidden = false; head.textContent = t(old ? 'car.editTitle' : 'home.addCar'); showPhoto(); $('#ve-cat').focus();
     });
     $('#ve-ct').querySelector('input,button')?.focus();
@@ -219,7 +225,8 @@ export function openVehicleEditor(ctx, id = null) {
     }
     const nv = { ...(old || {}), id: old ? old.id : ctx.uid(), make, model, nick, year: year === '' ? '' : Math.round(year), plate: val('#ve-plate'),
       fuel: $('#ve-fuel').value, tank: parseNum(val('#ve-tank')) || 0, odo0: parseNum(val('#ve-odo')) || 0, photo, photoCat };
-    if (!photo) delete nv.photo; if (!photoCat) delete nv.photoCat; if (!nick) delete nv.nick;
+    if (photoCat) nv.photoCat = inCatalog(make, model) ? { make, model, body: bodyOf(make, model), color: photoCat.color } : null;
+    if (!photo) delete nv.photo; if (!nv.photoCat) delete nv.photoCat; if (!nick) delete nv.nick;
     nv.name = legacyName(nv);
     const before = JSON.stringify(ctx.S.vehicles), beforeCur = ctx.S.cur;
     if (old) ctx.S.vehicles = ctx.S.vehicles.map(z => (z.id === nv.id ? nv : z));
@@ -239,12 +246,17 @@ function openCatalogSheet(ctx) {
   const V = ctx.veh(ctx.S.cur);
   const root = openSheet({ title: t('catalog.title'), body: `<div id="ct-root" class="mc-stack"></div><p class="mc-caption mc-muted" style="margin:0">${t('catalog.note')}</p>`,
     footer: `<label class="mc-btn mc-btn--outline">${icon('upload')}<span>${t('catalog.fromDevice')}</span><input type="file" accept="image/*" data-car="photo" hidden></label>` });
-  mountCatalog(root.querySelector('#ct-root'), { make: V.make, model: V.model, color: V.photoCat ? V.photoCat.color : 'silver' }, pick => {
+  const ok = mountCatalog(root.querySelector('#ct-root'), { make: V.make, model: V.model, color: V.photoCat ? V.photoCat.color : 'silver' }, pick => {
     const prev = { photo: V.photo, photoCat: V.photoCat };
     V.photoCat = pick; delete V.photo;
     if (!ctx.save(['g'])) { Object.assign(V, prev); if (!prev.photo) delete V.photo; toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
     closeSheet(); ctx.render(); toast(t('car.photoSaved'), { tone: 'success' });
   });
+  if (!ok) {
+    const b = document.createElement('div'); b.innerHTML = button(t('catalog.setModel'), { variant: 'primary', block: true, icon: 'pencil', attrs: 'data-ct-setmodel' });
+    root.querySelector('#ct-root').appendChild(b.firstElementChild);
+    root.querySelector('[data-ct-setmodel]').addEventListener('click', () => { closeSheet(true); openVehicleEditor(ctx, V.id); });
+  }
 }
 
 /* ---------- documents ---------- */
