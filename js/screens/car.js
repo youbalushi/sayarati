@@ -21,14 +21,51 @@ const curLabel = ctx => { const c = ctx.S.set.cur || 'ر.ع'; return getLang() =
 const fill2 = (s, o) => Object.entries(o).reduce((a, [k, v]) => a.replace('{' + k + '}', v), String(s));
 const longDate = d => { const [y, m, dd] = d.split('-'); return `${+dd} ${t('month')[+m - 1]} ${y}`; };
 
-/** Downscale an image file to a JPEG data URL (keeps storage small). */
-export async function imageToDataURL(file, max, quality) {
+/** Where the subject is inside a photo with plain margins (white / grey / transparent studio-style background).
+    Returns {x,y,w,h} in the photo's own pixels, or null to keep the photo as it is:
+    - the margin colour is read from the outer edge; if the edge is not one uniform colour (a normal photo with a
+      street or garage behind the car) nothing is cut;
+    - the box holds everything that differs from that colour (car + its shadow), ignoring isolated specks;
+    - a small breathing margin is kept so the car never touches the frame; nothing is cut when the gain is tiny. */
+export function subjectBox(img) {
+  const W0 = img.naturalWidth, H0 = img.naturalHeight, k = Math.min(1, 480 / Math.max(W0, H0));
+  const W = Math.max(1, Math.round(W0 * k)), H = Math.max(1, Math.round(H0 * k));
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
+  const d = g.getImageData(0, 0, W, H).data, at = (x, y) => (y * W + x) * 4;
+  // edge ring (2 px)
+  const ring = [];
+  for (let x = 0; x < W; x++) for (const y of [0, 1, H - 2, H - 1]) if (y >= 0 && y < H) ring.push(at(x, y));
+  for (let y = 2; y < H - 2; y++) for (const x of [0, 1, W - 2, W - 1]) if (x >= 0 && x < W) ring.push(at(x, y));
+  const clear = ring.filter(o => d[o + 3] < 24).length / ring.length > 0.5;
+  const solid = ring.filter(o => d[o + 3] >= 24), med = ch => { const v = solid.map(o => d[o + ch]).sort((a, b) => a - b); return v[v.length >> 1] || 0; };
+  const bg = clear ? null : [med(0), med(1), med(2)], TH = 28;
+  const isBg = o => d[o + 3] < 24 || (bg && Math.max(Math.abs(d[o] - bg[0]), Math.abs(d[o + 1] - bg[1]), Math.abs(d[o + 2] - bg[2])) <= TH);
+  if (!clear && solid.filter(isBg).length / solid.length < 0.85) return null; // edge isn't one plain colour → a real scene
+  const rows = new Uint32Array(H), cols = new Uint32Array(W);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!isBg(at(x, y))) { rows[y]++; cols[x]++; }
+  const rMin = Math.max(2, W * 0.006), cMin = Math.max(2, H * 0.006);
+  let top = 0, bot = H - 1, lef = 0, rig = W - 1;
+  while (top < H && rows[top] < rMin) top++; while (bot > top && rows[bot] < rMin) bot--;
+  while (lef < W && cols[lef] < cMin) lef++; while (rig > lef && cols[rig] < cMin) rig--;
+  if (top >= bot || lef >= rig) return null; // nothing found
+  const pad = Math.round(Math.max(rig - lef, bot - top) * 0.04);
+  top = Math.max(0, top - pad); lef = Math.max(0, lef - pad); bot = Math.min(H - 1, bot + pad); rig = Math.min(W - 1, rig + pad);
+  const box = { x: Math.floor(lef / k), y: Math.floor(top / k), w: Math.ceil((rig - lef + 1) / k), h: Math.ceil((bot - top + 1) / k) };
+  box.w = Math.min(box.w, W0 - box.x); box.h = Math.min(box.h, H0 - box.y);
+  return box.w * box.h > W0 * H0 * 0.92 ? null : box; // margins too small to matter
+}
+
+/** Downscale an image file to a JPEG data URL (keeps storage small).
+    { trim: true } first cuts plain margins around the subject (see subjectBox); proportions are never changed. */
+export async function imageToDataURL(file, max, quality, { trim = false } = {}) {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-    const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
-    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    const box = (trim && subjectBox(img)) || { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
+    const s = Math.min(1, max / Math.max(box.w, box.h));
+    const c = document.createElement('canvas'); c.width = Math.round(box.w * s); c.height = Math.round(box.h * s);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', quality);
   } finally { URL.revokeObjectURL(url); }
 }
@@ -114,7 +151,7 @@ export function openVehicleEditor(ctx, id = null) {
   const showPhoto = () => { const html = preview(), has = !!photo || (photoCat && inCatalog(...formModel())); $('#ve-photo').className = 'cd-edit-photo__img' + (has ? '' : ' is-empty'); $('#ve-photo').innerHTML = html; $('#ve-rm').hidden = !(photo || photoCat); };
   $('#ve-file').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
-    try { photo = await imageToDataURL(f, 900, 0.82); photoCat = null; showPhoto(); }
+    try { photo = await imageToDataURL(f, 900, 0.82, { trim: true }); photoCat = null; showPhoto(); } // new car photos: plain margins trimmed
     catch (err) { toast(t('car.imageError'), { tone: 'danger' }); }
   });
   $('#ve-rm').addEventListener('click', () => { photo = ''; photoCat = null; showPhoto(); });
