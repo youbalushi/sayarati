@@ -1,0 +1,68 @@
+/* سيارتي · My Car — Reports (rp-). Design-system tokens only.
+   Charts: one series in the brand colour (validated palette rule — orange vs amber are too close to
+   carry identity alone), values in text inks, recessive grid, hover/focus tooltip + hidden table. */
+.rp-appbar{padding-inline:var(--space-4) var(--space-2)}
+.rp-appbar__id{flex:1;display:grid;justify-items:start;min-width:0}
+.rp-appbar__id .mc-title{font-size:var(--fs-title);line-height:var(--lh-title);font-weight:var(--fw-bold)}
+.rp-appbar__id .mc-btn{margin-inline-start:calc(var(--space-2) * -1);max-width:100%}
+.rp-grid{display:grid;gap:var(--space-3);padding-block:var(--space-4) var(--space-6)}
+.rp-period .mc-seg{max-width:440px}
+.rp-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+.rp-kpis .mc-stat__value{font-size:var(--fs-title);line-height:var(--lh-title)}
+.rp-h{margin-block-end:var(--space-3)!important}
+.rp-card .mc-card__head{margin-block-end:var(--space-3)}
+.rp-none{margin:0;padding-block:var(--space-4);text-align:center}
+
+/* monthly columns: start edge = oldest month in both directions */
+.rp-chart{position:relative}
+.rp-cols{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:2px;block-size:168px;align-items:end;
+  border-block-end:1px solid var(--color-border);padding-block-start:var(--space-5)}
+.rp-col{position:relative;block-size:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+  background:none;border:0;padding:0 1px;cursor:default;border-radius:4px 4px 0 0}
+.rp-col:hover .rp-col__bar,.rp-col:focus-visible .rp-col__bar{filter:brightness(1.08)}
+.rp-col:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
+.rp-col__bar{display:block;inline-size:min(100%,28px);background:var(--color-primary);border-radius:4px 4px 0 0;min-block-size:0}
+.rp-col__bar.is-zero{background:transparent}
+.rp-col__val{position:absolute;inset-block-start:calc(var(--space-5) * -1);font-size:var(--fs-caption);line-height:var(--lh-caption);
+  font-weight:var(--fw-semibold);color:var(--color-text);white-space:nowrap}
+.rp-xl{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:2px;margin-block-start:var(--space-2);
+  font-size:var(--fs-caption);line-height:var(--lh-caption);color:var(--color-text-secondary);text-align:center}
+.rp-xl span{overflow:visible;white-space:nowrap}
+
+/* category breakdown */
+.rp-hb{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3)}
+.rp-hb li{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,6fr) auto;align-items:center;gap:var(--space-3);font-size:var(--fs-small);line-height:var(--lh-small)}
+.rp-hb__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp-hb__track{block-size:8px;border-radius:var(--radius-full);background:var(--color-surface-sunken);overflow:hidden}
+.rp-hb__track i{display:block;block-size:100%;background:var(--color-primary);border-radius:var(--radius-full)}
+.rp-hb__val{font-weight:var(--fw-semibold);white-space:nowrap}
+.rp-hb__val .mc-stat__unit{font-size:var(--fs-caption)}
+
+/* consumption line */
+.rp-fig{block-size:200px;position:relative}
+.rp-fig svg{inline-size:100%;block-size:100%;display:block;overflow:visible}
+.rp-gl{stroke:var(--color-border);stroke-width:1}
+.rp-tick{font-size:11px;fill:var(--color-text-secondary);font-family:inherit}
+.rp-avg{stroke:var(--color-text-secondary);stroke-width:1.5;stroke-dasharray:4 4}
+.rp-line{fill:none;stroke:var(--color-primary);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.rp-dot{fill:var(--color-surface);stroke:var(--color-primary);stroke-width:2}
+.rp-hit{fill:transparent}
+.rp-avgnote{display:flex;align-items:center;gap:var(--space-2);margin:var(--space-2) 0 0}
+.rp-avgnote i{inline-size:18px;border-block-start:1.5px dashed var(--color-text-secondary)}
+.rp-avgnote .mc-num{color:var(--color-text);font-weight:var(--fw-semibold)}
+
+/* tooltip */
+.rp-tip{position:fixed;z-index:var(--z-dialog);pointer-events:none;white-space:pre-line;max-inline-size:240px;
+  background:var(--color-surface-elevated);color:var(--color-text);border:1px solid var(--color-border);border-radius:var(--radius-sm);
+  box-shadow:var(--shadow-2);padding:var(--space-2) var(--space-3);font-size:var(--fs-caption);line-height:var(--lh-caption)}
+.rp-tip::first-line{font-weight:var(--fw-semibold)}
+
+@media (min-width:600px){.rp-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:900px){
+  .rp .mc-container{max-width:var(--size-content-wide);padding-inline:var(--space-8)}
+  .rp-appbar{padding-inline:var(--space-8)}
+  .rp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4) var(--space-6);padding-block:var(--space-6)}
+  .rp-period,.rp-full{grid-column:1/-1}
+  .rp-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .rp-cols{block-size:200px}
+}

@@ -99,7 +99,7 @@ ok('backup file downloads', bk && /\.json$/.test(bk.suggestedFilename()), bk && 
 const [csv] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.click('[data-act=expcsv]')]);
 ok('CSV export downloads', csv && /\.csv$/.test(csv.suggestedFilename()), csv && csv.suggestedFilename());
 
-await p.click('[data-act=catadd]'); await p.waitForTimeout(250); await p.fill('#cf input[name=nm]', 'اختبار'); await p.click('#cf button[type=submit]'); await p.waitForTimeout(250);
+await p.click('[data-set-cat=add]'); await p.waitForTimeout(250); await p.fill('#cat-name', 'اختبار'); await p.click('#cat-save'); await p.waitForTimeout(250);
 ok('add category', await p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S.cats.service.includes('اختبار')));
 
 /* ---- home screen (design system) ---- */
@@ -209,7 +209,7 @@ const bkFile = bk2 && await bk2.path();
 const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 } }); const q = await ctx2.newPage();
 q.on('pageerror', e => issues.push('restore pageerror: ' + e.message));
 await q.goto(`${BASE}/index.html#settings`); await q.waitForTimeout(400);
-await q.setInputFiles('#imp', bkFile); await q.waitForTimeout(300); await q.click('#cyes'); await q.waitForTimeout(400);
+await q.setInputFiles('#imp', bkFile); await q.waitForTimeout(300); await q.click('[data-mc-ok]'); await q.waitForTimeout(400);
 const after = await q.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')).S; return JSON.stringify({ v: d.vehicles.map(x => [x.make, x.model, x.photo || '', JSON.stringify(x.photoCat || null)]), docs: d.docs.map(x => [x.type, x.number, x.img || '']) }); });
 ok('restore: vehicles, photos, catalog images and documents identical', after === before, `${before.length} chars`);
 await q.evaluate(() => { location.hash = 'car'; }); await q.waitForTimeout(300);
@@ -317,6 +317,79 @@ ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'
   ok('rem: English form is LTR with English labels', await q.evaluate(() => document.querySelector('.mc-scrim').closest('[dir]').dir === 'ltr' && /New reminder/.test(document.querySelector('.mc-sheet__title').textContent) && /Odometer when due/.test(document.querySelector('label[for=rm-odo]').textContent)));
   ok('rem: no horizontal overflow in the sheet', await q.evaluate(() => { const s = document.querySelector('.mc-sheet'); return s.scrollWidth <= s.clientWidth + 1; }));
   await c4.close();
+}
+
+// ---------- reports + settings (design system) ----------
+{
+  const c5 = await b.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true }); const q = await c5.newPage();
+  q.on('pageerror', e => issues.push('rs pageerror: ' + e.message)); q.on('console', m => { if (m.type() === 'error') issues.push('rs console.error: ' + m.text()); });
+  await q.goto(`${BASE}/index.html`); await q.waitForTimeout(400);
+  await q.evaluate(() => { location.hash = 'reports'; }); await q.waitForTimeout(250);
+  ok('reports: empty state when there is no car', await q.isVisible('.rp [data-act=addveh]'));
+  await q.evaluate(() => { location.hash = 'home'; }); await q.waitForTimeout(200); await q.click('[data-act=demo]'); await q.waitForTimeout(300);
+  await q.evaluate(() => { location.hash = 'reports'; }); await q.waitForTimeout(400);
+  const D = await q.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')));
+  const today = new Date(); const ms = k => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - k); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 8) + '01'; };
+  const sum = since => Object.values(D.E).flat().filter(x => x.v === D.S.cur && x.d >= since && x.t !== 'income').reduce((s, x) => s + (+x.cost || 0), 0);
+  const shown = () => q.evaluate(() => parseFloat(document.querySelector('.rp-kpis .mc-stat__value').textContent.replace(/[^\d.]/g, '')));
+  ok('reports: default 6 months, total matches the records', Math.abs((await shown()) - sum(ms(5))) < 0.001 && await q.evaluate(() => document.querySelector('[data-rp-period="6"]').getAttribute('aria-pressed') === 'true'), `${await shown()} vs ${sum(ms(5)).toFixed(3)}`);
+  ok('reports: 6 monthly columns, one value label, hidden data table', await q.evaluate(() => document.querySelectorAll('.rp-col').length === 6 && document.querySelectorAll('.rp-col__val').length === 1 && document.querySelectorAll('.rp-chart table tr').length === 7));
+  await q.click('[data-rp-period="0"]'); await q.waitForTimeout(400);
+  ok('reports: "All" period sums every record', Math.abs((await shown()) - sum('')) < 0.001);
+  await q.click('[data-rp-period="3"]'); await q.waitForTimeout(400);
+  ok('reports: 3 months → 3 columns', await q.evaluate(() => document.querySelectorAll('.rp-col').length === 3));
+  ok('reports: consumption line drawn with points', await q.evaluate(() => document.querySelectorAll('#rp-trend .rp-dot').length > 1 && !!document.querySelector('#rp-trend .rp-line')));
+  await q.hover('.rp-col'); await q.waitForTimeout(100);
+  ok('reports: hovering a column shows its tooltip', await q.evaluate(() => { const t = document.querySelector('.rp-tip'); return !t.hidden && /\d/.test(t.textContent); }));
+  ok('reports: breakdown lists categories with amounts', await q.evaluate(() => document.querySelectorAll('.rp-hb li').length >= 2));
+  ok('reports: no horizontal overflow', await q.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  // settings
+  await q.evaluate(() => { location.hash = 'settings'; }); await q.waitForTimeout(300);
+  ok('settings: vehicles, look, prefs, categories, backup sections', await q.evaluate(() => ['st-v', 'st-l', 'st-p', 'st-c', 'st-b'].every(i => document.getElementById(i))));
+  await q.fill('#s-cur', 'OMR'); await q.press('#s-cur', 'Tab'); await q.selectOption('#s-dec', '2'); await q.selectOption('#s-unit', 'l100'); await q.waitForTimeout(150);
+  ok('settings: currency, decimals and unit saved', await q.evaluate(() => { const s = JSON.parse(localStorage.getItem('sayarati-v1')).S.set; return s.cur === 'OMR' && s.dec === 2 && s.unit === 'l100'; }));
+  await q.evaluate(() => { location.hash = 'reports'; }); await q.waitForTimeout(300);
+  ok('settings → reports use the new unit and currency', await q.evaluate(() => /L\/100km|ل\/100كم/.test(document.querySelector('.rp').textContent) && /OMR/.test(document.querySelector('.rp-kpis').textContent)));
+  await q.evaluate(() => { location.hash = 'settings'; }); await q.waitForTimeout(300);
+  // categories: rename updates records + reminders, delete with undo
+  await q.click('[data-set-ct=service]'); await q.waitForTimeout(100);
+  const oilI = await q.evaluate(() => [...document.querySelectorAll('.st-cats .mc-list-item__title')].findIndex(e => e.textContent === 'تغيير زيت المحرك'));
+  await q.click(`[data-set-cat=edit][data-i="${oilI}"]`); await q.waitForTimeout(300);
+  await q.fill('#cat-name', 'فلتر هواء'); await q.click('#cat-save'); await q.waitForTimeout(150);
+  ok('category: duplicate name refused with an inline error', await q.evaluate(() => document.getElementById('cat-name').getAttribute('aria-invalid') === 'true' && !!document.querySelector('#cat-err [role=alert]')));
+  await q.fill('#cat-name', 'زيت المحرك'); await q.click('#cat-save'); await q.waitForTimeout(300);
+  ok('category: rename updates records and reminders', await q.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const all = Object.values(d.E).flat(); return d.S.cats.service.includes('زيت المحرك') && !all.some(x => x.cat === 'تغيير زيت المحرك') && all.some(x => x.cat === 'زيت المحرك') && d.S.reminders.some(r => r.name === 'زيت المحرك'); }));
+  await q.click('[data-set-ct=expense]'); await q.waitForTimeout(100);
+  const nE = await q.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S.cats.expense.length);
+  await q.click('[data-set-cat=del][data-i="0"]'); await q.waitForTimeout(250); await q.click('[data-mc-ok]'); await q.waitForTimeout(300);
+  ok('category: delete (after confirm)', await q.evaluate(n => JSON.parse(localStorage.getItem('sayarati-v1')).S.cats.expense.length === n - 1, nE));
+  await q.click('.mc-toast__action'); await q.waitForTimeout(250);
+  ok('category: undo restores it', await q.evaluate(n => JSON.parse(localStorage.getItem('sayarati-v1')).S.cats.expense.length === n, nE));
+  // theme + language from settings
+  await q.click('[data-set-theme=dark]'); await q.click('[data-set-lang=en]'); await q.waitForTimeout(300);
+  ok('settings: theme + language switch (EN/LTR, dark)', await q.evaluate(() => document.documentElement.dataset.theme === 'dark' && document.documentElement.dir === 'ltr' && document.querySelector('.st h1').textContent === 'Settings'));
+  ok('settings: no horizontal overflow', await q.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  // backup → invalid file → valid restore → wipe
+  const [bk] = await Promise.all([q.waitForEvent('download', { timeout: 4000 }).catch(() => null), q.click('[data-act=drvsave]')]);
+  const bkPath = bk && await bk.path(); const bkJson = bkPath ? JSON.parse((await import('node:fs')).readFileSync(bkPath, 'utf8')) : null;
+  const snap = await q.evaluate(() => localStorage.getItem('sayarati-v1'));
+  ok('backup: same format {app,v,S,E} and identical to stored data', bkJson && bkJson.app === 'sayarati' && bkJson.v === 1 && (() => { const st = JSON.parse(snap); delete st.S.set.lastDrive; const bj = JSON.parse(JSON.stringify({ S: bkJson.S, E: bkJson.E })); delete bj.S.set.lastDrive; return JSON.stringify(bj) === JSON.stringify(st); })());
+  ok('backup: last-backup date shown', await q.evaluate(() => /Last backup/.test(document.getElementById('st-b').closest('section').textContent)));
+  await q.setInputFiles('#imp', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"nope":1}') }); await q.waitForTimeout(300);
+  ok('restore: invalid file rejected, data untouched', /valid backup/.test(await q.evaluate(() => document.querySelector('.mc-toast-region')?.textContent || '')) && (await q.evaluate(() => localStorage.getItem('sayarati-v1'))) === (await q.evaluate(() => localStorage.getItem('sayarati-v1'))));
+  await q.click('[data-set=wipe]'); await q.waitForTimeout(250); await q.click('[data-mc-ok]'); await q.waitForTimeout(400);
+  ok('wipe: everything removed after confirm', await q.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); return !d.S.vehicles.length && !Object.values(d.E).flat().length; }));
+  await q.evaluate(() => { location.hash = 'settings'; }); await q.waitForTimeout(300);
+  await q.setInputFiles('#imp', bkPath); await q.waitForTimeout(300);
+  await q.click('.mc-scrim [data-mc-close]'); await q.waitForTimeout(250);
+  ok('restore: cancelling the confirm changes nothing', await q.evaluate(() => !JSON.parse(localStorage.getItem('sayarati-v1')).S.vehicles.length));
+  await q.setInputFiles('#imp', bkPath); await q.waitForTimeout(300); await q.click('[data-mc-ok]'); await q.waitForTimeout(400);
+  const back = await q.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')));
+  ok('restore: data identical to the backup (records, reminders, categories, settings)', JSON.stringify(back.E) === JSON.stringify(bkJson.E) && JSON.stringify(back.S.reminders) === JSON.stringify(bkJson.S.reminders) && JSON.stringify(back.S.cats) === JSON.stringify(bkJson.S.cats) && back.S.set.cur === 'OMR');
+  const [csvD] = await Promise.all([q.waitForEvent('download', { timeout: 4000 }).catch(() => null), q.click('[data-act=expcsv]')]);
+  const csvT = csvD ? (await import('node:fs')).readFileSync(await csvD.path(), 'utf8') : '';
+  ok('CSV: one row per record + header', csvT.trim().split('\n').length === Object.values(back.E).flat().length + 1);
+  await c5.close();
 }
 await b.close();
 

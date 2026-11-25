@@ -19,6 +19,8 @@
 <link rel="stylesheet" href="css/home.css">
 <link rel="stylesheet" href="css/car.css">
 <link rel="stylesheet" href="css/entry.css">
+<link rel="stylesheet" href="css/reports.css">
+<link rel="stylesheet" href="css/settings.css">
 <script>
 /* theme + language before first paint (design system prefs: mc-theme / mc-lang) */
 (function(){var g=function(k){try{return localStorage.getItem(k)}catch(e){return null}};var l=g('mc-lang')||'ar',th=g('mc-theme')||'auto';
@@ -154,7 +156,8 @@ h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;
 .ov{z-index:45}.toast{z-index:60}
 .app.is-home{max-width:none}
 .app.is-home #main{padding:0}
-.hm h1,.hm h2,.cd h1,.cd h2,.cd h3,.mc-scrim h2,.mc-scrim h3{display:block}
+.hm h1,.hm h2,.cd h1,.cd h2,.cd h3,.rp h1,.rp h2,.st h1,.st h2,.mc-scrim h2,.mc-scrim h3{display:block}
+.rp h2,.st h2{margin:0;font-size:inherit}
 @media(min-width:900px){.app.is-home{padding-inline-start:var(--size-rail)}}
 </style>
 </head>
@@ -173,6 +176,8 @@ import { renderHome, initHome } from './js/screens/home.js';
 import { renderCar, initCar, openVehicleEditor } from './js/screens/car.js';
 import { openEntryForm, openTypePicker } from './js/screens/entry.js';
 import { openReminderForm } from './js/screens/reminder.js';
+import { renderReports, afterRenderReports, initReports } from './js/screens/reports.js';
+import { renderSettings, initSettings } from './js/screens/settings.js';
 {
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -379,92 +384,12 @@ function remind(){
    ${rs.length?`<div class="list">${rs.map(x=>remCard(x.r,st)).join('')}</div>`:`<div class="card mut">أضف تذكيرًا بالمسافة (مثلاً كل 5,000 كم) أو بالمدة (كل 12 شهرًا) أو كليهما — يتحدّث تلقائيًا عند تسجيل صيانة بنفس الاسم.</div>`}
    <p class="note">عند تسجيل صيانة بنفس اسم التذكير، يُعاد ضبطه تلقائيًا. التوقّع بالأيام محسوب من معدل قيادتك الفعلي. إذا تغيّر موعد تذكير، أضفه للتقويم مرة أخرى.</p>`;
 }
-let RP=6;
-function reports(){
-  if(!S.vehicles.length)return emptyState();
-  const since=RP?monthStart(RP-1):'';const st=stats(S.cur,since);
-  let months=[];
-  const first=st.inP.length?st.inP[st.inP.length-1].d.slice(0,7):today().slice(0,7);
-  const cnt=RP||Math.min(24,Math.max(1,(new Date(today()).getFullYear()-+first.slice(0,4))*12+(new Date(today()).getMonth()+1-+first.slice(5))+1));
-  for(let k=cnt-1;k>=0;k--)months.push(monthStart(k).slice(0,7));
-  const mt=months.map(m=>{const xs=st.inP.filter(x=>x.d.startsWith(m));const o={m};['fuel','service','expense'].forEach(t=>o[t]=xs.filter(x=>x.t===t).reduce((s,x)=>s+(+x.cost||0),0));o.tot=o.fuel+o.service+o.expense;return o});
-  const mx=Math.max(1,...mt.map(o=>o.tot));
-  const showEvery=months.length>8?Math.ceil(months.length/6):1;
-  const cats={};st.inP.filter(x=>x.t!=='income').forEach(x=>{const k=x.t==='fuel'?'وقود '+(x.fuel||''):(x.cat||T[x.t].n);cats[k]=cats[k]||{v:0,t:x.t};cats[k].v+=+x.cost||0});
-  const ce=Object.entries(cats).sort((a,b)=>b[1].v-a[1].v).slice(0,8),cm=Math.max(1,...ce.map(e=>e[1].v));
-  const per=[[3,'3 أشهر'],[6,'6 أشهر'],[12,'سنة'],[0,'الكل']];
-  return `<div class="seg-ctl">${per.map(([k,l])=>`<button class="${RP===k?'on':''}" data-act="rp" data-k="${k}">${l}</button>`).join('')}</div>
-   <div class="grid2" style="margin-top:14px">
-    <div class="stat"><small>إجمالي المصروف</small><b>${money(st.spend)}</b></div>
-    <div class="stat"><small>تكلفة الكيلومتر</small><b>${st.cpk?money(st.cpk):'—'}</b></div>
-    <div class="stat"><small>المسافة المقطوعة</small><b><span class="num">${n(st.span)}</span> كم</b></div>
-    <div class="stat"><small>متوسط الاستهلاك</small><b>${consF(st.avg)}</b></div>
-    <div class="stat"><small>متوسط سعر اللتر</small><b>${st.ppl?money(st.ppl):'—'}</b></div>
-    <div class="stat"><small>معدل القيادة اليومي</small><b>${st.kmDay?`<span class="num">${n(st.kmDay)}</span> كم`:'—'}</b></div>
-   </div>
-   <h2>المصروف الشهري</h2>
-   <div class="card"><div class="cols">${mt.map(o=>`<div class="col" title="${esc(moneyTxt(o.tot))}">${o.tot?`<span class="v" style="bottom:${(o.tot/mx*100).toFixed(1)}%">${n(o.tot,0)}</span>`:''}${['expense','service','fuel'].map(t=>o[t]?`<div class="seg" style="height:${(o[t]/mx*100).toFixed(2)}%;background:${T[t].c}"></div>`:'').join('')}</div>`).join('')}</div>
-    <div class="xl">${mt.map((o,i)=>`<span>${i%showEvery===0?MON[+o.m.slice(5)-1].slice(0,3):''}</span>`).join('')}</div>
-    <div class="legend">${['fuel','service','expense'].map(t=>`<span><i style="--c:${T[t].c}"></i>${T[t].n} ${money(st.by[t])}</span>`).join('')}</div></div>
-   <h2>توزيع المصاريف</h2>
-   <div class="card">${ce.length?ce.map(([k,o])=>`<div class="hb"><span>${esc(k)}</span><span class="t"><i style="width:${(o.v/cm*100).toFixed(1)}%;--c:${T[o.t].c}"></i></span><span>${money(o.v)}</span></div>`).join(''):'<span class="mut">لا توجد بيانات في هذه الفترة</span>'}</div>
-   <h2>اتجاه الاستهلاك</h2>
-   <div class="card">${st.cons.length>1?`<div class="fig" id="consfig"><svg></svg></div>`:'<span class="mut">تحتاج تعبئتين على الأقل بخزان ممتلئ في هذه الفترة</span>'}</div>
-   <h2>أرقام الوقود</h2>
-   <div class="grid2">
-    <div class="stat"><small>عدد التعبئات</small><b class="num">${n(st.fills)}</b></div>
-    <div class="stat"><small>إجمالي اللترات</small><b><span class="num">${n(st.L,1)}</span> لتر</b></div>
-    <div class="stat"><small>أفضل استهلاك</small><b>${consF(S.set.unit==='l100'?st.best:st.best)}</b></div>
-    <div class="stat"><small>أسوأ استهلاك</small><b>${consF(st.worst)}</b></div>
-    <div class="stat"><small>متوسط التعبئة</small><b>${st.fills?money(st.by.fuel/st.fills):'—'}</b></div>
-    <div class="stat"><small>الدخل</small><b>${money(st.by.income)}</b></div>
-   </div>`;
-}
-const moneyTxt=x=>n(x,S.set.dec)+' '+S.set.cur;
-function settings(){
-  return `<h2>السيارات <button class="link" data-act="addveh">+ إضافة سيارة</button></h2>
-   <div class="list set">${S.vehicles.length?S.vehicles.map(v=>`<button class="row" style="cursor:pointer" data-act="editveh" data-id="${esc(v.id)}"><span class="dot" style="--c:var(--red)">${IC.car}</span><span class="rt"><b>${esc(v.name)}</b><small>${esc([v.plate,v.fuel,v.tank?v.tank+' لتر':''].filter(Boolean).join(' · '))}</small></span><span class="mut">تعديل</span></button>`).join(''):'<div class="row mut">لا توجد سيارات</div>'}</div>
-   <h2>التفضيلات</h2>
-   <div class="list set">
-    <label class="row"><span class="rt"><b>رمز العملة</b></span><input id="s-cur" value="${esc(S.set.cur)}" maxlength="6"></label>
-    <label class="row"><span class="rt"><b>الخانات العشرية</b></span><select id="s-dec"><option value="3" ${S.set.dec==3?'selected':''}>3 (بيسة)</option><option value="2" ${S.set.dec==2?'selected':''}>2</option><option value="0" ${S.set.dec==0?'selected':''}>بدون</option></select></label>
-    <label class="row"><span class="rt"><b>وحدة الاستهلاك</b></span><select id="s-unit"><option value="kmpl" ${S.set.unit==='kmpl'?'selected':''}>كم/لتر</option><option value="l100" ${S.set.unit==='l100'?'selected':''}>لتر/100كم</option></select></label>
-   </div>
-   <h2>الأصناف</h2>
-   <div class="seg-ctl" style="margin-top:0">${[['service','صيانة'],['expense','مصروف'],['income','دخل']].map(([k,l])=>`<button class="${CT===k?'on':''}" data-act="ct" data-t="${k}">${l}</button>`).join('')}</div>
-   <div class="list set" style="margin-top:10px">${cats(CT).map((c,i)=>`<div class="row"><span class="rt"><b>${esc(c)}</b></span><button class="link" data-act="catedit" data-i="${i}">تعديل</button><button class="link" data-act="catdel" data-i="${i}" style="color:var(--mut)">حذف</button></div>`).join('')||'<div class="row mut">لا توجد أصناف</div>'}</div>
-   <button class="btn full" style="margin-top:10px" data-act="catadd">+ صنف جديد</button>
-   <h2>النسخ الاحتياطي</h2>
-   <div class="card"><div class="mut" style="margin-bottom:12px">${S.set.lastDrive?'آخر نسخة احتياطية: '+fdate(S.set.lastDrive.slice(0,10)):'لم تأخذ نسخة احتياطية بعد'}</div>
-    <button class="btn pri full" data-act="drvsave">حفظ نسخة في Google Drive</button>
-    <div class="hint" style="margin:6px 0 12px">تفتح قائمة المشاركة في جوالك — اختر «Drive» واحفظ الملف.</div>
-    <label class="btn full" style="display:block;text-align:center">استرجاع نسخة<input type="file" id="imp" accept=".json,application/json" hidden></label>
-    <div class="hint" style="margin:6px 0 12px">اختر ملف النسخة من Google Drive أو من ملفات الجوال.</div>
-    <div class="grid2"><button class="btn" data-act="expcsv">تصدير Excel (CSV)</button><button class="btn" data-act="demo">بيانات نموذجية</button></div>
-    <button class="btn dan full" style="margin-top:10px" data-act="wipe">حذف كل البيانات</button></div>
-   ${installBox()}
-   <p class="note">سيارتي — كل تفاصيل سيارتك في مكان واحد. بياناتك محفوظة على جهازك فقط، ولا تُرسل لأي خادم.</p>`;
-}
-const SCR={home,car:()=>renderCar(carCtx),log,remind,reports,settings};
-let CT='service';
-
-/* ---------- categories ---------- */
-function catSheet(i){
-  const old=i==null?null:cats(CT)[i];
-  openSheet(`<h3>${old?'تعديل الصنف':'صنف جديد'}</h3><form class="fl" id="cf" novalidate><label>الاسم<input name="nm" value="${esc(old||'')}"></label>
-   ${old?'<div class="hint">تغيير الاسم يحدّث كل السجلات والتذكيرات المرتبطة به.</div>':''}<div class="ferr"></div><button class="btn pri full" type="submit">حفظ</button></form>`,b=>{
-    const f=$('#cf',b);f.nm.focus();
-    f.addEventListener('submit',e=>{e.preventDefault();const nm=f.nm.value.trim();
-      if(!nm){$('.ferr',f).textContent='أدخل الاسم';return}
-      if(cats(CT).some((c,j)=>c===nm&&j!==i)){$('.ferr',f).textContent='الصنف موجود مسبقًا';return}
-      S.cats=S.cats||clone(CATS);S.cats[CT]=[...cats(CT)];const keys=new Set(['g']);
-      if(old){S.cats[CT][i]=nm;
-        Object.keys(E).forEach(k=>E[k].forEach(x=>{if(x.t===CT&&x.cat===old){x.cat=nm;keys.add(k)}}));
-        S.reminders.forEach(r=>{if(r.name===old)r.name=nm});
-      }else S.cats[CT].push(nm);
-      persist([...keys]);closeSheet();render();toast(old?'تم تعديل الصنف':'أُضيف الصنف')});
-  });
-}
+const reportsCtx={get S(){return S},veh,stats,monthStart,today,render:()=>render()};
+const settingsCtx={get S(){return S},get E(){return E},all,cats,CATS,render:()=>render(),
+  persist:keys=>{const ok=saveLocal();if(ok)persist(keys);return ok},
+  install:()=>({standalone:standalone(),canPrompt:!!deferredPrompt,ios:/iPhone|iPad|iPod/.test(navigator.userAgent)}),
+  wipe:()=>{const keys=['g',...Object.keys(E)];Object.keys(E).forEach(k=>E[k]=[]);S=defS();persist(keys);location.hash='home';render();UI.toast(UI.t('set.wiped'))}};
+const SCR={home,car:()=>renderCar(carCtx),log,remind,reports:()=>renderReports(reportsCtx),settings:()=>renderSettings(settingsCtx)};
 
 /* ---------- phone calendar ---------- */
 function calSheet(r){
@@ -492,16 +417,16 @@ async function driveSave(){
   const file=new File([text],name,{type:'application/json'});
   const done=()=>{S.set.lastDrive=new Date().toISOString();persist(['g']);render()};
   if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:'نسخة سيارتي'});done();toast('تم — تأكد أنك اخترت Google Drive');return}
+    try{await navigator.share({files:[file],title:UI.t('set.backupTitle')});done();UI.toast(UI.t('set.shared'),{tone:'success'});return}
     catch(e){if(e&&e.name==='AbortError')return}
   }
-  download(name,text,'application/json');done();toast('نُزّلت النسخة — ارفعها إلى Google Drive');
+  download(name,text,'application/json');done();UI.toast(UI.t('set.downloaded'),{tone:'success'});
 }
 let ro=null;
 function render(){
   if(S.vehicles.length&&!veh(S.cur))S.cur=S.vehicles[0].id;
   const t=tab();
-  const isHome=t==='home'||t==='car';
+  const isHome=['home','car','reports','settings'].includes(t);
   $('#top').hidden=isHome;
   $('#top').innerHTML=isHome?'':header();
   $('#main').innerHTML=SCR[t]();
@@ -510,33 +435,8 @@ function render(){
   $('#ov').dir='rtl';$('#ov').lang='ar';
   $('.app').classList.toggle('is-home',isHome);
   renderNav(t==='car'?'home':t);
-  drawCons();
+  afterRenderReports(reportsCtx);
 }
-function drawCons(){
-  if(ro){ro.disconnect();ro=null}
-  const f=$('#consfig');if(!f)return;
-  const since=RP?monthStart(RP-1):'';const c=stats(S.cur,since).cons;
-  const svg=$('svg',f);
-  const draw=()=>{
-    const W=f.clientWidth,H=f.clientHeight;if(!W)return;
-    const l100=S.set.unit==='l100',val=x=>l100?100/x.k:x.k;
-    const vs=c.map(val),mn=Math.min(...vs),mx=Math.max(...vs),pad=(mx-mn)*.15||1,lo=mn-pad,hi=mx+pad;
-    const L=34,R=10,Tp=14,B=24,iw=W-L-R,ih=H-Tp-B;
-    const X=i=>L+(c.length<2?iw/2:i/(c.length-1)*iw),Y=v=>Tp+(1-(v-lo)/(hi-lo))*ih;
-    const avg=vs.reduce((a,b)=>a+b,0)/vs.length;
-    const pts=vs.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
-    const ticks=[lo+pad,(lo+hi)/2,hi-pad];
-    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-    svg.innerHTML=`${W>=320?ticks.map(t=>`<line x1="${L}" x2="${W-R}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(t)+4}" font-size="11" fill="var(--mut)" text-anchor="end" direction="ltr">${t.toFixed(1)}</text>`).join(''):''}
-     <line x1="${L}" x2="${W-R}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="var(--amber)" stroke-dasharray="4 4"/>
-     <polyline points="${pts}" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linejoin="round"/>
-     ${vs.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="var(--card)" stroke="var(--red)" stroke-width="2"><title>${fdate(c[i].d)}: ${v.toFixed(1)}</title></circle>`).join('')}
-     <text x="${L}" y="${H-6}" font-size="11" fill="var(--mut)">${esc(fdate(c[0].d))}</text>
-     <text x="${W-R}" y="${H-6}" font-size="11" fill="var(--mut)" text-anchor="end">${esc(fdate(c[c.length-1].d))}</text>`;
-  };
-  ro=new ResizeObserver(draw);ro.observe(f);
-}
-
 /* ---------- forms ---------- */
 function opts(list,sel){return list.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join('')}
 function openVeh(v){
@@ -582,7 +482,7 @@ async function give(name,text,mime){
     if(/iPhone|iPad|iPod/.test(navigator.userAgent)){location.href='data:text/calendar;charset=utf-8,'+encodeURIComponent(text);return}
     download(name,text,mime);toast('افتح الملف المنزّل لإضافته للتقويم');return;
   }
-  download(name,text,mime);toast('تم التصدير');
+  download(name,text,mime);UI.toast(UI.t('set.exported'),{tone:'success'});
 }
 function csv(){
   const head=['السيارة','النوع','التاريخ','العداد','الصنف/الوقود','اللترات','سعر اللتر','المبلغ','خزان ممتلئ','المكان','ملاحظة'];
@@ -593,12 +493,12 @@ function csv(){
 function importFile(file){const rd=new FileReader();rd.onload=()=>importText(rd.result);rd.readAsText(file)}
 function importText(text){
   {try{const x=JSON.parse(text);if(!x||!x.S||!Array.isArray(x.S.vehicles)||typeof x.E!=='object')throw 0;
-    confirmSheet('استبدال بياناتك الحالية بالنسخة المستوردة؟','استيراد',()=>{
+    UI.confirmDialog({title:UI.t('set.importQ'),text:UI.t('set.importText'),confirmText:UI.t('set.importOk'),tone:'warning',ic:'upload'}).then(yes=>{if(!yes)return;
       const keys=new Set(['g',...Object.keys(E)]);Object.keys(E).forEach(k=>E[k]=[]);
       S=Object.assign(defS(),x.S);S.set=Object.assign(defS().set,x.S.set||{});
       Object.entries(x.E).forEach(([k,v])=>{if(/^\d{4}$/.test(k)&&Array.isArray(v)){E[k]=v;keys.add(k)}});
-      persist([...keys]);render();toast('تم الاستيراد');});
-  }catch(e){toast('الملف غير صالح')}}
+      persist([...keys]);render();UI.toast(UI.t('set.imported'),{tone:'success'});});
+  }catch(e){UI.toast(UI.t('set.badFile'),{tone:'danger'})}}
 }
 function demo(){
   const v={id:uidg(),make:'toyota',model:'Camry',year:2021,name:'تويوتا Camry',plate:'نموذج',fuel:'M91',tank:60,odo0:62000,photoCat:{make:'toyota',model:'Camry',body:'sedan',color:'silver'}};
@@ -622,7 +522,7 @@ function demo(){
   S.reminders.push({id:uidg(),v:v.id,name:'تغيير زيت المحرك',km:5000,months:6,lastOdo:lastOil,lastDate:lastOilDate});
   S.reminders.push({id:uidg(),v:v.id,name:'تأمين',km:0,months:12,lastOdo:0,lastDate:iso(ins)});
   S.reminders.push({id:uidg(),v:v.id,name:'إطارات',km:40000,months:48,lastOdo:50000,lastDate:'2025-03-01'});
-  persist([...keys]);location.hash='home';render();toast('أُضيفت سيارة نموذجية — احذفها من الإعدادات متى شئت');
+  persist([...keys]);location.hash='home';render();UI.toast(UI.t('set.demoAdded'));
 }
 
 /* ---------- events ---------- */
@@ -639,22 +539,15 @@ document.addEventListener('click',e=>{
   else if(a==='addrem')openReminderForm(entryCtx);
   else if(a==='editrem')openReminderForm(entryCtx,id);
   else if(a==='donerem'){const r=S.reminders.find(z=>z.id===id);if(r){const c=r.cat||r.name,isS=!cats('expense').includes(c);closeSheet();openEntryForm(entryCtx,isS?'service':'expense',null,{cat:c,odo:curOdo(r.v)})}}
-  else if(a==='ct'){CT=b.dataset.t;render()}
-  else if(a==='catadd')catSheet(null);
-  else if(a==='catedit')catSheet(+b.dataset.i);
-  else if(a==='catdel'){const i=+b.dataset.i,c=cats(CT)[i];confirmSheet('حذف الصنف «'+c+'»؟ السجلات القديمة تبقى كما هي.','حذف',()=>{S.cats=S.cats||clone(CATS);S.cats[CT]=cats(CT).filter((_,j)=>j!==i);persist(['g']);render();toast('حُذف الصنف',()=>{S.cats[CT].splice(i,0,c);persist(['g']);render()})})}
   else if(a==='ics'){const r=S.reminders.find(z=>z.id===id);if(r)calSheet(r)}
   else if(a==='icsfile'){const r=S.reminders.find(z=>z.id===id);closeSheet();if(r)icsFor(r)}
   else if(a==='drvsave')driveSave();
   else if(a==='install')doInstall();
   else if(a==='filter'){LF.t=b.dataset.t;render()}
-  else if(a==='rp'){RP=+b.dataset.k;render()}
   else if(a==='undo'){const u=toast.undo;$('#toast').innerHTML='';toast.undo=null;if(u)u()}
   else if(a==='expjson')give('sayarati-backup-'+today()+'.json',backupText(),'application/json');
   else if(a==='expcsv')give('sayarati-'+today()+'.csv',csv(),'text/csv');
   else if(a==='demo')demo();
-  else if(a==='wipe')confirmSheet('سيتم حذف كل السيارات والسجلات والتذكيرات. صدّر نسخة احتياطية أولًا إن أردت.','حذف الكل',()=>{
-    const keys=['g',...Object.keys(E)];Object.keys(E).forEach(k=>E[k]=[]);S=defS();persist(keys);location.hash='home';render();toast('تم حذف كل البيانات')});
 });
 document.addEventListener('input',e=>{
   if(e.target.id==='q'){LF.q=e.target.value;$('#loglist').innerHTML=logList()}
@@ -672,13 +565,7 @@ window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
 let deferredPrompt=null;
 const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(tab()==='settings')render()});
-window.addEventListener('appinstalled',()=>{deferredPrompt=null;toast('تم تثبيت سيارتي');render()});
-function installBox(){
-  if(standalone())return '';
-  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
-  return `<h2>تثبيت التطبيق</h2><div class="card">${deferredPrompt?'<button class="btn pri full" data-act="install">ثبّت سيارتي على الشاشة الرئيسية</button>':
-   ios?'<span class="mut">في Safari: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».</span>':'<span class="mut">من قائمة المتصفح (⋮) اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».</span>'}</div>`;
-}
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;UI.toast(UI.t('set.installed'),{tone:'success'});render()});
 async function doInstall(){if(!deferredPrompt)return;deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch(e){}deferredPrompt=null;render()}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
@@ -694,6 +581,8 @@ function renderNav(cur){
 UI.initPrefs();
 initHome(homeCtx);
 initCar(carCtx);
+initReports(reportsCtx);
+initSettings(settingsCtx);
 document.addEventListener('mc:lang',()=>render());
 document.addEventListener('mc:theme',()=>render());
 loadLocal();render();

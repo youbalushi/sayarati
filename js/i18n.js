@@ -16,6 +16,31 @@ export const STRINGS = {
     theme: { light: 'فاتح', dark: 'داكن', auto: 'تلقائي' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    rep: {
+      title: 'التقارير', period: 'الفترة', p3: '3 أشهر', p6: '6 أشهر', p12: 'سنة', p0: 'الكل',
+      spend: 'إجمالي المصروف', costKm: 'تكلفة الكيلومتر', distance: 'المسافة المقطوعة', avg: 'متوسط الاستهلاك', ppl: 'متوسط سعر اللتر', kmDay: 'معدل القيادة اليومي',
+      monthly: 'المصروف الشهري', byType: 'حسب النوع', byCat: 'توزيع المصاريف', trend: 'اتجاه الاستهلاك', fuelNums: 'أرقام الوقود',
+      fills: 'عدد التعبئات', liters: 'إجمالي اللترات', best: 'أفضل استهلاك', worst: 'أسوأ استهلاك', avgFill: 'متوسط التعبئة', income: 'الدخل',
+      noData: 'لا توجد بيانات في هذه الفترة', needFills: 'تحتاج تعبئتين على الأقل بخزان ممتلئ في هذه الفترة', average: 'المتوسط', perDay: '{n} كم/يوم',
+      chartMonthly: 'مخطط المصروف الشهري', chartTrend: 'مخطط اتجاه الاستهلاك', total: 'الإجمالي'
+    },
+    set: {
+      title: 'الإعدادات', vehicles: 'السيارات', addVehicle: 'إضافة سيارة', noVehicles: 'لا توجد سيارات بعد',
+      look: 'المظهر واللغة', theme: 'المظهر', language: 'اللغة',
+      prefs: 'التفضيلات', currency: 'رمز العملة', decimals: 'الخانات العشرية', dec3: '3 (بيسة)', dec2: '2', dec0: 'بدون', unit: 'وحدة الاستهلاك', kmpl: 'كم/لتر', l100: 'لتر/100كم',
+      cats: 'الأصناف', catsDesc: 'تظهر في نماذج الصيانة والمصروف والدخل.', noCats: 'لا توجد أصناف', addCat: 'صنف جديد', editCat: 'تعديل الصنف', catName: 'الاسم',
+      catRenameHint: 'تغيير الاسم يحدّث كل السجلات والتذكيرات المرتبطة به.', catErrName: 'أدخل الاسم.', catErrDup: 'الصنف موجود مسبقًا.',
+      catAdded: 'أُضيف الصنف', catSaved: 'تم تعديل الصنف', catDelQ: 'حذف الصنف «{n}»؟', catDelText: 'السجلات القديمة تبقى كما هي.', catDeleted: 'حُذف الصنف',
+      backup: 'النسخ الاحتياطي', lastBackup: 'آخر نسخة احتياطية: {d}', noBackup: 'لم تأخذ نسخة احتياطية بعد', oldBackup: 'آخر نسخة احتياطية قبل {n} يوم — احفظ نسخة جديدة',
+      saveDrive: 'حفظ نسخة في Google Drive', saveDriveHint: 'تفتح قائمة المشاركة في جوالك — اختر «Drive» واحفظ الملف.',
+      restore: 'استرجاع نسخة', restoreHint: 'اختر ملف النسخة من Google Drive أو من ملفات الجوال.', exportCsv: 'تصدير Excel (CSV)', demo: 'بيانات نموذجية',
+      wipe: 'حذف كل البيانات', wipeQ: 'حذف كل البيانات؟', wipeText: 'سيتم حذف كل السيارات والسجلات والتذكيرات. صدّر نسخة احتياطية أولًا إن أردت.', wipeOk: 'حذف الكل', wiped: 'تم حذف كل البيانات',
+      importQ: 'استبدال بياناتك الحالية؟', importText: 'ستحل النسخة المستوردة محل كل البيانات الموجودة على هذا الجهاز.', importOk: 'استيراد', imported: 'تم الاستيراد', badFile: 'الملف غير صالح',
+      shared: 'تم — تأكد أنك اخترت Google Drive', downloaded: 'نُزّلت النسخة — ارفعها إلى Google Drive', exported: 'تم التصدير', demoAdded: 'أُضيفت سيارة نموذجية — احذفها من الإعدادات متى شئت',
+      install: 'تثبيت التطبيق', installBtn: 'ثبّت سيارتي على الشاشة الرئيسية', installIos: 'في Safari: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».',
+      installOther: 'من قائمة المتصفح (⋮) اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».', installed: 'تم تثبيت سيارتي',
+      privacy: 'سيارتي — كل تفاصيل سيارتك في مكان واحد. بياناتك محفوظة على جهازك فقط، ولا تُرسل لأي خادم.', backupTitle: 'نسخة سيارتي'
+    },
     rem: {
       addTitle: 'تذكير جديد', editTitle: 'تعديل التذكير', type: 'نوع التذكير', title: 'العنوان', titlePh: 'مثال: تغيير زيت المحرك', vehicle: 'السيارة',
       basedOn: 'يعتمد على', byDate: 'التاريخ', byOdo: 'العداد', byBoth: 'كلاهما', dueDate: 'تاريخ الاستحقاق', dueOdo: 'قراءة العداد عند الاستحقاق',
@@ -89,6 +114,31 @@ export const STRINGS = {
     theme: { light: 'Light', dark: 'Dark', auto: 'Auto' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    rep: {
+      title: 'Reports', period: 'Period', p3: '3 months', p6: '6 months', p12: '1 year', p0: 'All',
+      spend: 'Total spent', costKm: 'Cost per km', distance: 'Distance driven', avg: 'Average consumption', ppl: 'Average price per litre', kmDay: 'Daily driving',
+      monthly: 'Monthly spending', byType: 'By type', byCat: 'Spending breakdown', trend: 'Consumption trend', fuelNums: 'Fuel figures',
+      fills: 'Fill-ups', liters: 'Total litres', best: 'Best consumption', worst: 'Worst consumption', avgFill: 'Average fill-up', income: 'Income',
+      noData: 'No data in this period', needFills: 'Needs at least two full-tank fill-ups in this period', average: 'Average', perDay: '{n} km/day',
+      chartMonthly: 'Monthly spending chart', chartTrend: 'Consumption trend chart', total: 'Total'
+    },
+    set: {
+      title: 'Settings', vehicles: 'Vehicles', addVehicle: 'Add a vehicle', noVehicles: 'No vehicles yet',
+      look: 'Appearance & language', theme: 'Theme', language: 'Language',
+      prefs: 'Preferences', currency: 'Currency symbol', decimals: 'Decimal places', dec3: '3 (baisa)', dec2: '2', dec0: 'None', unit: 'Consumption unit', kmpl: 'km/L', l100: 'L/100km',
+      cats: 'Categories', catsDesc: 'Shown in the service, expense and income forms.', noCats: 'No categories', addCat: 'New category', editCat: 'Edit category', catName: 'Name',
+      catRenameHint: 'Renaming updates every record and reminder that uses it.', catErrName: 'Enter a name.', catErrDup: 'This category already exists.',
+      catAdded: 'Category added', catSaved: 'Category updated', catDelQ: 'Delete “{n}”?', catDelText: 'Existing records keep it as they are.', catDeleted: 'Category deleted',
+      backup: 'Backup', lastBackup: 'Last backup: {d}', noBackup: 'You haven’t made a backup yet', oldBackup: 'Last backup was {n} days ago — save a new one',
+      saveDrive: 'Save a copy to Google Drive', saveDriveHint: 'Opens your phone’s share sheet — choose “Drive” and save the file.',
+      restore: 'Restore a backup', restoreHint: 'Pick the backup file from Google Drive or your phone’s files.', exportCsv: 'Export to Excel (CSV)', demo: 'Sample data',
+      wipe: 'Delete all data', wipeQ: 'Delete all data?', wipeText: 'All vehicles, records and reminders will be removed. Export a backup first if you need one.', wipeOk: 'Delete all', wiped: 'All data deleted',
+      importQ: 'Replace your current data?', importText: 'The imported backup will replace everything stored on this device.', importOk: 'Import', imported: 'Backup imported', badFile: 'This file isn’t a valid backup',
+      shared: 'Done — make sure you chose Google Drive', downloaded: 'Backup downloaded — upload it to Google Drive', exported: 'Exported', demoAdded: 'Sample car added — delete it from Settings any time',
+      install: 'Install the app', installBtn: 'Install My Car on your home screen', installIos: 'In Safari, tap Share, then “Add to Home Screen”.',
+      installOther: 'From the browser menu (⋮) choose “Install app” or “Add to Home screen”.', installed: 'My Car installed',
+      privacy: 'My Car — everything about your car in one place. Your data stays on this device and is never sent to a server.', backupTitle: 'My Car backup'
+    },
     rem: {
       addTitle: 'New reminder', editTitle: 'Edit reminder', type: 'Reminder type', title: 'Title', titlePh: 'e.g. Engine oil change', vehicle: 'Vehicle',
       basedOn: 'Based on', byDate: 'Date', byOdo: 'Odometer', byBoth: 'Both', dueDate: 'Due date', dueOdo: 'Odometer when due',

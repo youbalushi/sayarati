@@ -1,0 +1,26 @@
+/* سيارتي · My Car — Settings (st-). Design-system tokens only. */
+.st-appbar{padding-inline:var(--space-2)}
+.st-grid{display:grid;gap:var(--space-3);padding-block:var(--space-4) var(--space-6)}
+.st-col{display:grid;gap:var(--space-3);align-content:start}
+.st-card{display:grid;gap:var(--space-3)}
+.st-card__head{display:flex;align-items:center;gap:var(--space-3)}
+.st-card__head p{margin:2px 0 0}
+.st-card .mc-list{border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden}
+.st-rows{display:grid;gap:var(--space-3)}
+.st-row{display:grid;gap:var(--space-2)}
+.st-row__label{font-size:var(--fs-small);line-height:var(--lh-small);font-weight:var(--fw-semibold)}
+.st-prefs{display:grid;gap:var(--space-3)}
+.st-cats .mc-list-item__trail{gap:0}
+.st-actions{display:grid;gap:var(--space-3)}
+.st-actions p{margin:var(--space-1) 0 0}
+.st-file{position:relative;cursor:pointer}
+.st-file input{position:absolute;inset:0;opacity:0;inline-size:100%;cursor:pointer}
+.st-file:focus-within{outline:2px solid var(--color-focus);outline-offset:2px}
+.st-note{margin:0;padding-inline:var(--space-2);text-align:center}
+@media (min-width:600px){.st-prefs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:900px){
+  .st .mc-container{max-width:var(--size-content-wide);padding-inline:var(--space-8)}
+  .st-appbar{padding-inline:var(--space-6)}
+  .st-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-6);padding-block:var(--space-6)}
+  .st-prefs{grid-template-columns:minmax(0,1fr)}
+}
