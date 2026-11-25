@@ -28,7 +28,7 @@ export function openEntryForm(ctx, type, existing = null, preset = {}) {
   const { S } = ctx;
   if (!S.vehicles.length) { ctx.addVehicle(); return; }
   const old = existing || null;
-  const x = old ? { ...old } : { t: type, d: ctx.today(), v: S.cur, full: true, fuel: ctx.veh(S.cur)?.fuel || 'M91', ...preset };
+  const x = old ? { ...old } : { t: type, d: ctx.today(), v: S.cur, full: true, fuel: (ctx.items(S.cur).find(r => r.t === 'fuel' && r.fuel) || {}).fuel || ctx.veh(S.cur)?.fuel || 'M91', ...preset };
   const T = x.t, isFuel = T === 'fuel', dec = S.set.dec;
   const odoNow = ctx.curOdo(x.v), lastFuel = ctx.stats(x.v).lastFuel;
   const cur = getLang() === 'en' && (S.set.cur || 'ر.ع') === 'ر.ع' ? 'OMR' : (S.set.cur || 'ر.ع');

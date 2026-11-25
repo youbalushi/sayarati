@@ -6,7 +6,6 @@ import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacy
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const DOC_TYPES = ['insurance', 'registration', 'inspection', 'license', 'other'];
-const FUELS = ['M91', 'M95', 'ديزل'];
 
 /* ---------- helpers ---------- */
 const safeImg = p => (typeof p === 'string' && /^data:image\/(png|jpe?g|webp);base64,/.test(p) ? p : '');
@@ -18,7 +17,7 @@ function docStatus(d) {
   const n = daysTo(d.expiry);
   return n < 0 ? ['danger', t('car.expired')] : n <= 30 ? ['warning', fill(t('car.expiresIn'), n)] : ['success', t('car.valid')];
 }
-const fuelLabel = f => (getLang() === 'en' && f === 'ديزل' ? 'Diesel' : f);
+const curLabel = ctx => { const c = ctx.S.set.cur || 'ر.ع'; return getLang() === 'en' && c === 'ر.ع' ? 'OMR' : c; };
 const fill2 = (s, o) => Object.entries(o).reduce((a, [k, v]) => a.replace('{' + k + '}', v), String(s));
 const longDate = d => { const [y, m, dd] = d.split('-'); return `${+dd} ${t('month')[+m - 1]} ${y}`; };
 
@@ -103,8 +102,8 @@ export function openVehicleEditor(ctx, id = null) {
     </div>
     <div class="mc-grid-2">${field({ id: 've-year', label: t('car.year'), optional: t('car.optional'), value: V.year || '', inputmode: 'numeric', placeholder: String(yearNow) })}${field({ id: 've-nick', label: t('car.nick'), optional: t('car.optional'), value: nick0, placeholder: t('car.namePh') })}</div>
     <div class="mc-field__hint" style="margin-top:-6px">${t('car.nickHint')}</div>
-    <div class="mc-grid-2">${field({ id: 've-plate', label: t('car.plate'), optional: t('car.optional'), value: V.plate || '' })}${field({ id: 've-fuel', label: t('car.fuel'), options: FUELS.map(f => [f, fuelLabel(f)]), value: V.fuel || 'M91' })}</div>
-    <div class="mc-grid-2">${field({ id: 've-tank', label: t('car.tank'), optional: t('car.optional'), value: V.tank || '', inputmode: 'decimal', unit: t('home.liter') })}${field({ id: 've-odo', label: t('car.odo0'), optional: t('car.optional'), value: V.odo0 || '', inputmode: 'numeric', unit: t('unit.km') })}</div>
+    <div class="mc-grid-2">${field({ id: 've-plate', label: t('car.plate'), optional: t('car.optional'), value: V.plate || '' })}${field({ id: 've-odo', label: t('car.odo0'), optional: t('car.optional'), value: V.odo0 || '', inputmode: 'numeric', unit: t('unit.km') })}</div>
+    <div class="mc-grid-2">${field({ id: 've-bought', label: t('car.bought'), optional: t('car.optional'), type: 'date', value: V.bought || '' })}${field({ id: 've-price', label: t('car.price'), optional: t('car.optional'), value: V.price || '', inputmode: 'decimal', unit: curLabel(ctx) })}</div>
     <div id="ve-err"></div>
     ${old ? `<div class="mc-divider"></div>${button(t('car.deleteCar'), { variant: 'danger', icon: 'trash-2', block: true, attrs: 'id="ve-del"' })}` : ''}
   </form></div>
@@ -152,10 +151,11 @@ export function openVehicleEditor(ctx, id = null) {
     const val = s => $(s).value.trim();
     const mkSel = $('#ve-make').value, make = mkSel === '__other' ? val('#ve-make-t') : mkSel;
     const mdSel = $('#ve-model').value, model = mkSel === '__other' || mdSel === '__other' ? val('#ve-model-t') : mdSel;
-    const nick = val('#ve-nick'), year = val('#ve-year') ? parseNum(val('#ve-year')) : '';
+    const nick = val('#ve-nick'), year = val('#ve-year') ? parseNum(val('#ve-year')) : '', price = val('#ve-price') ? parseNum(val('#ve-price')) : '';
     const errs = [];
     if (!(make && model) && !nick) errs.push([make ? (mkSel === '__other' || mdSel === '__other' ? 've-model-t' : 've-model') : 've-make', t('car.errName')]);
     if (year !== '' && !(year >= 1950 && year <= yearNow + 1)) errs.push(['ve-year', fill(t('car.errYear'), yearNow + 1)]);
+    if (price !== '' && !(price >= 0)) errs.push(['ve-price', t('car.errPrice')]);
     root.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
     if (errs.length) {
       errs.forEach(([id]) => $('#' + id).setAttribute('aria-invalid', 'true'));
@@ -163,7 +163,9 @@ export function openVehicleEditor(ctx, id = null) {
       $('#' + errs[0][0]).focus(); return;
     }
     const nv = { ...(old || {}), id: old ? old.id : ctx.uid(), make, model, nick, year: year === '' ? '' : Math.round(year), plate: val('#ve-plate'),
-      fuel: $('#ve-fuel').value, tank: parseNum(val('#ve-tank')) || 0, odo0: parseNum(val('#ve-odo')) || 0, photo, photoCat };
+      odo0: parseNum(val('#ve-odo')) || 0, bought: $('#ve-bought').value, price: price === '' ? '' : price, photo, photoCat };
+    // fuel type and tank capacity are no longer edited here; values saved earlier are kept as they are
+    if (!nv.bought) delete nv.bought; if (nv.price === '') delete nv.price;
     if (photoCat) nv.photoCat = inCatalog(make, model) ? { make, model, body: bodyOf(make, model), color: photoCat.color } : null;
     if (!photo) delete nv.photo; if (!nv.photoCat) delete nv.photoCat; if (!nick) delete nv.nick;
     nv.name = legacyName(nv);

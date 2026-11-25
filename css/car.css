@@ -43,6 +43,8 @@
 
 /* Editors */
 .cd-edit-photo{display:flex;align-items:center;gap:var(--space-4)}
+/* paired fields line up on their input boxes even when one label wraps (e.g. “Odometer when added (optional)”) */
+#ve-form .mc-grid-2{align-items:end}
 .cd-edit-photo__img{width:96px;height:72px;border-radius:var(--radius-md);overflow:hidden;flex:none;display:grid;place-items:center;background:var(--color-surface-sunken)}
 .cd-edit-photo__img img{width:100%;height:100%;object-fit:cover}
 .cd-edit-photo__img.is-empty{background:var(--color-primary-soft);color:var(--color-primary-text)}

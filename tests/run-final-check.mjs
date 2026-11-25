@@ -70,11 +70,11 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
   await p.goto(`${BASE}/index.html`); await wait(p, 400);
   await p.click('.hm [data-act=addveh]'); await wait(p, 400);
   await p.selectOption('#ve-make', 'toyota'); await wait(p, 100); await p.selectOption('#ve-model', 'Land Cruiser');
-  await p.fill('#ve-year', '2020'); await p.fill('#ve-plate', '12345 أ ب'); await p.fill('#ve-tank', '90'); await p.fill('#ve-odo', '120000');
+  await p.fill('#ve-year', '2020'); await p.fill('#ve-plate', '12345 أ ب'); await p.fill('#ve-odo', '120000'); await p.fill('#ve-bought', '2024-05-10'); await p.fill('#ve-price', '9500');
   await p.click('#ve-save'); await wait(p, 400);
   let S = (await store(p)).S;
   const v1 = S.vehicles[0];
-  ok('vehicle: add saves make, model, year, plate, tank, odometer', S.vehicles.length === 1 && v1.make === 'toyota' && v1.model === 'Land Cruiser' && +v1.year === 2020 && v1.plate === '12345 أ ب' && +v1.tank === 90 && +v1.odo0 === 120000, JSON.stringify(v1));
+  ok('vehicle: add saves make, model, year, plate, odometer, purchase date + value', S.vehicles.length === 1 && v1.make === 'toyota' && v1.model === 'Land Cruiser' && +v1.year === 2020 && v1.plate === '12345 أ ب' && +v1.odo0 === 120000 && v1.bought === '2024-05-10' && +v1.price === 9500 && !('fuel' in v1) && !('tank' in v1), JSON.stringify(v1));
   await editCar(p); await p.fill('#ve-nick', 'سيارة العمل'); await p.fill('#ve-plate', '777'); await p.click('#ve-save'); await wait(p, 400); await go(p, 'home');
   S = (await store(p)).S;
   ok('vehicle: edit updates the same car', S.vehicles.length === 1 && S.vehicles[0].id === v1.id && S.vehicles[0].plate === '777' && /سيارة العمل/.test(await p.textContent('.hm-car__name')));

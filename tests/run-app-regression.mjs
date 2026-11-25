@@ -202,6 +202,20 @@ await p.click('.hm-docs [data-type=other]'); await p.waitForTimeout(350);
 ok('… and opens them', await p.evaluate(() => document.querySelectorAll('.mc-scrim [data-car=doc-open]').length === 1)); await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 /* ---- vehicle editor (Settings → Vehicles) ---- */
 await editCar(p);
+ok('editor fields: no fuel type / tank; plate next to odometer; purchase date + value are the last two', await p.evaluate(() => {
+  if (document.getElementById('ve-fuel') || document.getElementById('ve-tank')) return false;
+  const row = id => document.getElementById(id).closest('.mc-grid-2'), ids = [...document.querySelectorAll('#ve-form input, #ve-form select')].map(e => e.id).filter(Boolean);
+  return row('ve-plate') === row('ve-odo') && row('ve-bought') === row('ve-price') && ids.slice(-2).join() === 've-bought,ve-price' && document.getElementById('ve-bought').type === 'date'
+    && /\(/.test(document.querySelector('label[for=ve-bought]').textContent) && /\(/.test(document.querySelector('label[for=ve-price]').textContent); }));
+ok('editor: the catalog panel (its back link + note) stays hidden until opened', await p.evaluate(() => getComputedStyle(document.getElementById('ve-catview')).display === 'none'));
+await p.fill('#ve-price', 'abc'); await p.click('#ve-save'); await p.waitForTimeout(150);
+ok('editor: a non-number purchase value is rejected on that field', await p.evaluate(() => document.getElementById('ve-price').getAttribute('aria-invalid') === 'true'));
+await p.fill('#ve-price', '٨٥٠٠'); await p.fill('#ve-bought', '2023-01-15'); await p.click('#ve-save'); await p.waitForTimeout(350); await goHome(p);
+ok('editor: purchase date + value saved (Arabic digits ok); fuel/tank saved earlier kept as they were', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.bought === '2023-01-15' && v.price === 8500 && v.fuel === 'M91' && v.tank === 60; }));
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-entry-type=fuel]'); await p.waitForTimeout(300);
+ok('fuel form: fuel type preselected from the car\'s last fill-up', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const last = Object.values(d.E).flat().filter(x => x.v === d.S.cur && x.t === 'fuel').sort((a, b) => b.d.localeCompare(a.d))[0]; return document.getElementById('en-fuel').value === last.fuel; }));
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+await editCar(p);
 await p.click('#ve-cat'); await p.waitForTimeout(250);
 ok('editor catalog: shows only the car\'s make + model', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !sc.querySelector('[data-ct-make],[data-ct-model],[data-ct-q]') && /Camry/.test(sc.querySelector('.ct-locked__id').textContent) && sc.querySelectorAll('[data-ct-color]').length === 8; }));
 await p.click('.mc-scrim [data-ct-color=red]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200); await p.click('#ve-save'); await p.waitForTimeout(350); await goHome(p);

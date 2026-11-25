@@ -19,7 +19,7 @@ function backupStatus(ctx) {
 export function renderSettings(ctx) {
   const { S } = ctx;
   const vehicles = S.vehicles.length
-    ? `<div class="mc-list">${S.vehicles.map(V => listItem({ title: esc(vehTitle(V)), sub: [esc(vehSub(V)), V.plate ? `<span class="mc-num">${esc(V.plate)}</span>` : '', V.fuel ? esc(V.fuel) : '', V.tank ? `${V.tank} ${t('unit.liter')}` : ''].filter(Boolean).join(' · '),
+    ? `<div class="mc-list">${S.vehicles.map(V => listItem({ title: esc(vehTitle(V)), sub: [esc(vehSub(V)), V.plate ? `<span class="mc-num">${esc(V.plate)}</span>` : ''].filter(Boolean).join(' · '),
         lead: 'car', tone: V.id === S.cur ? 'primary' : 'neutral', chevron: true, attrs: `data-act="editveh" data-id="${esc(V.id)}"` })).join('')}</div>`
     : `<p class="mc-small mc-muted">${t('set.noVehicles')}</p>`;
   const look = `<div class="st-rows">
