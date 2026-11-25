@@ -6,9 +6,9 @@
 /* Hero: photo + identity + key facts */
 .cd-photo{position:relative;aspect-ratio:16/9;background:var(--color-surface-sunken);display:grid;place-items:center;overflow:hidden}
 .cd-photo img{width:100%;height:100%;object-fit:cover;display:block}
-/* uploaded photos: the whole picture, never cropped, over a blurred copy of itself (any shape fits the 16:9 frame) */
+/* uploaded photos: the whole picture in its own proportions (contain), never cropped or stretched;
+   the frame's surface colour (light/dark) shows around it */
 .cd-photo img.ph,.cd-edit-photo__img img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.cd-photo img.ph-bg,.cd-edit-photo__img img.ph-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(18px) saturate(1.1);transform:scale(1.2);opacity:.9}
 .cd-edit-photo__img{position:relative}
 .cd-photo.is-empty{background:var(--color-primary-soft);color:var(--color-primary-text);align-content:center;gap:var(--space-1);justify-items:center}
 .cd-photo.is-empty>.mc-icon{width:56px;height:56px;stroke-width:1.6}
