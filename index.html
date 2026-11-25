@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>سيارتي — سجل السيارة</title>
 <meta name="theme-color" content="#c62a1f">
-<meta name="description" content="سيارتي — سجل مصاريف ووقود وصيانة السيارة، بدون إعلانات">
+<meta name="description" content="سيارتي — كل تفاصيل سيارتك في مكان واحد: الوقود والصيانة والمصاريف">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -287,7 +287,7 @@ function header(){
     <div class="sync" id="sync">${backupNudge()}</div>
     ${V&&tab()==='home'?`<div class="odo"><span class="lbl">عداد المسافة<br><b style="font-size:15px">كم</b></span><div class="drum" aria-label="${n(odo)} كم">${digs}</div></div>`:''}`;
 }
-function backupNudge(){if(!all().length)return 'بدون إعلانات · محفوظ على جهازك';const l=S.set.lastDrive?new Date(S.set.lastDrive):0;const d=l?Math.floor((Date.now()-l)/864e5):null;
+function backupNudge(){if(!all().length)return 'محفوظ على جهازك';const l=S.set.lastDrive?new Date(S.set.lastDrive):0;const d=l?Math.floor((Date.now()-l)/864e5):null;
   return d==null?'<a href="#settings" style="color:#fff">لم تأخذ نسخة احتياطية بعد — احفظ نسخة في Drive</a>':d>14?`<a href="#settings" style="color:#fff">آخر نسخة احتياطية قبل ${d} يوم — احفظ نسخة جديدة</a>`:'محفوظ على جهازك · آخر نسخة احتياطية قبل '+(d?d+' يوم':'اليوم')}
 function gauge(st){
   const c=st.allCons.slice(-12);
@@ -423,7 +423,7 @@ function settings(){
     <div class="grid2"><button class="btn" data-act="expcsv">تصدير Excel (CSV)</button><button class="btn" data-act="demo">بيانات نموذجية</button></div>
     <button class="btn dan full" style="margin-top:10px" data-act="wipe">حذف كل البيانات</button></div>
    ${installBox()}
-   <p class="note">سيارتي — بدون إعلانات وبدون تتبّع. بياناتك محفوظة على جهازك فقط، ولا تُرسل لأي خادم.</p>`;
+   <p class="note">سيارتي — كل تفاصيل سيارتك في مكان واحد. بياناتك محفوظة على جهازك فقط، ولا تُرسل لأي خادم.</p>`;
 }
 const SCR={home,log,remind,reports,settings};
 let CT='service';
