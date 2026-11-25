@@ -1,0 +1,46 @@
+/* سيارتي · My Car — Log (lg-) + Reminders list (rl-). Design-system tokens only. */
+.lg-appbar{padding-inline:var(--space-4) var(--space-2)}
+.lg-appbar__id{flex:1;display:grid;justify-items:start;min-width:0}
+.lg-appbar__id .mc-title{font-size:var(--fs-title);line-height:var(--lh-title);font-weight:var(--fw-bold)}
+.lg-appbar__id .mc-btn{margin-inline-start:calc(var(--space-2) * -1);max-width:100%}
+.lg-wrap,.rl-wrap{display:grid;gap:var(--space-3);padding-block:var(--space-4) var(--space-6)}
+
+/* log: filters + search stay in reach while scrolling */
+.lg-tools{position:sticky;top:var(--size-appbar);z-index:2;display:grid;gap:var(--space-2);
+  margin-inline:calc(var(--space-4) * -1);padding:var(--space-2) var(--space-4) var(--space-3);background:var(--color-bg)}
+.lg-filter{overflow-x:auto;scrollbar-width:none}
+.lg-filter .mc-seg{min-inline-size:max-content}
+.lg-filter .mc-seg button{padding-inline:var(--space-3);flex:1 0 auto}
+.lg-search{position:relative}
+.lg-search>.mc-icon{position:absolute;inset-inline-start:var(--space-3);top:50%;transform:translateY(-50%);color:var(--color-text-secondary);pointer-events:none}
+.lg-search .mc-input{padding-inline-start:calc(var(--space-3) + 28px)}
+.lg-list{display:grid;gap:var(--space-4)}
+.lg-month{display:grid;gap:var(--space-2)}
+.lg-month__head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--space-3);padding-inline:var(--space-1);color:var(--color-text-secondary)}
+.lg-month__head h2{font-weight:var(--fw-semibold);color:var(--color-text)}
+.lg-month__head .mc-num{font-weight:var(--fw-semibold);color:var(--color-text)}
+
+/* reminders */
+.rl-wrap>.mc-section-head{margin-block:0}
+.rl-list{display:grid;gap:var(--space-3)}
+.rl-card{display:grid;gap:var(--space-2);border-inline-start:4px solid var(--_solid)}
+.rl-card__head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}
+.rl-card__head .mc-title{font-size:var(--fs-body);font-weight:var(--fw-bold)}
+.rl-card__meta,.rl-card__note{margin:0}
+.rl-card__note{padding:var(--space-2) var(--space-3);background:var(--color-surface-sunken);border-radius:var(--radius-sm)}
+.rl-card__acts{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-block-start:var(--space-1)}
+.rl-note{display:flex;gap:var(--space-2);align-items:flex-start;margin:var(--space-2) 0 0;padding-inline:var(--space-1)}
+.rl-note .mc-icon{flex:none;inline-size:16px;block-size:16px;margin-block-start:2px}
+.rl-cal__sum{margin:0 0 var(--space-3)}
+.rl-cal{display:grid;gap:var(--space-3)}
+.rl-cal p{margin:var(--space-1) 0 0}
+
+@media (min-width:900px){
+  .lg .mc-container,.rl .mc-container{max-width:var(--size-content-wide);padding-inline:var(--space-8)}
+  .lg-appbar{padding-inline:var(--space-8)}
+  .lg-filter{overflow:visible}
+  .lg-tools{grid-template-columns:max-content minmax(260px,1fr);align-items:center;margin-inline:calc(var(--space-8) * -1);padding-inline:var(--space-8)}
+  .lg .mc-container{max-width:860px}
+  .lg-filter .mc-seg button{padding-inline:var(--space-4)}
+  .rl-list{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+}

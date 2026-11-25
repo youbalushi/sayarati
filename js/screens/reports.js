@@ -4,8 +4,9 @@ import { vehTitle } from '../vehicle.js';
 
 let period = 6, bound = false, ro = null;
 const fill = (s, n) => s.replace('{n}', n);
-const money = (ctx, x) => `${num(x, ctx.S.set.dec)} <span class="mc-stat__unit">${esc(ctx.S.set.cur)}</span>`;
-const moneyTxt = (ctx, x) => `${fmt(x, ctx.S.set.dec)} ${ctx.S.set.cur}`;
+const cur = ctx => { const c = ctx.S.set.cur || 'ر.ع'; return getLang() === 'en' && c === 'ر.ع' ? 'OMR' : c; }; // same rule as Home
+const money = (ctx, x) => `${num(x, ctx.S.set.dec)} <span class="mc-stat__unit">${esc(cur(ctx))}</span>`;
+const moneyTxt = (ctx, x) => `${fmt(x, ctx.S.set.dec)} ${cur(ctx)}`;
 const consUnit = ctx => (ctx.S.set.unit === 'l100' ? (getLang() === 'ar' ? 'ل/100كم' : 'L/100km') : t('unit.kmpl'));
 const consVal = (ctx, k) => (ctx.S.set.unit === 'l100' ? 100 / k : k);
 const cons = (ctx, k) => (k ? `${num(consVal(ctx, k), 1)} <span class="mc-stat__unit">${consUnit(ctx)}</span>` : '—');

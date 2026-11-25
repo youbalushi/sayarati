@@ -16,6 +16,19 @@ export const STRINGS = {
     theme: { light: 'فاتح', dark: 'داكن', auto: 'تلقائي' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    log: {
+      title: 'السجل', all: 'الكل', search: 'بحث: محطة، صنف، ملاحظة…', searchLabel: 'بحث في السجل', noMatch: 'لا توجد سجلات مطابقة', noMatchText: 'جرّب كلمة أخرى أو نوعًا آخر.',
+      notFull: 'خزان غير ممتلئ', monthSpend: 'مصروف الشهر', filter: 'نوع السجل'
+    },
+    rems: {
+      title: 'التذكيرات', heading: 'تذكيرات الصيانة', add: 'تذكير جديد', empty: 'لا توجد تذكيرات بعد',
+      emptyText: 'أضف تذكيرًا بالمسافة (مثلاً كل 5,000 كم) أو بالمدة (كل 12 شهرًا) أو كليهما — يتحدّث تلقائيًا عند تسجيل صيانة بنفس النوع.',
+      note: 'عند تسجيل صيانة بنفس نوع التذكير، يُعاد ضبطه تلقائيًا. التوقّع بالأيام محسوب من معدل قيادتك الفعلي. إذا تغيّر موعد تذكير، أضفه للتقويم مرة أخرى.',
+      eta: 'متوقع خلال ~{n} يوم حسب قيادتك', dueOn: 'الموعد: {d}', doneOn: 'تمّ في {d}', markDone: 'تمّت', calendar: 'أضف لتقويم الهاتف',
+      calTitle: 'أضف لتقويم الهاتف', calBefore: 'تنبيه قبله بـ {n} يوم', calFile: 'ملف تقويم (iPhone وكل التقويمات)', calFileHint: 'يفتح الملف في تطبيق التقويم مع تنبيه قبل الموعد وتنبيه يوم الموعد.',
+      calGoogle: 'فتح في تقويم Google', calGoogleHint: 'في تقويم Google يُضاف الموعد بتنبيهك الافتراضي — يمكنك تعديله هناك.',
+      calDetails: 'تذكير من تطبيق سيارتي', calLeft: 'المتبقي {n} كم', calOpened: 'افتح الملف المنزّل لإضافته للتقويم', progress: 'اقتراب الموعد'
+    },
     rep: {
       title: 'التقارير', period: 'الفترة', p3: '3 أشهر', p6: '6 أشهر', p12: 'سنة', p0: 'الكل',
       spend: 'إجمالي المصروف', costKm: 'تكلفة الكيلومتر', distance: 'المسافة المقطوعة', avg: 'متوسط الاستهلاك', ppl: 'متوسط سعر اللتر', kmDay: 'معدل القيادة اليومي',
@@ -114,6 +127,19 @@ export const STRINGS = {
     theme: { light: 'Light', dark: 'Dark', auto: 'Auto' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    log: {
+      title: 'Log', all: 'All', search: 'Search: station, category, note…', searchLabel: 'Search the log', noMatch: 'No matching records', noMatchText: 'Try another word or type.',
+      notFull: 'Partial fill', monthSpend: 'Month spending', filter: 'Record type'
+    },
+    rems: {
+      title: 'Reminders', heading: 'Service reminders', add: 'New reminder', empty: 'No reminders yet',
+      emptyText: 'Add a reminder by distance (e.g. every 5,000 km), by time (every 12 months), or both — it updates itself when you log a service of the same type.',
+      note: 'Logging a service of the same type resets its reminder automatically. Day estimates use your actual driving rate. If a reminder’s date changes, add it to your calendar again.',
+      eta: 'Expected in ~{n} days at your driving rate', dueOn: 'Due: {d}', doneOn: 'Done on {d}', markDone: 'Done', calendar: 'Add to phone calendar',
+      calTitle: 'Add to phone calendar', calBefore: 'alert {n} days before', calFile: 'Calendar file (iPhone and all calendars)', calFileHint: 'Opens in your calendar app with an alert before the date and one on the day.',
+      calGoogle: 'Open in Google Calendar', calGoogleHint: 'Google Calendar adds it with your default alert — you can change it there.',
+      calDetails: 'Reminder from My Car', calLeft: '{n} km left', calOpened: 'Open the downloaded file to add it to your calendar', progress: 'How close it is'
+    },
     rep: {
       title: 'Reports', period: 'Period', p3: '3 months', p6: '6 months', p12: '1 year', p0: 'All',
       spend: 'Total spent', costKm: 'Cost per km', distance: 'Distance driven', avg: 'Average consumption', ppl: 'Average price per litre', kmDay: 'Daily driving',

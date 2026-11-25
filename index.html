@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="css/entry.css">
 <link rel="stylesheet" href="css/reports.css">
 <link rel="stylesheet" href="css/settings.css">
+<link rel="stylesheet" href="css/log.css">
 <script>
 /* theme + language before first paint (design system prefs: mc-theme / mc-lang) */
 (function(){var g=function(k){try{return localStorage.getItem(k)}catch(e){return null}};var l=g('mc-lang')||'ar',th=g('mc-theme')||'auto';
@@ -156,20 +157,18 @@ h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;
 .ov{z-index:45}.toast{z-index:60}
 .app.is-home{max-width:none}
 .app.is-home #main{padding:0}
-.hm h1,.hm h2,.cd h1,.cd h2,.cd h3,.rp h1,.rp h2,.st h1,.st h2,.mc-scrim h2,.mc-scrim h3{display:block}
-.rp h2,.st h2{margin:0;font-size:inherit}
-@media(min-width:900px){.app.is-home{padding-inline-start:var(--size-rail)}}
+.app.is-home{padding-bottom:calc(var(--size-bottomnav) + var(--space-8) + env(safe-area-inset-bottom))}
+.app.is-home h1,.app.is-home h2,.app.is-home h3,.mc-scrim h2,.mc-scrim h3{display:block}
+.rp h2,.st h2,.lg h2,.rl h2{margin:0;font-size:inherit}
+@media(min-width:900px){.app.is-home{padding-inline-start:var(--size-rail);padding-bottom:var(--space-8)}}
 </style>
 </head>
 <body class="mc mc-has-rail">
-<div class="app">
-  <header class="top" id="top"></header>
+<div class="app is-home">
   <main id="main"></main>
 </div>
 <nav class="mc-bottomnav" id="nav-bottom" aria-label="القائمة الرئيسية"></nav>
 <nav class="mc-rail" id="nav-rail" aria-label="القائمة الرئيسية"></nav>
-<div class="ov" id="ov" hidden><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="body"></div></div></div>
-<div id="toast"></div>
 <script type="module">
 import * as UI from './js/ui.js';
 import { renderHome, initHome } from './js/screens/home.js';
@@ -178,6 +177,9 @@ import { openEntryForm, openTypePicker } from './js/screens/entry.js';
 import { openReminderForm } from './js/screens/reminder.js';
 import { renderReports, afterRenderReports, initReports } from './js/screens/reports.js';
 import { renderSettings, initSettings } from './js/screens/settings.js';
+import { renderLog, initLog } from './js/screens/log.js';
+import { renderReminders, openCalendarSheet } from './js/screens/reminders.js';
+import { vehTitle } from './js/vehicle.js';
 {
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -185,14 +187,6 @@ const uidg=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const iso=dt=>{const z=new Date(dt);z.setMinutes(z.getMinutes()-z.getTimezoneOffset());return z.toISOString().slice(0,10)};
 const today=()=>iso(new Date());
 const MON=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const IC={
- fuel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10M14 8l3 3v6a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>',
- service:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></svg>',
- expense:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6M9 15h4"/></svg>',
- income:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M8.5 10.5L12 7l3.5 3.5"/></svg>',
- gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
- car:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2M7 17h10"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>'
-};
 const T={fuel:{n:'وقود',c:'var(--red)'},service:{n:'صيانة',c:'var(--blue)'},expense:{n:'مصروف',c:'var(--ochre)'},income:{n:'دخل',c:'var(--green)'}};
 const CATS={service:['تغيير زيت المحرك','فلتر هواء','فلتر مكيف','إطارات','ترصيص وميزان','فرامل','بطارية','زيت القير','سائل التبريد','بواجي','فحص دوري','تصليح عطل','أخرى'],
  expense:['تأمين','تجديد الملكية','غسيل','مواقف','مخالفة مرورية','قطع غيار','إكسسوارات','تظليل','أخرى'],
@@ -267,7 +261,7 @@ function flush(){
     const body=k==='g'?clone(S):{items:clone(E[k]||[])};
     qs[k]=(qs[k]||Promise.resolve()).then(()=>ref.set(body)).catch(err=>{
       if(err&&err.code==='unavailable'){setTimeout(()=>persist([k]),1500+Math.random()*1000)}
-      else if(err&&err.code==='quota_exceeded'){toast('مساحة التخزين السحابي ممتلئة — صدّر نسخة احتياطية')}
+      else if(err&&err.code==='quota_exceeded'){UI.toast('مساحة التخزين السحابي ممتلئة — صدّر نسخة احتياطية')}
       else if(err&&err.code==='invalid_argument'){db=null;setSync('محفوظ على هذا الجهاز فقط')}
     });
   }
@@ -275,75 +269,9 @@ function flush(){
 function setSync(m){syncMsg=m;const el=$('#sync');if(el)el.textContent=m;const e2=$('#sync2');if(e2)e2.textContent=m}
 function connect(){}
 
-/* ---------- UI bits ---------- */
-let tt=0;
-function toast(msg,undo){
-  const el=$('#toast');clearTimeout(tt);
-  el.innerHTML=`<div class="toast"><span>${esc(msg)}</span>${undo?'<button data-act="undo">تراجع</button>':''}</div>`;
-  toast.undo=undo;tt=setTimeout(()=>{el.innerHTML='';toast.undo=null},undo?6000:3000);
-}
-function openSheet(html,mount){const ov=$('#ov');$('.body',ov).innerHTML=html;ov.hidden=false;requestAnimationFrame(()=>ov.classList.add('on'));if(mount)mount($('.body',ov))}
-function closeSheet(){const ov=$('#ov');ov.classList.remove('on');setTimeout(()=>{ov.hidden=true;$('.body',ov).innerHTML=''},180)}
-$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeSheet()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)closeSheet()});
+const {openSheet,closeSheet}=UI;
 
 const tab=()=>{const h=location.hash.slice(1);return ['home','car','log','remind','reports','settings'].includes(h)?h:'home'};
-
-function header(){
-  const V=veh(S.cur);
-  const odo=V?curOdo(V.id):0;
-  const digs=String(Math.round(odo)).padStart(6,'0').split('').map(d=>`<i>${d}</i>`).join('');
-  return `<div class="bar">
-    <button class="chip" data-act="pickveh">${IC.car}<b>${V?esc(V.name):'سيارتي'}</b>${V&&V.plate?`<small>${esc(V.plate)}</small>`:''}</button>
-    <a class="ib" href="#settings" aria-label="الإعدادات">${IC.gear}</a></div>
-    <div class="sync" id="sync">${backupNudge()}</div>
-    ${V&&tab()==='home'?`<div class="odo"><span class="lbl">عداد المسافة<br><b style="font-size:15px">كم</b></span><div class="drum" aria-label="${n(odo)} كم">${digs}</div></div>`:''}`;
-}
-function backupNudge(){if(!all().length)return 'محفوظ على جهازك';const l=S.set.lastDrive?new Date(S.set.lastDrive):0;const d=l?Math.floor((Date.now()-l)/864e5):null;
-  return d==null?'<a href="#settings" style="color:#fff">لم تأخذ نسخة احتياطية بعد — احفظ نسخة في Drive</a>':d>14?`<a href="#settings" style="color:#fff">آخر نسخة احتياطية قبل ${d} يوم — احفظ نسخة جديدة</a>`:'محفوظ على جهازك · آخر نسخة احتياطية قبل '+(d?d+' يوم':'اليوم')}
-function gauge(st){
-  const c=st.allCons.slice(-12);
-  if(!c.length)return `<div class="gauge"><svg viewBox="0 0 120 70"><path d="M12 62A48 48 0 0 1 108 62" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"/></svg><small>سجّل تعبئتين بخزان ممتلئ لحساب الاستهلاك</small></div>`;
-  const ks=c.map(x=>x.k),mn=Math.min(...ks)*.95,mx=Math.max(...ks)*1.05,avg=c.reduce((s,x)=>s+x.dist,0)/c.reduce((s,x)=>s+x.l,0);
-  const p=Math.max(0,Math.min(1,(avg-mn)/((mx-mn)||1))),th=Math.PI*(1-p);
-  const nx=60+38*Math.cos(th),ny=62-38*Math.sin(th);
-  const last=c[c.length-1].k,diff=avg?((last-avg)/avg*100):0;
-  return `<div class="gauge"><svg viewBox="0 0 120 70" aria-hidden="true">
-   <defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="var(--red)"/><stop offset=".55" stop-color="var(--amber)"/><stop offset="1" stop-color="var(--green)"/></linearGradient></defs>
-   <path d="M12 62A48 48 0 0 1 108 62" fill="none" stroke="url(#gg)" stroke-width="10" stroke-linecap="round"/>
-   <line x1="60" y1="62" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>
-   <circle cx="60" cy="62" r="6" fill="var(--ink)"/></svg>
-   <div class="big">${consF(avg)}</div>
-   <small>متوسط آخر ${c.length} تعبئات · الأخيرة ${diff>=0?'أفضل':'أسوأ'} بـ <span class="num">${n(Math.abs(diff),0)}%</span></small></div>`;
-}
-function row(x){
-  const ttl=x.t==='fuel'?`<span class="num">${n(x.liters,2)}</span> لتر ${esc(x.fuel||'')}`:esc(x.cat||T[x.t].n);
-  const sub=[fdate(x.d),x.odo?`<span class="num">${n(x.odo)}</span> كم`:'',x.t==='fuel'&&!x.full?'خزان غير ممتلئ':'',esc(x.place||'')].filter(Boolean).join(' · ');
-  return `<button class="row" data-act="edit" data-id="${esc(x.id)}"><span class="dot" style="--c:${T[x.t].c}">${IC[x.t]}</span><span class="rt"><b>${ttl}</b><small>${sub}</small></span><span class="amt ${x.t==='income'?'in':''}">${x.t==='income'?'+':''}${money(x.cost)}</span></button>`;
-}
-function emptyState(){
-  return `<div class="empty card">${IC.car.replace('<svg','<svg aria-hidden="true"')}
-   <h1>كل تفاصيل سيارتك في مكان واحد</h1>
-   <p>تابع الوقود والصيانة والمصاريف، واعرف استهلاك سيارتك وتكلفة كل كيلومتر، مع تذكيرات ذكية بالصيانة.</p>
-   <button class="btn pri full" data-act="addveh">أضف سيارتك الأولى</button>
-   <p style="margin-top:12px"><button class="link" data-act="demo">أو جرّب التطبيق ببيانات نموذجية</button></p></div>`;
-}
-function remCard(r,st){
-  const s=rstat(r,st);const c=s.due?'var(--red)':s.soon?'var(--ochre)':'var(--blue)';
-  const parts=[];
-  if(s.km!=null)parts.push(s.km<=0?`متأخر <span class="num">${n(-s.km)}</span> كم`:`بعد <span class="num">${n(s.km)}</span> كم`);
-  if(s.days!=null)parts.push(s.days<=0?`متأخر ${n(-s.days)} يوم`:`بعد ${n(s.days)} يوم`);
-  if(s.eta!=null&&(s.days==null||s.eta<s.days))parts.push(`متوقع خلال ~${n(s.eta)} يوم حسب قيادتك`);
-  if(s.dueDate)parts.push('الموعد: '+fdate(s.dueDate));
-  if(s.done)parts.push('تمّ في '+fdate(r.done));
-  if(r.alert===false)parts.push('التنبيه متوقف');
-  if(r.note)parts.push(esc(r.note));
-
-  return `<div class="rem"><div class="h"><b>${esc(r.name)}</b><span class="tag" style="--c:${c}">${s.done?'تمّ':s.due?'مستحق':s.soon?'قريبًا':'جيد'}</span></div>
-   <div class="meter" style="--c:${c}"><i style="width:${Math.round(s.pct*100)}%"></i></div>
-   <div class="mut">${parts.join(' · ')}</div>
-   <div class="acts"><button class="btn pri" data-act="donerem" data-id="${esc(r.id)}">تمّت ✓</button><button class="btn" data-act="editrem" data-id="${esc(r.id)}">تعديل</button>${s.dueDate&&r.alert!==false?`<button class="btn" data-act="ics" data-id="${esc(r.id)}">أضف لتقويم الهاتف</button>`:''}</div></div>`;
-}
 
 /* ---------- screens ---------- */
 function home(){return renderHome(homeCtx)}
@@ -361,51 +289,19 @@ function deleteVehicle(id){
 }
 
 let LF={t:'all',q:''};
-function logList(){
-  const q=LF.q.trim();
-  const it=items(S.cur).filter(x=>(LF.t==='all'||x.t===LF.t)&&(!q||[x.cat,x.place,x.note,x.fuel,T[x.t].n].join(' ').includes(q)));
-  if(!it.length)return `<div class="card mut" style="text-align:center">لا توجد سجلات مطابقة</div>`;
-  const g={};it.forEach(x=>{(g[x.d.slice(0,7)]=g[x.d.slice(0,7)]||[]).push(x)});
-  return Object.entries(g).map(([m,xs])=>{const sp=xs.filter(x=>x.t!=='income').reduce((s,x)=>s+(+x.cost||0),0);
-    return `<div class="mh"><span>${MON[+m.slice(5)-1]} ${m.slice(0,4)}</span><span>${money(sp)}</span></div><div class="list">${xs.map(row).join('')}</div>`}).join('');
-}
-function log(){
-  if(!S.vehicles.length)return emptyState();
-  const f=[['all','الكل'],['fuel','وقود'],['service','صيانة'],['expense','مصروف'],['income','دخل']];
-  return `<div class="filters">${f.map(([k,l])=>`<button class="${LF.t===k?'on':''}" data-act="filter" data-t="${k}">${l}</button>`).join('')}</div>
-   <input class="search" id="q" type="search" placeholder="بحث: محطة، صنف، ملاحظة…" value="${esc(LF.q)}">
-   <div id="loglist">${logList()}</div>`;
-}
-function remind(){
-  if(!S.vehicles.length)return emptyState();
-  const st=stats(S.cur);
-  const rs=S.reminders.filter(r=>r.v===S.cur).map(r=>({r,s:rstat(r,st)})).sort((a,b)=>b.s.pct-a.s.pct);
-  return `<h2>تذكيرات الصيانة <button class="link" data-act="addrem">+ تذكير جديد</button></h2>
-   ${rs.length?`<div class="list">${rs.map(x=>remCard(x.r,st)).join('')}</div>`:`<div class="card mut">أضف تذكيرًا بالمسافة (مثلاً كل 5,000 كم) أو بالمدة (كل 12 شهرًا) أو كليهما — يتحدّث تلقائيًا عند تسجيل صيانة بنفس الاسم.</div>`}
-   <p class="note">عند تسجيل صيانة بنفس اسم التذكير، يُعاد ضبطه تلقائيًا. التوقّع بالأيام محسوب من معدل قيادتك الفعلي. إذا تغيّر موعد تذكير، أضفه للتقويم مرة أخرى.</p>`;
-}
 const reportsCtx={get S(){return S},veh,stats,monthStart,today,render:()=>render()};
 const settingsCtx={get S(){return S},get E(){return E},all,cats,CATS,render:()=>render(),
   persist:keys=>{const ok=saveLocal();if(ok)persist(keys);return ok},
   install:()=>({standalone:standalone(),canPrompt:!!deferredPrompt,ios:/iPhone|iPad|iPod/.test(navigator.userAgent)}),
   wipe:()=>{const keys=['g',...Object.keys(E)];Object.keys(E).forEach(k=>E[k]=[]);S=defS();persist(keys);location.hash='home';render();UI.toast(UI.t('set.wiped'))}};
-const SCR={home,car:()=>renderCar(carCtx),log,remind,reports:()=>renderReports(reportsCtx),settings:()=>renderSettings(settingsCtx)};
+const logCtx={get S(){return S},get LF(){return LF},items,veh,render:()=>render()};
+const remCtx={get S(){return S},veh,stats,rstat,render:()=>render()};
+const SCR={home,car:()=>renderCar(carCtx),log:()=>renderLog(logCtx),remind:()=>renderReminders(remCtx),reports:()=>renderReports(reportsCtx),settings:()=>renderSettings(settingsCtx)};
 
-/* ---------- phone calendar ---------- */
-function calSheet(r){
-  const s=rstat(r);if(!s.dueDate)return;const V=veh(r.v),d=s.dueDate.replace(/-/g,''),bd=+(r.before??7)||0;
-  const ttl=(V?V.name+' - ':'')+r.name;
-  const det=`تذكير من تطبيق سيارتي`+(s.km!=null?` — المتبقي ${n(s.km)} كم`:'');
-  const g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(ttl)+'&dates='+d+'T090000/'+d+'T093000&details='+encodeURIComponent(det);
-  openSheet(`<h3>أضف لتقويم الهاتف</h3><p class="mut" style="margin-top:0">${esc(ttl)} · ${fdate(s.dueDate)}${bd?` · تنبيه قبله بـ ${n(bd)} يوم`:''}</p>
-   <div class="fl"><button class="btn pri full" data-act="icsfile" data-id="${esc(r.id)}">ملف تقويم (iPhone وكل التقويمات)</button>
-   <div class="hint">يفتح الملف في تطبيق التقويم مع تنبيه قبل الموعد وتنبيه يوم الموعد.</div>
-   <a class="btn full" style="text-align:center;text-decoration:none;color:var(--ink)" href="${esc(g)}" target="_blank" rel="noopener">فتح في تقويم Google</a>
-   <div class="hint">في تقويم Google يُضاف الموعد بتنبيهك الافتراضي — يمكنك تعديله هناك.</div></div>`);
-}
+/* ---------- phone calendar (.ics) ---------- */
 function icsFor(r){
   const s=rstat(r);if(!s.dueDate)return;const V=veh(r.v),d=s.dueDate.replace(/-/g,''),b=+(r.before??7)||0;
-  const ttl=((V?V.name+' - ':'')+r.name).replace(/[,;\\]/g,' ');
+  const ttl=((V?vehTitle(V)+' - ':'')+r.name).replace(/[,;\\]/g,' ');
   const alarm=t=>['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+ttl,'TRIGGER:'+t,'END:VALARM'];
   const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Sayarati//AR','BEGIN:VEVENT','UID:'+r.id+'-'+d+'@sayarati','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z','DTSTART:'+d+'T090000','DTEND:'+d+'T093000','SUMMARY:'+ttl,...(b?alarm('-P'+b+'D'):[]),...alarm('PT0M'),'END:VEVENT','END:VCALENDAR'];
   give('sayarati-reminder-'+d+'.ics',L.join('\r\n'),'text/calendar');
@@ -426,52 +322,11 @@ let ro=null;
 function render(){
   if(S.vehicles.length&&!veh(S.cur))S.cur=S.vehicles[0].id;
   const t=tab();
-  const isHome=['home','car','reports','settings'].includes(t);
-  $('#top').hidden=isHome;
-  $('#top').innerHTML=isHome?'':header();
   $('#main').innerHTML=SCR[t]();
-  // screens not yet redesigned stay Arabic/RTL until their turn
-  for(const el of [$('#top'),$('#main'),$('#ov')]){if(isHome){el.removeAttribute('dir');el.removeAttribute('lang')}else{el.dir='rtl';el.lang='ar'}}
-  $('#ov').dir='rtl';$('#ov').lang='ar';
-  $('.app').classList.toggle('is-home',isHome);
-  renderNav(t==='car'?'home':t);
+  renderNav(t==='car'?'home':t==='settings'?'':t);
   afterRenderReports(reportsCtx);
 }
 /* ---------- forms ---------- */
-function opts(list,sel){return list.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join('')}
-function openVeh(v){
-  const old=v||null;v=v||{fuel:'M91'};
-  openSheet(`<h3>${old?'تعديل السيارة':'سيارة جديدة'}</h3>
-   <form class="fl" id="vf" novalidate>
-    <label>اسم السيارة<input name="name" value="${esc(v.name||'')}" placeholder="مثال: لاندكروزر 2020"></label>
-    <div class="grid2"><label>رقم اللوحة<input name="plate" value="${esc(v.plate||'')}"></label><label>الوقود<select name="fuel">${opts(FUELS,v.fuel)}</select></label></div>
-    <div class="grid2"><label>سعة الخزان (لتر)<input name="tank" inputmode="numeric" value="${esc(v.tank||'')}"></label><label>قراءة العداد الحالية<input name="odo0" inputmode="numeric" value="${esc(v.odo0||'')}"></label></div>
-    <div class="ferr"></div>
-    <button class="btn pri full" type="submit">حفظ</button>
-    ${old?'<button class="btn dan full" type="button" id="vdel">حذف السيارة وكل سجلاتها</button>':''}
-   </form>`,b=>{
-    const f=$('#vf',b);
-    f.addEventListener('submit',e=>{e.preventDefault();
-      const name=f.name.value.trim();if(!name){$('.ferr',f).textContent='أدخل اسم السيارة';return}
-      const nv={id:old?old.id:uidg(),name,plate:f.plate.value.trim(),fuel:f.fuel.value,tank:+f.tank.value||0,odo0:+f.odo0.value||0};
-      if(old)S.vehicles=S.vehicles.map(z=>z.id===nv.id?nv:z);else{S.vehicles.push(nv);S.cur=nv.id}
-      persist(['g']);closeSheet();render();toast(old?'تم الحفظ':'أُضيفت السيارة — سجّل أول تعبئة');
-    });
-    const d=$('#vdel',b);if(d)d.addEventListener('click',()=>confirmSheet('حذف «'+old.name+'» وكل سجلاتها؟ لا يمكن التراجع.','حذف نهائي',()=>{
-      const keys=['g'];Object.keys(E).forEach(k=>{const before=E[k].length;E[k]=E[k].filter(z=>z.v!==old.id);if(E[k].length!==before)keys.push(k)});
-      S.vehicles=S.vehicles.filter(z=>z.id!==old.id);S.reminders=S.reminders.filter(r=>r.v!==old.id);S.cur=S.vehicles[0]?.id||null;
-      persist(keys);render();toast('تم حذف السيارة')}));
-  });
-}
-function confirmSheet(msg,btn,fn){
-  openSheet(`<h3>تأكيد</h3><p>${esc(msg)}</p><div class="grid2"><button class="btn" id="cno">إلغاء</button><button class="btn pri" id="cyes">${esc(btn)}</button></div>`,b=>{
-    $('#cno',b).addEventListener('click',closeSheet);$('#cyes',b).addEventListener('click',()=>{closeSheet();fn()});});
-}
-function pickVeh(){
-  openSheet(`<h3>اختر السيارة</h3><div class="vlist">${S.vehicles.map(v=>`<button class="${v.id===S.cur?'on':''}" data-act="setveh" data-id="${esc(v.id)}"><span><b>${esc(v.name)}</b><br><small class="mut">${esc(v.plate||'')}</small></span><span class="num">${n(curOdo(v.id))} كم</span></button>`).join('')}</div>
-   <button class="btn full" data-act="addveh">+ إضافة سيارة</button>`);
-}
-
 /* ---------- backup ---------- */
 function download(name,text,mime){
   const u=URL.createObjectURL(new Blob([text],{type:mime}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
@@ -480,7 +335,7 @@ async function give(name,text,mime){
   if(/calendar/.test(mime)){
     const file=new File([text],name,{type:mime});
     if(/iPhone|iPad|iPod/.test(navigator.userAgent)){location.href='data:text/calendar;charset=utf-8,'+encodeURIComponent(text);return}
-    download(name,text,mime);toast('افتح الملف المنزّل لإضافته للتقويم');return;
+    download(name,text,mime);UI.toast(UI.t('rems.calOpened'));return;
   }
   download(name,text,mime);UI.toast(UI.t('set.exported'),{tone:'success'});
 }
@@ -532,25 +387,20 @@ document.addEventListener('click',e=>{
   if(a==='fab')openTypePicker(entryCtx);
   else if(a==='add')openEntryForm(entryCtx,b.dataset.t);
   else if(a==='edit'){const x=all().find(z=>z.id===id);if(x)openEntryForm(entryCtx,x.t,x)}
-  else if(a==='pickveh'){if(S.vehicles.length)pickVeh();else openVeh()}
-  else if(a==='setveh'){S.cur=id;persist(['g']);closeSheet();render()}
   else if(a==='addveh')openVehicleEditor(carCtx);
   else if(a==='editveh')openVehicleEditor(carCtx,id);
   else if(a==='addrem')openReminderForm(entryCtx);
   else if(a==='editrem')openReminderForm(entryCtx,id);
   else if(a==='donerem'){const r=S.reminders.find(z=>z.id===id);if(r){const c=r.cat||r.name,isS=!cats('expense').includes(c);closeSheet();openEntryForm(entryCtx,isS?'service':'expense',null,{cat:c,odo:curOdo(r.v)})}}
-  else if(a==='ics'){const r=S.reminders.find(z=>z.id===id);if(r)calSheet(r)}
+  else if(a==='ics'){const r=S.reminders.find(z=>z.id===id);if(r)openCalendarSheet(remCtx,r)}
   else if(a==='icsfile'){const r=S.reminders.find(z=>z.id===id);closeSheet();if(r)icsFor(r)}
   else if(a==='drvsave')driveSave();
   else if(a==='install')doInstall();
-  else if(a==='filter'){LF.t=b.dataset.t;render()}
-  else if(a==='undo'){const u=toast.undo;$('#toast').innerHTML='';toast.undo=null;if(u)u()}
   else if(a==='expjson')give('sayarati-backup-'+today()+'.json',backupText(),'application/json');
   else if(a==='expcsv')give('sayarati-'+today()+'.csv',csv(),'text/csv');
   else if(a==='demo')demo();
 });
 document.addEventListener('input',e=>{
-  if(e.target.id==='q'){LF.q=e.target.value;$('#loglist').innerHTML=logList()}
 });
 document.addEventListener('change',e=>{
   const t=e.target;
@@ -583,6 +433,7 @@ initHome(homeCtx);
 initCar(carCtx);
 initReports(reportsCtx);
 initSettings(settingsCtx);
+initLog(logCtx);
 document.addEventListener('mc:lang',()=>render());
 document.addEventListener('mc:theme',()=>render());
 loadLocal();render();

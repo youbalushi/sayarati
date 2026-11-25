@@ -35,7 +35,7 @@ for (const tab of ['log', 'remind', 'reports', 'settings']) {
   ok(`tab #${tab} renders`, (await p.evaluate(() => document.getElementById('main').innerHTML.length)) > 200);
 }
 await p.evaluate(() => { location.hash = 'log'; }); await p.waitForTimeout(250);
-await p.click('.row[data-act=edit]'); await p.waitForTimeout(250);
+await p.click('.lg [data-act=edit]'); await p.waitForTimeout(250);
 await p.click('#en-del'); await p.waitForTimeout(250);
 const n2 = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat().length);
 await p.click('.mc-toast__action'); await p.waitForTimeout(250);
@@ -127,7 +127,7 @@ ok('home: + opens the add picker', await p.isVisible('.en-types')); await p.keyb
 await p.click('[data-mc-menu=hm-menu]'); await p.click('#hm-menu [data-action=hm-lang][data-value=en]'); await p.waitForTimeout(300);
 ok('home: English switches to LTR', await p.evaluate(() => document.documentElement.dir === 'ltr' && /Odometer/.test(document.querySelector('.hm-odo').textContent)));
 await p.evaluate(() => { location.hash = 'log'; }); await p.waitForTimeout(250);
-ok('legacy screen stays Arabic RTL while in English', await p.evaluate(() => document.getElementById('main').dir === 'rtl'));
+ok('log follows the language (English, LTR)', await p.evaluate(() => !document.getElementById('main').hasAttribute('dir') && document.documentElement.dir === 'ltr' && document.querySelector('.lg h1').textContent === 'Log'));
 await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250);
 await p.click('[data-mc-menu=hm-menu]'); await p.click('#hm-menu [data-action=hm-theme][data-value=dark]'); await p.waitForTimeout(250);
 ok('home: theme menu switches to dark', await p.evaluate(() => document.documentElement.dataset.theme === 'dark'));
@@ -274,7 +274,7 @@ ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'
   await q.evaluate(() => { location.hash = 'home'; }); await q.waitForTimeout(250);
   ok('rem: alert off → not on Home', !(await q.evaluate(id => [...document.querySelectorAll('.hm [data-id]')].some(x => x.dataset.id === id), added.id)));
   await q.evaluate(() => { location.hash = 'remind'; }); await q.waitForTimeout(250);
-  ok('rem: alert off → no calendar button, still listed', await q.evaluate(id => { const c = document.querySelector(`[data-act=donerem][data-id="${id}"]`)?.closest('.rem'); return c && !c.querySelector('[data-act=ics]') && /التنبيه متوقف/.test(c.textContent); }, added.id));
+  ok('rem: alert off → no calendar button, still listed', await q.evaluate(id => { const c = document.querySelector(`[data-act=donerem][data-id="${id}"]`)?.closest('.rl-card'); return c && !c.querySelector('[data-act=ics]') && /التنبيه متوقف/.test(c.textContent); }, added.id));
   // complete: "done" → service form → reminder rolls forward by its repeat
   await q.click(`[data-act=donerem][data-id="${added.id}"]`); await q.waitForTimeout(350);
   ok('rem: done opens the service form with the reminder type', await q.evaluate(() => document.getElementById('en-cat').value === 'تغيير زيت المحرك'));
@@ -390,6 +390,64 @@ ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'
   const csvT = csvD ? (await import('node:fs')).readFileSync(await csvD.path(), 'utf8') : '';
   ok('CSV: one row per record + header', csvT.trim().split('\n').length === Object.values(back.E).flat().length + 1);
   await c5.close();
+}
+
+// ---------- log + reminders list (design system) ----------
+{
+  const c6 = await b.newContext({ viewport: { width: 390, height: 700 }, acceptDownloads: true }); const q = await c6.newPage();
+  q.on('pageerror', e => issues.push('lr pageerror: ' + e.message)); q.on('console', m => { if (m.type() === 'error') issues.push('lr console.error: ' + m.text()); });
+  await q.goto(`${BASE}/index.html#log`); await q.waitForTimeout(400);
+  ok('log: empty state without a car', await q.isVisible('.lg [data-act=addveh]'));
+  await q.click('.lg [data-act=demo]'); await q.waitForTimeout(300); await q.evaluate(() => { location.hash = 'log'; }); await q.waitForTimeout(300);
+  const D = await q.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1'))); const recs = Object.values(D.E).flat().filter(x => x.v === D.S.cur);
+  ok('log: every record listed, grouped by month', await q.evaluate(n => document.querySelectorAll('.lg [data-act=edit]').length === n && document.querySelectorAll('.lg-month').length > 3, recs.length));
+  const m0 = recs.map(x => x.d.slice(0, 7)).sort().pop(); const sp = recs.filter(x => x.d.startsWith(m0) && x.t !== 'income').reduce((s, x) => s + x.cost, 0);
+  ok('log: month total = that month’s spending', await q.evaluate(() => parseFloat(document.querySelector('.lg-month__head > span .mc-num').textContent.replace(/,/g, ''))) === +sp.toFixed(3));
+  await q.click('[data-log-type=service]'); await q.waitForTimeout(250);
+  ok('log: type filter', await q.evaluate(n => document.querySelectorAll('.lg [data-act=edit]').length === n && document.querySelector('[data-log-type=service]').getAttribute('aria-pressed') === 'true', recs.filter(x => x.t === 'service').length));
+  await q.click('[data-log-type=all]'); await q.waitForTimeout(250);
+  await q.fill('#q', 'غسيل'); await q.waitForTimeout(150);
+  ok('log: search filters as you type and keeps focus', await q.evaluate(n => document.querySelectorAll('.lg [data-act=edit]').length === n && document.activeElement.id === 'q', recs.filter(x => x.cat === 'غسيل').length));
+  await q.fill('#q', 'zzzz'); await q.waitForTimeout(150);
+  ok('log: no-match state', await q.evaluate(() => /لا توجد سجلات مطابقة/.test(document.getElementById('loglist').textContent)));
+  await q.fill('#q', ''); await q.waitForTimeout(150);
+  const partial = recs.find(x => x.t === 'fuel' && !x.full);
+  ok('log: partial fill is labelled', !partial || await q.evaluate(id => /خزان غير ممتلئ/.test(document.querySelector(`.lg [data-act=edit][data-id="${id}"]`).textContent), partial.id));
+  await q.click('.lg [data-act=edit]'); await q.waitForTimeout(350);
+  ok('log: tapping a record opens its edit form', await q.evaluate(() => !!document.getElementById('en-del')));
+  await q.keyboard.press('Escape'); await q.waitForTimeout(250);
+  // the car page "see all" for a tab opens the log filtered
+  await q.evaluate(() => { location.hash = 'car'; }); await q.waitForTimeout(300);
+  const carLog = await q.$('[data-car-log]');
+  if (carLog) { await carLog.click(); await q.waitForTimeout(350); ok('log: opened pre-filtered from the car page', await q.evaluate(() => location.hash === '#log' && document.querySelector('.lg-filter [aria-pressed=true]').dataset.logType !== 'all')); await q.click('[data-log-type=all]'); await q.waitForTimeout(200); }
+  // reminders list
+  await q.evaluate(() => { location.hash = 'remind'; }); await q.waitForTimeout(300);
+  const nR = D.S.reminders.filter(r => r.v === D.S.cur).length;
+  ok('reminders: one card per reminder with status, progress and actions', await q.evaluate(n => document.querySelectorAll('.rl-card').length === n && [...document.querySelectorAll('.rl-card')].every(c => c.querySelector('.mc-badge') && c.querySelector('[role=progressbar]') && c.querySelector('[data-act=donerem]') && c.querySelector('[data-act=editrem]')), nR));
+  ok('reminders: sorted most urgent first', await q.evaluate(() => { const v = [...document.querySelectorAll('.rl-card [role=progressbar]')].map(e => +e.getAttribute('aria-valuenow')); return v.every((x, i) => !i || v[i - 1] >= x); }));
+  await q.click('.rl [data-act=addrem]'); await q.waitForTimeout(400);
+  ok('reminders: add opens the reminder form', await q.evaluate(() => !!document.getElementById('rm-form')));
+  await q.keyboard.press('Escape'); await q.waitForTimeout(250);
+  await q.click('.rl-card [data-act=editrem]'); await q.waitForTimeout(400);
+  ok('reminders: edit opens the reminder form with its data', await q.evaluate(() => !!document.getElementById('rm-del') && document.getElementById('rm-name').value.length > 0));
+  await q.keyboard.press('Escape'); await q.waitForTimeout(250);
+  await q.click('.rl-card [data-act=ics]'); await q.waitForTimeout(350);
+  ok('reminders: calendar sheet offers file + Google Calendar', await q.evaluate(() => !!document.querySelector('.mc-scrim [data-act=icsfile]') && /calendar\.google\.com/.test(document.querySelector('.mc-scrim a[href*=google]').href)));
+  const [ics] = await Promise.all([q.waitForEvent('download', { timeout: 4000 }).catch(() => null), q.click('.mc-scrim [data-act=icsfile]')]);
+  const icsT = ics ? (await import('node:fs')).readFileSync(await ics.path(), 'utf8') : '';
+  ok('reminders: .ics has the event + alarms and the sheet closes', /BEGIN:VEVENT/.test(icsT) && /BEGIN:VALARM/.test(icsT) && /Camry/.test(icsT) && await q.evaluate(() => !document.querySelector('.mc-scrim.is-open')));
+  await q.click('.rl-card [data-act=donerem]'); await q.waitForTimeout(350);
+  ok('reminders: done opens the service form with its type', await q.evaluate(() => !!document.getElementById('en-form') && document.getElementById('en-cat').value.length > 0));
+  await q.keyboard.press('Escape'); await q.waitForTimeout(250);
+  // English + dark, and nothing hidden under the bottom bar
+  await q.evaluate(() => { localStorage.setItem('mc-lang', 'en'); localStorage.setItem('mc-theme', 'dark'); }); await q.reload(); await q.waitForTimeout(400);
+  ok('reminders: English labels', await q.evaluate(() => document.querySelector('.rl h1').textContent === 'Reminders' && /Done/.test(document.querySelector('.rl-card [data-act=donerem]').textContent)));
+  for (const h of ['home', 'car', 'log', 'remind', 'reports', 'settings']) {
+    await q.evaluate(x => { location.hash = x; }, h); await q.waitForTimeout(350);
+    ok(`#${h}: last content clears the bottom bar; no sideways scroll`, await q.evaluate(() => { scrollTo(0, 1e6); const nav = document.getElementById('nav-bottom').getBoundingClientRect().top;
+      const els = [...document.querySelectorAll('#main *')].filter(e => e.offsetParent && !e.children.length); return Math.max(...els.map(e => e.getBoundingClientRect().bottom)) <= nav && document.documentElement.scrollWidth <= innerWidth; }));
+  }
+  await c6.close();
 }
 await b.close();
 
