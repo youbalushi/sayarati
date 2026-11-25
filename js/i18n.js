@@ -23,7 +23,7 @@ export const STRINGS = {
       upcoming: 'التذكيرات القادمة', noReminders: 'لا توجد تذكيرات بعد', recent: 'آخر العمليات', seeAll: 'عرض الكل',
       noRecords: 'لا توجد عمليات بعد', noRecordsText: 'اضغط زر + لتسجيل أول تعبئة أو صيانة.',
       inKm: 'بعد {n} كم', overKm: 'متأخر {n} كم', inDays: 'بعد {n} يوم', overDays: 'متأخر {n} يوم', due: 'مستحق', soon: 'قريبًا', ok: 'جيد',
-      welcomeTitle: 'سجل سيارتك، بدون إعلانات', welcomeText: 'تابع الوقود والصيانة والمصاريف، واعرف استهلاك سيارتك وتكلفة كل كيلومتر.', tryDemo: 'جرّب ببيانات نموذجية',
+      welcomeTitle: 'كل تفاصيل سيارتك في مكان واحد', welcomeText: 'تابع الوقود والصيانة والمصاريف، واعرف استهلاك سيارتك وتكلفة كل كيلومتر.', tryDemo: 'جرّب ببيانات نموذجية',
       viewOptions: 'خيارات', settings: 'الإعدادات', noPhoto: 'لا توجد صورة', liter: 'لتر'
     }
   },
@@ -49,7 +49,7 @@ export const STRINGS = {
       upcoming: 'Upcoming reminders', noReminders: 'No reminders yet', recent: 'Recent activity', seeAll: 'See all',
       noRecords: 'No activity yet', noRecordsText: 'Tap + to log your first fill-up or service.',
       inKm: 'In {n} km', overKm: '{n} km overdue', inDays: 'In {n} days', overDays: '{n} days overdue', due: 'Due', soon: 'Soon', ok: 'Good',
-      welcomeTitle: 'Your car log, without ads', welcomeText: 'Track fuel, service and expenses, and see your consumption and cost per km.', tryDemo: 'Try with sample data',
+      welcomeTitle: 'Everything about your car in one place', welcomeText: 'Track fuel, service and expenses, and see your consumption and cost per km.', tryDemo: 'Try with sample data',
       viewOptions: 'Options', settings: 'Settings', noPhoto: 'No photo', liter: 'L'
     }
   }
