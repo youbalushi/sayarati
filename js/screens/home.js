@@ -43,11 +43,12 @@ function carCard(ctx, V, odo, odoDate) {
   const photo = safePhoto(V.photo);
   return `<section class="mc-card hm-car" aria-label="${esc(V.name)}">
     <div class="hm-car__top">
-      <div class="hm-car__photo${photo ? '' : ' is-empty'}">${photo ? `<img src="${photo}" alt="${esc(V.name)}">` : `${icon('car')}<span class="mc-visually-hidden">${esc(t('home.noPhoto'))}</span>`}</div>
+      <a class="hm-car__link" href="#car" aria-label="${esc(V.name)} — ${esc(t('car.title'))}">
+      <div class="hm-car__photo${photo ? '' : ' is-empty'}">${photo ? `<img src="${photo}" alt="">` : `${icon('car')}<span class="mc-visually-hidden">${esc(t('home.noPhoto'))}</span>`}</div>
       <div class="hm-car__id">
         <h2 class="mc-title hm-car__name">${esc(V.name)}</h2>
-        <div class="hm-car__meta">${V.plate ? `<span class="mc-small mc-muted">${esc(V.plate)}</span>` : ''}${V.fuel ? badge(V.fuel, 'neutral') : ''}</div>
-      </div>
+        <div class="hm-car__meta">${[V.model, V.year].filter(Boolean).length ? `<span class="mc-small mc-muted">${[V.model, V.year].filter(Boolean).map(esc).join(' · ')}</span>` : V.plate ? `<span class="mc-small mc-muted">${esc(V.plate)}</span>` : ''}${V.fuel ? badge(V.fuel, 'neutral') : ''}</div>
+      </div>${icon('chevron-right')}</a>
       ${button(t('home.switchCar'), { variant: 'tonal', size: 'sm', iconEnd: 'chevron-down', attrs: 'data-home="switch" aria-haspopup="dialog"' })}
     </div>
     <div class="hm-odo">

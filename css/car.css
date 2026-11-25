@@ -1,0 +1,55 @@
+/* سيارتي · My Car — Vehicle details (cd-). Design-system tokens only. */
+.cd-appbar{padding-inline:var(--space-2)}
+.cd-grid{display:grid;gap:var(--space-4);padding-block:var(--space-4) var(--space-6)}
+.cd-col{display:grid;gap:var(--space-3);align-content:start}
+
+/* Hero: photo + identity + key facts */
+.cd-photo{position:relative;aspect-ratio:16/9;background:var(--color-surface-sunken);display:grid;place-items:center;overflow:hidden}
+.cd-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.cd-photo.is-empty{background:var(--color-primary-soft);color:var(--color-primary-text);align-content:center;gap:var(--space-1);justify-items:center}
+.cd-photo.is-empty>.mc-icon{width:56px;height:56px;stroke-width:1.6}
+.cd-photo__btn{position:absolute;inset-block-end:var(--space-3);inset-inline-end:var(--space-3);--_bg:var(--color-surface);--_bd:transparent;box-shadow:var(--shadow-2)}
+.cd-id{padding:var(--space-4) var(--space-4) 0;display:grid;gap:var(--space-1)}
+.cd-id__meta{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap}
+.cd-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:var(--space-4) 0 0;border-block-start:1px solid var(--color-border)}
+.cd-facts>div{padding:var(--space-3) var(--space-4)}
+.cd-facts>div+div{border-inline-start:1px solid var(--color-border)}
+.cd-facts dt{font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
+.cd-facts dd{margin:0;font-size:var(--fs-h3);line-height:var(--lh-h3);font-weight:var(--fw-bold)}
+.cd-facts--list{grid-template-columns:minmax(0,1fr);margin:0;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.cd-facts--list>div{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3)}
+.cd-facts--list>div+div{border-inline-start:0;border-block-start:1px solid var(--color-border)}
+.cd-facts--list dd{font-size:var(--fs-body);font-weight:var(--fw-semibold);display:flex;gap:var(--space-2);align-items:center}
+
+/* Expense summary */
+.cd-sum__total{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:var(--fw-bold);margin-block-end:var(--space-3)}
+.cd-bar{display:flex;height:10px;border-radius:var(--radius-full);overflow:hidden;background:var(--color-surface-sunken);gap:2px}
+.cd-bar>span{background:var(--_solid);min-width:0}
+.cd-legend{list-style:none;margin:var(--space-3) 0 0;padding:0;display:grid;gap:var(--space-2)}
+.cd-legend li{display:flex;align-items:center;gap:var(--space-2);font-size:var(--fs-small);line-height:var(--lh-small)}
+.cd-legend i{width:10px;height:10px;border-radius:3px;background:var(--_solid);flex:none}
+.cd-legend span{flex:1;color:var(--color-text-secondary)}
+
+/* Tabs + panels */
+.cd-tabs-wrap .mc-tabs{margin-block-end:var(--space-3)}
+.cd-panel{display:grid;gap:var(--space-3)}
+.cd-panel__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);flex-wrap:wrap}
+.cd-more{margin-inline-start:auto}
+.cd-empty{padding-block:var(--space-6);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg)}
+
+/* Editors */
+.cd-edit-photo{display:flex;align-items:center;gap:var(--space-4)}
+.cd-edit-photo__img{width:96px;height:72px;border-radius:var(--radius-md);overflow:hidden;flex:none;display:grid;place-items:center;background:var(--color-surface-sunken)}
+.cd-edit-photo__img img{width:100%;height:100%;object-fit:cover}
+.cd-edit-photo__img.is-empty{background:var(--color-primary-soft);color:var(--color-primary-text)}
+.cd-doc-img{height:140px;border-radius:var(--radius-md);overflow:hidden;display:grid;place-items:center;background:var(--color-surface-sunken);border:1px dashed var(--color-border-strong)}
+.cd-doc-img img{width:100%;height:100%;object-fit:contain}
+.cd-doc-img.is-empty{color:var(--color-text-secondary)}
+.cd-doc-img.is-empty .mc-icon{width:32px;height:32px}
+.cd-doc-full{width:100%;max-height:50dvh;object-fit:contain;border-radius:var(--radius-md);background:var(--color-surface-sunken)}
+
+@media (min-width:900px){
+  .cd .mc-container{max-width:var(--size-content-wide);padding-inline:var(--space-8)}
+  .cd-appbar{padding-inline:var(--space-6)}
+  .cd-grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--space-6);padding-block:var(--space-6)}
+}

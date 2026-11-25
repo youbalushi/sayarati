@@ -68,7 +68,7 @@ ok('home: tapping an activity opens its edit form', await p.isVisible('#ef'));
 await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 // switch cars: add a second car, then switch back through the sheet
 await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('[data-addcar]'); await p.waitForTimeout(500);
-await p.fill('#vf input[name=name]', 'Second car'); await p.click('#vf button[type=submit]'); await p.waitForTimeout(300);
+await p.fill('#ve-name', 'Second car'); await p.click('#ve-save'); await p.waitForTimeout(300);
 ok('home: new car becomes current', (await p.textContent('.hm-car__name')).includes('Second car'));
 await p.click('[data-home=switch]'); await p.waitForTimeout(300);
 const cars = await p.$$eval('.mc-scrim [data-car]', els => els.length);
@@ -90,6 +90,39 @@ ok('home: no horizontal overflow', await p.evaluate(() => document.documentEleme
 await p.setViewportSize({ width: 1440, height: 900 }); await p.waitForTimeout(300);
 ok('desktop: side rail replaces bottom nav', await p.evaluate(() => getComputedStyle(document.getElementById('nav-rail')).display !== 'none' && getComputedStyle(document.getElementById('nav-bottom')).display === 'none'));
 ok('desktop: two-column home', await p.evaluate(() => getComputedStyle(document.querySelector('.hm-grid')).gridTemplateColumns.split(' ').length === 2));
+/* ---- vehicle details (#car) ---- */
+await p.setViewportSize({ width: 390, height: 844 });
+await p.click('.hm-car__link'); await p.waitForTimeout(300);
+ok('car: home card opens #car', await p.evaluate(() => location.hash === '#car' && !!document.querySelector('.cd h1')));
+ok('car: plate + odometer facts, expense summary, 4 tabs', await p.evaluate(() => document.querySelectorAll('.cd-facts>div').length === 2 && !!document.querySelector('.cd-sum__total') && document.querySelectorAll('[data-car-tab]').length === 4));
+const sumOk = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.cur; const tot = Object.values(d.E).flat().filter(x => x.v === v && x.t !== 'income').reduce((a, x) => a + (+x.cost || 0), 0); return Math.abs(parseFloat(document.querySelector('.cd-sum__total').textContent.replace(/[^\d.]/g, '')) - tot) < 0.01; });
+ok('car: expense total equals stored records', sumOk);
+const nService = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); return Object.values(d.E).flat().filter(x => x.v === d.S.cur && x.t === 'service').length; });
+ok('car: service tab lists the car\'s service records', (await p.$$eval('#cd-panel .mc-list-item', e => e.length)) === Math.min(20, nService), String(nService));
+await p.click('[data-car-tab=fuel]'); await p.waitForTimeout(200);
+ok('car: fuel tab shows fill-ups', (await p.$$eval('#cd-panel .mc-list-item', e => e.length)) > 0);
+await p.focus('[data-car-tab=fuel]'); await p.keyboard.press(await p.evaluate(() => document.documentElement.dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight')); await p.waitForTimeout(200);
+ok('car: arrow keys move between tabs', await p.evaluate(() => document.activeElement.dataset.carTab === 'reminders' && document.querySelector('[data-car-tab=reminders]').getAttribute('aria-selected') === 'true'));
+// photo from gallery
+const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP4z8DAwMDAxMDAwMDAAAANHQEDK+mmyAAAAABJRU5ErkJggg==';
+await p.setInputFiles('[data-car=photo]', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(500);
+ok('car: photo from gallery is stored and shown', await p.evaluate(() => { const v = JSON.parse(localStorage.getItem('sayarati-v1')).S.vehicles.find(x => x.id === JSON.parse(localStorage.getItem('sayarati-v1')).S.cur); return /^data:image\/jpeg;base64,/.test(v.photo) && !!document.querySelector('.cd-photo img'); }));
+// edit: Arabic digits, validation
+await p.click('[data-car=edit]'); await p.waitForTimeout(300);
+await p.fill('#ve-name', ''); await p.click('#ve-save'); await p.waitForTimeout(150);
+ok('car: empty name is rejected with a message', await p.evaluate(() => document.getElementById('ve-name').getAttribute('aria-invalid') === 'true' && !!document.querySelector('#ve-err [role=alert]')));
+await p.fill('#ve-name', 'تويوتا كامري 2021'); await p.fill('#ve-year', '٢٠٢١'); await p.fill('#ve-model', 'Camry'); await p.click('#ve-save'); await p.waitForTimeout(300);
+ok('car: edits saved (Arabic-digit year → 2021)', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.year === 2021 && v.model === 'Camry' && v.odo0 === 62000; }));
+// documents
+await p.click('[data-car-tab=docs]'); await p.waitForTimeout(200); await p.click('#cd-panel [data-car=doc-add]'); await p.waitForTimeout(300);
+await p.fill('#de-exp', '2020-01-01'); await p.click('#de-save'); await p.waitForTimeout(300);
+ok('car: document saved, expired badge shown', await p.evaluate(() => (JSON.parse(localStorage.getItem('sayarati-v1')).S.docs || []).length === 1 && /danger/.test(document.querySelector('#cd-panel .mc-badge').className)));
+await p.click('#cd-panel [data-car=doc-open]'); await p.waitForTimeout(300); await p.click('#dv-del'); await p.waitForTimeout(350); await p.click('[data-mc-ok]'); await p.waitForTimeout(300);
+ok('car: document delete (with confirm)', await p.evaluate(() => (JSON.parse(localStorage.getItem('sayarati-v1')).S.docs || []).length === 0));
+const [bk2] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.evaluate(() => { location.hash = 'settings'; }).then(() => p.waitForTimeout(250)).then(() => p.click('[data-act=drvsave]'))]);
+const bkText = bk2 ? (await import('node:fs')).readFileSync(await bk2.path(), 'utf8') : '';
+ok('backup includes the new vehicle fields', /"model":"Camry"/.test(bkText) && /"photo":"data:image/.test(bkText));
+ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'; return true; }) && await p.waitForTimeout(200).then(() => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)));
 await b.close();
 
 let f = 0; for (const r of results) { if (!r.pass) f++; console.log(`${r.pass ? '✓' : '✗'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`); }

@@ -174,7 +174,8 @@ function trap(e) {
   if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
-window.addEventListener('popstate', () => { if (openLayer && openLayer.pushed) { openLayer.pushed = false; closeSheet(); } });
+let skipPop = 0; // history.back() we triggered ourselves must not close the next sheet
+window.addEventListener('popstate', () => { if (skipPop) { skipPop--; return; } if (openLayer && openLayer.pushed) { openLayer.pushed = false; closeSheet(); } });
 
 /** openSheet({title, body, footer, dialog, center, onClose}) → root. Esc, scrim tap and Back close it. */
 export function openSheet({ title = '', body = '', footer = '', dialog = false, center = false, onClose } = {}) {
@@ -204,7 +205,7 @@ export function closeSheet(silent = false) {
   const { el, onClose, prevFocus, pushed } = openLayer; openLayer = null;
   document.removeEventListener('keydown', trap);
   document.body.style.overflow = '';
-  if (pushed && !silent) { try { history.back(); } catch (e) {} }
+  if (pushed && !silent) { try { skipPop++; history.back(); } catch (e) { skipPop = Math.max(0, skipPop - 1); } }
   el.classList.remove('is-open'); setTimeout(() => el.remove(), 200);
   prevFocus && prevFocus.focus && prevFocus.focus({ preventScroll: true });
   onClose && onClose();

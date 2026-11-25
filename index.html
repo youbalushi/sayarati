@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/car.css">
 <script>
 /* theme + language before first paint (design system prefs: mc-theme / mc-lang) */
 (function(){var g=function(k){try{return localStorage.getItem(k)}catch(e){return null}};var l=g('mc-lang')||'ar',th=g('mc-theme')||'auto';
@@ -152,7 +153,7 @@ h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;
 .ov{z-index:45}.toast{z-index:60}
 .app.is-home{max-width:none}
 .app.is-home #main{padding:0}
-.hm h1,.hm h2{display:block}
+.hm h1,.hm h2,.cd h1,.cd h2,.cd h3{display:block}
 @media(min-width:900px){.app.is-home{padding-inline-start:var(--size-rail)}}
 </style>
 </head>
@@ -168,6 +169,7 @@ h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;
 <script type="module">
 import * as UI from './js/ui.js';
 import { renderHome, initHome } from './js/screens/home.js';
+import { renderCar, initCar, openVehicleEditor } from './js/screens/car.js';
 {
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -245,9 +247,9 @@ function rstat(r,st){
 /* ---------- storage: local cache + private cloud doc ---------- */
 let db=null,gRef=null,yCol=null,dirty=new Set(),pt=0,syncMsg='محفوظ على هذا الجهاز';
 const qs={};
-function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({S,E}))}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({S,E}));return true}catch(e){return false}}
 function loadLocal(){try{const x=JSON.parse(localStorage.getItem(LS)||localStorage.getItem(LS_OLD)||'null');if(x&&x.S){S=Object.assign(defS(),x.S);S.set=Object.assign(defS().set,x.S.set||{});E=x.E||{}}}catch(e){}}
-function persist(keys){saveLocal();if(!db)return;keys.forEach(k=>dirty.add(k));clearTimeout(pt);pt=setTimeout(flush,500)}
+function persist(keys){const ok=saveLocal();if(!ok)UI.toast(UI.t('car.storageFull'),{tone:'danger',duration:6000});if(!db)return ok;keys.forEach(k=>dirty.add(k));clearTimeout(pt);pt=setTimeout(flush,500)}
 function flush(){
   for(const k of [...dirty]){
     dirty.delete(k);
@@ -275,7 +277,7 @@ function closeSheet(){const ov=$('#ov');ov.classList.remove('on');setTimeout(()=
 $('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeSheet()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)closeSheet()});
 
-const tab=()=>{const h=location.hash.slice(1);return ['home','log','remind','reports','settings'].includes(h)?h:'home'};
+const tab=()=>{const h=location.hash.slice(1);return ['home','car','log','remind','reports','settings'].includes(h)?h:'home'};
 
 function header(){
   const V=veh(S.cur);
@@ -333,7 +335,15 @@ function remCard(r,st){
 /* ---------- screens ---------- */
 function home(){return renderHome(homeCtx)}
 const homeCtx={get S(){return S},veh,curOdo,stats,rstat,items,monthStart,
-  selectCar:id=>{S.cur=id;persist(['g']);render()},addCar:()=>openVeh()};
+  selectCar:id=>{S.cur=id;persist(['g']);render()},addCar:()=>openVehicleEditor(carCtx)};
+const carCtx={get S(){return S},veh,curOdo,stats,rstat,items,uid:uidg,render:()=>render(),
+  save:keys=>{const ok=saveLocal();if(ok&&db)persist(keys);return ok},
+  setLogFilter:t=>{LF.t=t},deleteVehicle};
+function deleteVehicle(id){
+  const keys=['g'];Object.keys(E).forEach(k=>{const before=E[k].length;E[k]=E[k].filter(z=>z.v!==id);if(E[k].length!==before)keys.push(k)});
+  S.vehicles=S.vehicles.filter(z=>z.id!==id);S.reminders=S.reminders.filter(r=>r.v!==id);S.docs=(S.docs||[]).filter(d=>d.v!==id);S.cur=S.vehicles[0]?.id||null;
+  persist(keys);render();
+}
 
 let LF={t:'all',q:''};
 function logList(){
@@ -425,7 +435,7 @@ function settings(){
    ${installBox()}
    <p class="note">سيارتي — كل تفاصيل سيارتك في مكان واحد. بياناتك محفوظة على جهازك فقط، ولا تُرسل لأي خادم.</p>`;
 }
-const SCR={home,log,remind,reports,settings};
+const SCR={home,car:()=>renderCar(carCtx),log,remind,reports,settings};
 let CT='service';
 
 /* ---------- categories ---------- */
@@ -481,7 +491,7 @@ let ro=null;
 function render(){
   if(S.vehicles.length&&!veh(S.cur))S.cur=S.vehicles[0].id;
   const t=tab();
-  const isHome=t==='home';
+  const isHome=t==='home'||t==='car';
   $('#top').hidden=isHome;
   $('#top').innerHTML=isHome?'':header();
   $('#main').innerHTML=SCR[t]();
@@ -489,7 +499,7 @@ function render(){
   for(const el of [$('#top'),$('#main'),$('#ov')]){if(isHome){el.removeAttribute('dir');el.removeAttribute('lang')}else{el.dir='rtl';el.lang='ar'}}
   $('#ov').dir='rtl';$('#ov').lang='ar';
   $('.app').classList.toggle('is-home',isHome);
-  renderNav(t);
+  renderNav(t==='car'?'home':t);
   drawCons();
 }
 function drawCons(){
@@ -704,8 +714,8 @@ document.addEventListener('click',e=>{
   else if(a==='edit'){const x=all().find(z=>z.id===id);if(x)openEntry(x.t,x)}
   else if(a==='pickveh'){if(S.vehicles.length)pickVeh();else openVeh()}
   else if(a==='setveh'){S.cur=id;persist(['g']);closeSheet();render()}
-  else if(a==='addveh')openVeh();
-  else if(a==='editveh')openVeh(veh(id));
+  else if(a==='addveh')openVehicleEditor(carCtx);
+  else if(a==='editveh')openVehicleEditor(carCtx,id);
   else if(a==='addrem'){if(!S.vehicles.length)openVeh();else openRem()}
   else if(a==='editrem')openRem(S.reminders.find(r=>r.id===id));
   else if(a==='donerem'){const r=S.reminders.find(z=>z.id===id);if(r){const isS=!cats('expense').includes(r.name);openEntry(isS?'service':'expense',null);setTimeout(()=>{const s=$('#ef select[name=cat]');if(s){if(![...s.options].some(o=>o.value===r.name))s.insertAdjacentHTML('afterbegin',`<option>${esc(r.name)}</option>`);s.value=r.name}const o=$('#ef input[name=odo]');if(o)o.value=curOdo(r.v)},0)}}
@@ -763,6 +773,7 @@ function renderNav(cur){
 }
 UI.initPrefs();
 initHome(homeCtx);
+initCar(carCtx);
 document.addEventListener('mc:lang',()=>render());
 document.addEventListener('mc:theme',()=>render());
 loadLocal();render();
