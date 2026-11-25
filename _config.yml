@@ -1,0 +1,4 @@
+# GitHub Pages: publish the app only. These stay in the repository but are not served on the site.
+exclude:
+  - design-system.html
+  - tests

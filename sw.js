@@ -1,6 +1,6 @@
 // سيارتي — service worker: يعمل التطبيق بدون إنترنت
 // Bump CACHE whenever shipped files change.
-const CACHE = 'sayarati-v12';
+const CACHE = 'sayarati-v13';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',

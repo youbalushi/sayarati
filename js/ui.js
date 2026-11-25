@@ -38,7 +38,7 @@ export function applyTheme() {
   const dark = themePref === 'dark' || (themePref === 'auto' && mq && mq.matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = dark ? '#111318' : '#F5F6F8';
+  if (meta) meta.content = dark ? '#F28C38' : '#E98230'; // browser bar: approved primary orange (dark / light)
 }
 export function setTheme(pref, persist = true) {
   themePref = ['light', 'dark'].includes(pref) ? pref : 'auto';
