@@ -92,7 +92,7 @@ export function renderHome(ctx) {
   const spend = (from, to) => ctx.items(v).filter(x => x.t !== 'income' && x.d >= from && (!to || x.d < to)).reduce((a, x) => a + (+x.cost || 0), 0);
   const thisMonth = spend(m0), lastMonth = spend(m1, m0);
   const cons = st.allCons.slice(-12), L = cons.reduce((a, c) => a + c.l, 0), avg = L ? cons.reduce((a, c) => a + c.dist, 0) / L : 0;
-  const rems = S.reminders.filter(r => r.v === v).map(r => ({ r, s: ctx.rstat(r, st) })).sort((a, b) => b.s.pct - a.s.pct).slice(0, 2);
+  const rems = S.reminders.filter(r => r.v === v && r.alert !== false).map(r => ({ r, s: ctx.rstat(r, st) })).filter(x => !x.s.done).sort((a, b) => b.s.pct - a.s.pct).slice(0, 2);
   const recent = st.it.slice(0, 5);
 
   return `<div class="hm">${appBar()}

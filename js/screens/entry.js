@@ -140,9 +140,10 @@ export function openEntryForm(ctx, type, existing = null, preset = {}) {
     const y = rec.d.slice(0, 4); (E[y] = E[y] || []).push(rec); keys.add(y);
     let msg = t(old ? 'entry.updated' : 'entry.added');
     if (!isFuel && rec.cat) {
-      S.reminders.filter(r => r.v === rec.v && r.name === rec.cat && (!r.lastDate || rec.d >= r.lastDate)).forEach(r => {
+      S.reminders.filter(r => r.v === rec.v && (r.cat || r.name) === rec.cat && (!r.lastDate || rec.d >= r.lastDate)).forEach(r => {
         r.lastDate = rec.d; if (rec.odo) r.lastOdo = rec.odo;
         if (r.date && (+r.months || !r.km)) { const dd = new Date(rec.d); dd.setMonth(dd.getMonth() + (+r.months || 12)); r.date = +r.months ? '' : ctx.iso(dd); }
+        if (r.odoDue) { if (+r.km && rec.odo) r.odoDue = rec.odo + (+r.km); else { delete r.odoDue; if (!r.date && !+r.months && !+r.km) r.done = rec.d; } }
         keys.add('g'); msg = fill(t('entry.reminderReset'), { name: rec.cat });
       });
     }

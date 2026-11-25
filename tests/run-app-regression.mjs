@@ -236,6 +236,88 @@ ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'
   ok('old data: saving unchanged keeps the same title', (await r.textContent('.cd h1')).trim() === 'لاندكروزر 2015');
   await c3.close();
 }
+
+// ---------- reminders: add / edit / delete / complete ----------
+{
+  const c4 = await b.newContext({ viewport: { width: 390, height: 844 } }); const q = await c4.newPage();
+  q.on('pageerror', e => issues.push('rem pageerror: ' + e.message)); q.on('console', m => { if (m.type() === 'error') issues.push('rem console.error: ' + m.text()); });
+  await q.goto(`${BASE}/index.html`); await q.waitForTimeout(400); await q.click('[data-act=demo]'); await q.waitForTimeout(300);
+  const st = () => q.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S);
+  const odoNow = await q.evaluate(() => Math.max(...Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat().map(x => +x.odo || 0)));
+  const nR0 = (await st()).reminders.length;
+  // add from the + picker
+  await q.click('#nav-bottom [data-act=fab]'); await q.waitForTimeout(250); await q.click('.mc-scrim [data-entry-rem]'); await q.waitForTimeout(450);
+  ok('rem: form opens from + picker with all fields', await q.evaluate(() => ['rm-cat', 'rm-name', 'rm-v', 'rm-date', 'rm-odo', 'rm-note', 'rm-before'].every(i => document.getElementById(i)) && !!document.querySelector('[name=rm-alert]') && document.querySelectorAll('[data-rm-by]').length === 3));
+  await q.selectOption('#rm-cat', 'تأمين'); await q.waitForTimeout(100);
+  ok('rem: type "insurance" → date only, odometer hidden, title follows type', await q.evaluate(() => document.querySelector('[data-rm-by=date]').getAttribute('aria-pressed') === 'true' && document.getElementById('rm-odo').closest('[data-for]').hidden && !document.getElementById('rm-date').closest('[data-for]').hidden && document.getElementById('rm-name').value === 'تأمين'));
+  await q.selectOption('#rm-cat', 'تغيير زيت المحرك'); await q.waitForTimeout(100);
+  ok('rem: type "oil" → date + odometer, odometer marked optional', await q.evaluate(() => document.querySelector('[data-rm-by=both]').getAttribute('aria-pressed') === 'true' && !document.getElementById('rm-odo').closest('[data-for]').hidden && /\(/.test(document.querySelector('label[for=rm-odo]').textContent) && +document.getElementById('rm-odo').value > 0));
+  // validation: odometer-only needs a reading
+  await q.click('[data-rm-by=odo]'); await q.fill('#rm-odo', ''); await q.click('#rm-save'); await q.waitForTimeout(150);
+  ok('rem: odometer-only without a reading → error on that field', await q.evaluate(() => document.getElementById('rm-odo').getAttribute('aria-invalid') === 'true' && !!document.querySelector('#rm-err [role=alert]') && !/\(/.test(document.querySelector('label[for=rm-odo]').textContent)));
+  await q.fill('#rm-odo', String(odoNow + 300)); await q.waitForTimeout(80);
+  ok('rem: error clears while typing', await q.evaluate(() => !document.querySelector('#rm-form [aria-invalid]') && !document.querySelector('#rm-err [role=alert]')));
+  await q.click('[data-rm-by=both]'); await q.fill('#rm-name', 'زيت المحرك — اختبار'); await q.fill('#rm-note', 'زيت 5W-30');
+  await q.click('#rm-save'); await q.waitForTimeout(350);
+  let S1 = await st(); const added = S1.reminders.find(r => r.name === 'زيت المحرك — اختبار');
+  ok('rem: add saves title, vehicle, type, both triggers, alert, note', S1.reminders.length === nR0 + 1 && added && added.v === S1.cur && added.cat === 'تغيير زيت المحرك' && added.by === 'both' && added.odoDue === odoNow + 300 && /^\d{4}-\d\d-\d\d$/.test(added.date) && added.alert === true && added.note === 'زيت 5W-30' && added.km === 5000 && added.months === 6, JSON.stringify(added));
+  ok('rem: soon (300 km left) shows first on Home', await q.evaluate(n => document.querySelector('.hm .mc-list').textContent.includes(n), 'زيت المحرك — اختبار'));
+  // edit from the car page: alert off → leaves Home, calendar button hidden
+  await q.evaluate(() => { location.hash = 'car'; }); await q.waitForTimeout(300); await q.click('[data-car-tab=reminders]'); await q.waitForTimeout(150);
+  await q.click(`[data-act=editrem][data-id="${added.id}"]`); await q.waitForTimeout(400);
+  ok('rem: edit opens with saved values', await q.evaluate(() => document.getElementById('rm-name').value === 'زيت المحرك — اختبار' && document.getElementById('rm-note').value === 'زيت 5W-30' && document.querySelector('[data-rm-by=both]').getAttribute('aria-pressed') === 'true' && !!document.getElementById('rm-del')));
+  await q.fill('#rm-name', 'زيت المحرك'); await q.click('.mc-scrim .mc-switch'); await q.waitForTimeout(80);
+  ok('rem: alert off hides the "days before" field', await q.isHidden('#rm-before-w'));
+  await q.click('#rm-save'); await q.waitForTimeout(350);
+  S1 = await st(); let e1 = S1.reminders.find(r => r.id === added.id);
+  ok('rem: edit updates the same reminder', S1.reminders.length === nR0 + 1 && e1.name === 'زيت المحرك' && e1.alert === false && e1.odoDue === odoNow + 300, JSON.stringify(e1));
+  await q.evaluate(() => { location.hash = 'home'; }); await q.waitForTimeout(250);
+  ok('rem: alert off → not on Home', !(await q.evaluate(id => [...document.querySelectorAll('.hm [data-id]')].some(x => x.dataset.id === id), added.id)));
+  await q.evaluate(() => { location.hash = 'remind'; }); await q.waitForTimeout(250);
+  ok('rem: alert off → no calendar button, still listed', await q.evaluate(id => { const c = document.querySelector(`[data-act=donerem][data-id="${id}"]`)?.closest('.rem'); return c && !c.querySelector('[data-act=ics]') && /التنبيه متوقف/.test(c.textContent); }, added.id));
+  // complete: "done" → service form → reminder rolls forward by its repeat
+  await q.click(`[data-act=donerem][data-id="${added.id}"]`); await q.waitForTimeout(350);
+  ok('rem: done opens the service form with the reminder type', await q.evaluate(() => document.getElementById('en-cat').value === 'تغيير زيت المحرك'));
+  await q.fill('#en-odo', String(odoNow + 250)); await q.fill('#en-cost', '15'); await q.click('#en-save'); await q.waitForTimeout(350);
+  e1 = (await st()).reminders.find(r => r.id === added.id);
+  const today = await q.evaluate(() => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); });
+  ok('rem: complete → next due = reading + 5000 km and +6 months, history updated', e1.odoDue === odoNow + 250 + 5000 && e1.lastOdo === odoNow + 250 && e1.lastDate === today && e1.date === '' && e1.months === 6, JSON.stringify(e1));
+  // custom title still resets because it matches by TYPE
+  ok('rem: reset matches by type even with a custom title', e1.name === 'زيت المحرك');
+  // one-off odometer reminder (no repeat) → marked done
+  await q.evaluate(() => { location.hash = 'home'; }); await q.waitForTimeout(200);
+  await q.click('#nav-bottom [data-act=fab]'); await q.waitForTimeout(250); await q.click('.mc-scrim [data-entry-rem]'); await q.waitForTimeout(450);
+  await q.selectOption('#rm-cat', 'فرامل'); await q.click('[data-rm-by=odo]'); await q.fill('#rm-odo', String(odoNow + 900)); await q.fill('#rm-km', '');
+  await q.click('#rm-save'); await q.waitForTimeout(350);
+  let one = (await st()).reminders.find(r => r.cat === 'فرامل' && r.by === 'odo');
+  ok('rem: odometer-only reminder saved without a date', one && one.odoDue === odoNow + 900 && one.date === '' && one.km === 0, JSON.stringify(one));
+  await q.click('#nav-bottom [data-act=fab]'); await q.waitForTimeout(250); await q.click('.mc-scrim [data-entry-type=service]'); await q.waitForTimeout(250);
+  await q.selectOption('#en-cat', 'فرامل'); await q.fill('#en-odo', String(odoNow + 880)); await q.fill('#en-cost', '40'); await q.click('#en-save'); await q.waitForTimeout(350);
+  one = (await st()).reminders.find(r => r.id === one.id);
+  ok('rem: one-off reminder completed → marked done, no due left', one.done === today && !one.odoDue, JSON.stringify(one));
+  await q.evaluate(() => { location.hash = 'car'; }); await q.waitForTimeout(300); await q.click('[data-car-tab=reminders]'); await q.waitForTimeout(150);
+  ok('rem: done reminder shows "تمّ" on the car page, off Home', await q.evaluate(id => /تمّ/.test(document.querySelector(`[data-act=editrem][data-id="${id}"]`).textContent), one.id));
+  // delete with undo, then delete
+  await q.click(`[data-act=editrem][data-id="${one.id}"]`); await q.waitForTimeout(400); await q.click('#rm-del'); await q.waitForTimeout(300);
+  ok('rem: delete removes it', !(await st()).reminders.some(r => r.id === one.id));
+  await q.click('.mc-toast-region button'); await q.waitForTimeout(300);
+  ok('rem: undo restores it', (await st()).reminders.some(r => r.id === one.id));
+  await q.click(`[data-act=editrem][data-id="${one.id}"]`); await q.waitForTimeout(400); await q.click('#rm-del'); await q.waitForTimeout(300);
+  ok('rem: delete again (kept deleted)', !(await st()).reminders.some(r => r.id === one.id));
+  // legacy reminder (interval only, no due fields) opens with derived due values and still works
+  const leg = await q.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const r = d.S.reminders.find(x => !x.by && +x.km && +x.months); return r && { id: r.id, due: (+r.lastOdo || 0) + (+r.km) }; });
+  if (leg) {
+    await q.click(`[data-act=editrem][data-id="${leg.id}"]`); await q.waitForTimeout(400);
+    ok('rem: old reminder opens with due odometer = last + interval', +(await q.inputValue('#rm-odo')) === leg.due && /^\d{4}-/.test(await q.inputValue('#rm-date')));
+    await q.keyboard.press('Escape'); await q.waitForTimeout(250);
+  }
+  // English + dark
+  await q.evaluate(() => { localStorage.setItem('mc-lang', 'en'); localStorage.setItem('mc-theme', 'dark'); }); await q.reload(); await q.waitForTimeout(400);
+  await q.click('#nav-bottom [data-act=fab]'); await q.waitForTimeout(250); await q.click('.mc-scrim [data-entry-rem]'); await q.waitForTimeout(450);
+  ok('rem: English form is LTR with English labels', await q.evaluate(() => document.querySelector('.mc-scrim').closest('[dir]').dir === 'ltr' && /New reminder/.test(document.querySelector('.mc-sheet__title').textContent) && /Odometer when due/.test(document.querySelector('label[for=rm-odo]').textContent)));
+  ok('rem: no horizontal overflow in the sheet', await q.evaluate(() => { const s = document.querySelector('.mc-sheet'); return s.scrollWidth <= s.clientWidth + 1; }));
+  await c4.close();
+}
 await b.close();
 
 let f = 0; for (const r of results) { if (!r.pass) f++; console.log(`${r.pass ? '✓' : '✗'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`); }

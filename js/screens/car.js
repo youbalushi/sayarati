@@ -117,11 +117,13 @@ function tabPanel(ctx, V, st) {
     const rs = ctx.S.reminders.filter(r => r.v === v).map(r => ({ r, s: ctx.rstat(r, st) })).sort((a, b) => b.s.pct - a.s.pct);
     if (!rs.length) return empty('bell', t('home.noReminders'), button(t('car.addReminder'), { variant: 'primary', icon: 'plus', attrs: 'data-act="addrem"' }));
     return `<div class="mc-list">${rs.map(({ r, s }) => {
-      const stt = s.due ? ['danger', t('home.due')] : s.soon ? ['warning', t('home.soon')] : ['neutral', t('home.ok')];
+      const stt = s.done ? ['success', t('rem.done')] : s.due ? ['danger', t('home.due')] : s.soon ? ['warning', t('home.soon')] : ['neutral', t('home.ok')];
       const parts = [];
       if (s.km != null) parts.push(s.km <= 0 ? fill(t('home.overKm'), fmt(-s.km)) : fill(t('home.inKm'), fmt(s.km)));
       else if (s.days != null) parts.push(s.days <= 0 ? fill(t('home.overDays'), fmt(-s.days)) : fill(t('home.inDays'), fmt(s.days)));
       if (s.dueDate) parts.push(shortDate(s.dueDate));
+      if (s.done) parts.push(shortDate(r.done));
+      if (r.alert === false) parts.push(t('rem.alertOff'));
       return listItem({ title: esc(r.name), sub: parts.join(' · '), lead: 'bell', tone: stt[0] === 'neutral' ? 'service' : stt[0], trail: badge(stt[1], stt[0]), attrs: `data-act="editrem" data-id="${esc(r.id)}"`, compact: true });
     }).join('')}</div>
       <div class="cd-panel__foot">${button(t('car.addReminder'), { variant: 'tonal', size: 'sm', icon: 'plus', attrs: 'data-act="addrem"' })}<a class="mc-btn mc-btn--ghost mc-btn--sm cd-more" href="#remind">${t('home.seeAll')}${icon('chevron-right')}</a></div>`;

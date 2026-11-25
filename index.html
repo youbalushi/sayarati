@@ -172,6 +172,7 @@ import * as UI from './js/ui.js';
 import { renderHome, initHome } from './js/screens/home.js';
 import { renderCar, initCar, openVehicleEditor } from './js/screens/car.js';
 import { openEntryForm, openTypePicker } from './js/screens/entry.js';
+import { openReminderForm } from './js/screens/reminder.js';
 {
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -232,18 +233,20 @@ function stats(v,since=''){
     best:ks.length?Math.max(...ks):0,worst:ks.length?Math.min(...ks):0,lastFuel:fuel[fuel.length-1],odoDate:(it.filter(x=>+x.odo).sort((a,b)=>b.odo-a.odo)[0]||{}).d||today()};
 }
 function rstat(r,st){
-  const odo=curOdo(r.v);let km=null,days=null;
-  if(+r.km)km=(+r.lastOdo||0)+(+r.km)-odo;
-  if(r.date){days=Math.round((new Date(r.date)-new Date(today()))/864e5)}
-  else if(+r.months){const d=new Date(r.lastDate||today());d.setMonth(d.getMonth()+(+r.months));days=Math.round((d-new Date(today()))/864e5)}
-  let pct=0;if(km!=null)pct=Math.max(pct,1-km/r.km);if(days!=null)pct=Math.max(pct,1-days/((+r.months||1)*30.4));
+  const odo=curOdo(r.v);let km=null,days=null;const by=r.by||'both';
+  if(by!=='date'){if(r.odoDue)km=(+r.odoDue)-odo;else if(+r.km)km=(+r.lastOdo||0)+(+r.km)-odo}
+  if(by!=='odo'){if(r.date){days=Math.round((new Date(r.date)-new Date(today()))/864e5)}
+  else if(+r.months){const d=new Date(r.lastDate||today());d.setMonth(d.getMonth()+(+r.months));days=Math.round((d-new Date(today()))/864e5)}}
+  const kmWin=+r.km||5000;
+  let pct=0;if(km!=null)pct=Math.max(pct,1-km/kmWin);if(days!=null)pct=Math.max(pct,1-days/((+r.months||1)*30.4));
+  const done=km==null&&days==null&&!!r.done;
   const due=(km!=null&&km<=0)||(days!=null&&days<=0);
-  const soon=!due&&((km!=null&&km<=Math.min(1000,r.km*.15))||(days!=null&&days<=14));
+  const soon=!due&&((km!=null&&km<=Math.min(1000,kmWin*.15))||(days!=null&&days<=14));
   st=st||stats(r.v);
   const eta=km!=null&&km>0&&st.kmDay>0?Math.round(km/st.kmDay):null;
   let dueDate=days!=null?addDays(today(),days):null;
   if(km!=null){const kd=km<=0?st.odoDate:(st.kmDay>0?addDays(st.odoDate,Math.round(km/st.kmDay)):null);if(kd&&(!dueDate||kd<dueDate))dueDate=kd}
-  return {km,days,pct:Math.min(1,Math.max(0,pct)),due,soon,eta,dueDate};
+  return {km,days,pct:done?0:Math.min(1,Math.max(0,pct)),due,soon,eta,dueDate,done};
 }
 
 /* ---------- storage: local cache + private cloud doc ---------- */
@@ -327,11 +330,14 @@ function remCard(r,st){
   if(s.days!=null)parts.push(s.days<=0?`متأخر ${n(-s.days)} يوم`:`بعد ${n(s.days)} يوم`);
   if(s.eta!=null&&(s.days==null||s.eta<s.days))parts.push(`متوقع خلال ~${n(s.eta)} يوم حسب قيادتك`);
   if(s.dueDate)parts.push('الموعد: '+fdate(s.dueDate));
+  if(s.done)parts.push('تمّ في '+fdate(r.done));
+  if(r.alert===false)parts.push('التنبيه متوقف');
+  if(r.note)parts.push(esc(r.note));
 
-  return `<div class="rem"><div class="h"><b>${esc(r.name)}</b><span class="tag" style="--c:${c}">${s.due?'مستحق':s.soon?'قريبًا':'جيد'}</span></div>
+  return `<div class="rem"><div class="h"><b>${esc(r.name)}</b><span class="tag" style="--c:${c}">${s.done?'تمّ':s.due?'مستحق':s.soon?'قريبًا':'جيد'}</span></div>
    <div class="meter" style="--c:${c}"><i style="width:${Math.round(s.pct*100)}%"></i></div>
    <div class="mut">${parts.join(' · ')}</div>
-   <div class="acts"><button class="btn pri" data-act="donerem" data-id="${esc(r.id)}">تمّت ✓</button><button class="btn" data-act="editrem" data-id="${esc(r.id)}">تعديل</button>${s.dueDate?`<button class="btn" data-act="ics" data-id="${esc(r.id)}">أضف لتقويم الهاتف</button>`:''}</div></div>`;
+   <div class="acts"><button class="btn pri" data-act="donerem" data-id="${esc(r.id)}">تمّت ✓</button><button class="btn" data-act="editrem" data-id="${esc(r.id)}">تعديل</button>${s.dueDate&&r.alert!==false?`<button class="btn" data-act="ics" data-id="${esc(r.id)}">أضف لتقويم الهاتف</button>`:''}</div></div>`;
 }
 
 /* ---------- screens ---------- */
@@ -342,7 +348,7 @@ const carCtx={get S(){return S},veh,curOdo,stats,rstat,items,uid:uidg,render:()=
   save:keys=>{const ok=saveLocal();if(ok&&db)persist(keys);return ok},
   setLogFilter:t=>{LF.t=t},deleteVehicle};
 const entryCtx={get S(){return S},get E(){return E},cats,items,all,curOdo,stats,veh,uid:uidg,today,iso,render:()=>render(),
-  persist:keys=>{const ok=saveLocal();if(ok)persist(keys);return ok},addVehicle:()=>openVehicleEditor(carCtx),addReminder:()=>openRem()};
+  persist:keys=>{const ok=saveLocal();if(ok)persist(keys);return ok},addVehicle:()=>openVehicleEditor(carCtx),addReminder:()=>openReminderForm(entryCtx)};
 function deleteVehicle(id){
   const keys=['g'];Object.keys(E).forEach(k=>{const before=E[k].length;E[k]=E[k].filter(z=>z.v!==id);if(E[k].length!==before)keys.push(k)});
   S.vehicles=S.vehicles.filter(z=>z.id!==id);S.reminders=S.reminders.filter(r=>r.v!==id);S.docs=(S.docs||[]).filter(d=>d.v!==id);S.cur=S.vehicles[0]?.id||null;
@@ -557,31 +563,6 @@ function openVeh(v){
       persist(keys);render();toast('تم حذف السيارة')}));
   });
 }
-function openRem(r){
-  const old=r||null;const odo=curOdo(S.cur);r=r||{v:S.cur,name:'تغيير زيت المحرك',km:5000,months:6,lastOdo:odo,lastDate:today()};
-  openSheet(`<h3>${old?'تعديل التذكير':'تذكير صيانة جديد'}</h3>
-   <form class="fl" id="rf" novalidate>
-    <label>الصيانة<input name="name" list="rcats" value="${esc(r.name)}"></label>
-    <datalist id="rcats">${cats('service').concat(cats('expense')).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
-    <div class="grid2"><label>كل (كم)<input name="km" inputmode="numeric" value="${esc(r.km||'')}" placeholder="اختياري"></label><label>أو كل (شهر)<input name="months" inputmode="numeric" value="${esc(r.months||'')}" placeholder="اختياري"></label></div>
-    <div class="grid2"><label>آخر مرة عند (كم)<input name="lastOdo" inputmode="numeric" value="${esc(r.lastOdo||'')}"></label><label>بتاريخ<input type="date" name="lastDate" value="${esc(r.lastDate||today())}"></label></div>
-    <label>أو تاريخ محدد (مثل انتهاء التأمين أو الملكية)<input type="date" name="date" value="${esc(r.date||'')}"></label>
-    <label>نبّهني قبل الموعد بـ (يوم)<input name="before" inputmode="numeric" value="${esc(r.before??7)}"></label>
-    <div class="hint">بعد الحفظ اضغط «أضف لتقويم الهاتف» ليذكّرك جوالك قبل الموعد بعدد الأيام هذا، ثم في يوم الموعد.</div>
-    <div class="ferr"></div>
-    <button class="btn pri full" type="submit">حفظ</button>
-    ${old?'<button class="btn dan full" type="button" id="rdel">حذف التذكير</button>':''}
-   </form>`,b=>{
-    const f=$('#rf',b);
-    f.addEventListener('submit',e=>{e.preventDefault();
-      const nr={id:old?old.id:uidg(),v:r.v,name:f.name.value.trim(),km:+f.km.value||0,months:+f.months.value||0,lastOdo:+f.lastOdo.value||0,lastDate:f.lastDate.value||today(),date:f.date.value||'',before:f.before.value===''?7:Math.max(0,+f.before.value||0)};
-      if(!nr.name||(!nr.km&&!nr.months&&!nr.date)){$('.ferr',f).textContent='أدخل الاسم ثم المسافة أو المدة أو تاريخًا محددًا';return}
-      if(old)S.reminders=S.reminders.map(z=>z.id===nr.id?nr:z);else S.reminders.push(nr);
-      persist(['g']);closeSheet();render();toast('تم حفظ التذكير');
-    });
-    const d=$('#rdel',b);if(d)d.addEventListener('click',()=>{const keep=old;S.reminders=S.reminders.filter(z=>z.id!==old.id);persist(['g']);closeSheet();render();toast('تم حذف التذكير',()=>{S.reminders.push(keep);persist(['g']);render()})});
-  });
-}
 function confirmSheet(msg,btn,fn){
   openSheet(`<h3>تأكيد</h3><p>${esc(msg)}</p><div class="grid2"><button class="btn" id="cno">إلغاء</button><button class="btn pri" id="cyes">${esc(btn)}</button></div>`,b=>{
     $('#cno',b).addEventListener('click',closeSheet);$('#cyes',b).addEventListener('click',()=>{closeSheet();fn()});});
@@ -655,9 +636,9 @@ document.addEventListener('click',e=>{
   else if(a==='setveh'){S.cur=id;persist(['g']);closeSheet();render()}
   else if(a==='addveh')openVehicleEditor(carCtx);
   else if(a==='editveh')openVehicleEditor(carCtx,id);
-  else if(a==='addrem'){if(!S.vehicles.length)openVeh();else openRem()}
-  else if(a==='editrem')openRem(S.reminders.find(r=>r.id===id));
-  else if(a==='donerem'){const r=S.reminders.find(z=>z.id===id);if(r){const isS=!cats('expense').includes(r.name);closeSheet();openEntryForm(entryCtx,isS?'service':'expense',null,{cat:r.name,odo:curOdo(r.v)})}}
+  else if(a==='addrem')openReminderForm(entryCtx);
+  else if(a==='editrem')openReminderForm(entryCtx,id);
+  else if(a==='donerem'){const r=S.reminders.find(z=>z.id===id);if(r){const c=r.cat||r.name,isS=!cats('expense').includes(c);closeSheet();openEntryForm(entryCtx,isS?'service':'expense',null,{cat:c,odo:curOdo(r.v)})}}
   else if(a==='ct'){CT=b.dataset.t;render()}
   else if(a==='catadd')catSheet(null);
   else if(a==='catedit')catSheet(+b.dataset.i);

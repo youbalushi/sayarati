@@ -16,6 +16,14 @@ export const STRINGS = {
     theme: { light: 'فاتح', dark: 'داكن', auto: 'تلقائي' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    rem: {
+      addTitle: 'تذكير جديد', editTitle: 'تعديل التذكير', type: 'نوع التذكير', title: 'العنوان', titlePh: 'مثال: تغيير زيت المحرك', vehicle: 'السيارة',
+      basedOn: 'يعتمد على', byDate: 'التاريخ', byOdo: 'العداد', byBoth: 'كلاهما', dueDate: 'تاريخ الاستحقاق', dueOdo: 'قراءة العداد عند الاستحقاق',
+      repeat: 'التكرار بعد الإتمام', everyMonths: 'بالأشهر', monthsUnit: 'شهر', everyKm: 'بالكيلومترات', repeatHint: 'عند تسجيل صيانة أو مصروف من نفس النوع، يُحسب الموعد القادم تلقائيًا.',
+      alert: 'تفعيل التنبيه', alertDesc: 'يظهر في الرئيسية عند اقتراب الموعد، ويمكن إضافته لتقويم الهاتف', before: 'نبّهني قبل الموعد بـ',
+      errTitle: 'أدخل عنوان التذكير.', errDate: 'أدخل تاريخ الاستحقاق.', errOdo: 'أدخل قراءة العداد عند الاستحقاق.', errBoth: 'أدخل تاريخ الاستحقاق أو قراءة العداد.',
+      done: 'تمّ', alertOff: 'التنبيه متوقف', added: 'تمت إضافة التذكير', updated: 'تم تحديث التذكير', delete: 'حذف التذكير', deleted: 'تم حذف التذكير'
+    },
     entry: {
       pickTitle: 'ماذا تريد أن تسجّل؟', newReminder: 'تذكير صيانة جديد',
       desc: { fuel: 'تعبئة وقود', service: 'زيت، إطارات، فحص…', expense: 'تأمين، غسيل، مخالفة…', income: 'توصيل، رحلة…' },
@@ -81,6 +89,14 @@ export const STRINGS = {
     theme: { light: 'Light', dark: 'Dark', auto: 'Auto' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    rem: {
+      addTitle: 'New reminder', editTitle: 'Edit reminder', type: 'Reminder type', title: 'Title', titlePh: 'e.g. Engine oil change', vehicle: 'Vehicle',
+      basedOn: 'Based on', byDate: 'Date', byOdo: 'Odometer', byBoth: 'Both', dueDate: 'Due date', dueOdo: 'Odometer when due',
+      repeat: 'Repeat after it’s done', everyMonths: 'In months', monthsUnit: 'months', everyKm: 'In kilometres', repeatHint: 'When you log a service or expense of the same type, the next due date is set automatically.',
+      alert: 'Turn on alert', alertDesc: 'Shown on Home as the date approaches, and can be added to your phone calendar', before: 'Alert me before by',
+      errTitle: 'Enter a title.', errDate: 'Enter the due date.', errOdo: 'Enter the odometer reading when due.', errBoth: 'Enter a due date or an odometer reading.',
+      done: 'Done', alertOff: 'Alert off', added: 'Reminder added', updated: 'Reminder updated', delete: 'Delete reminder', deleted: 'Reminder deleted'
+    },
     entry: {
       pickTitle: 'What do you want to log?', newReminder: 'New service reminder',
       desc: { fuel: 'Fill-up', service: 'Oil, tyres, inspection…', expense: 'Insurance, wash, fine…', income: 'Delivery, trip…' },
