@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Layout fixture — My Car</title>
+<link rel="stylesheet" href="../../css/tokens.css">
+<link rel="stylesheet" href="../../css/components.css">
+</head>
+<!-- Test fixture: app shell (app bar + bottom nav on phones, side rail from 900px). Not shipped to users. -->
+<body class="mc mc-has-rail">
+<nav class="mc-rail" id="rail" aria-label="rail"></nav>
+<div class="mc-main">
+  <header class="mc-appbar" id="bar"></header>
+  <main class="mc-container mc-stack" id="content" style="padding-block:var(--space-4)"></main>
+</div>
+<nav class="mc-bottomnav" id="bottom" aria-label="bottom"><div class="mc-bottomnav__inner" id="bottomInner"></div></nav>
+<script type="module">
+import { initPrefs, t, icon, iconButton, button, stat, num, listItem, menu } from '../../js/ui.js';
+import { setSpriteUrl } from '../../js/ui.js';
+setSpriteUrl('../../assets/icons/lucide-sprite.svg');
+initPrefs();
+const items = [['house', 'home', true], ['list', 'log'], ['bell', 'reminders'], ['chart-column', 'reports']];
+const nav = it => `<a class="mc-navitem" href="#" ${it[2] ? 'aria-current="page"' : ''}><span class="mc-navitem__pill">${icon(it[0])}</span>${t('nav.' + it[1])}</a>`;
+const fab = `<button class="mc-fab" type="button" aria-label="${t('nav.add')}">${icon('plus')}</button>`;
+document.getElementById('rail').innerHTML = fab + items.map(nav).join('');
+document.getElementById('bottomInner').innerHTML = nav(items[0]) + nav(items[1]) + fab + nav(items[2]) + nav(items[3]);
+document.getElementById('bar').innerHTML = `<div class="mc-appbar__title">${t('appName')}</div><div class="mc-appbar__actions">${button(t('action.save'), { variant: 'primary' })}${menu({ id: 'm1', label: t('action.more'), items: [{ label: t('action.edit'), icon: 'pencil' }, { label: t('action.delete'), icon: 'trash-2', danger: true }] })}</div>`;
+document.getElementById('content').innerHTML = `<div class="mc-grid-auto mc-grid-2">${stat('A', num(34.158, 3))}${stat('B', num(0.034, 3))}${stat('C', num(12.4, 1))}${stat('D', num(3284))}</div>
+  <div class="mc-list">${listItem({ title: 'M91 · 35.47', sub: '13 Nov · 78,690 km', lead: 'fuel', trail: num(8.265, 3) })}${listItem({ title: 'Oil', sub: '31 Oct', lead: 'wrench', tone: 'service', trail: num(18.5, 3) })}</div>`;
+</script>
+</body>
+</html>
