@@ -6,23 +6,24 @@
 .hm-col{display:grid;gap:var(--space-3);align-content:start}
 .hm-col>section .mc-section-head{margin-block-start:var(--space-3)}
 
-/* Car card */
-.hm-car{display:grid;gap:var(--space-4)}
-.hm-car__top{display:flex;align-items:center;gap:var(--space-3)}
-.hm-car__photo{width:64px;height:64px;border-radius:var(--radius-md);overflow:hidden;flex:none;display:grid;place-items:center;background:var(--color-surface-sunken)}
-.hm-car__photo img{width:100%;height:100%;object-fit:cover;display:block}
-.hm-car__photo.is-empty{background:var(--color-primary-soft);color:var(--color-primary-text)}
-.hm-car__photo.is-empty .mc-icon{width:30px;height:30px}
-.hm-car__link{flex:1;display:flex;align-items:center;gap:var(--space-3);min-width:0;color:inherit;text-decoration:none;border-radius:var(--radius-md)}
-.hm-car__link>.mc-icon{color:var(--color-text-secondary);flex:none}
-.hm-car__link:focus-visible{outline:none;box-shadow:var(--focus-ring)}
-.hm-car__id{flex:1;display:grid;gap:2px;min-width:0}
-.hm-car__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hm-car__meta{display:flex;align-items:center;gap:var(--space-2);flex-wrap:nowrap;min-width:0}
-.hm-car__meta>.mc-small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
-.hm-car__meta>.mc-badge{flex:none}
-.hm-odo{display:grid;gap:2px;padding-block-start:var(--space-4);border-block-start:1px solid var(--color-border)}
-.hm-odo__value{display:flex;align-items:baseline;gap:var(--space-2)}
+/* Car card: photo (pencil = edit), name + year with the car-switch arrow, registration expiry;
+   plate + odometer small and grey on the opposite side. Reuses .cd-photo from car.css. */
+.hm-hero{overflow:visible}
+.hm-hero .cd-photo{border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.hm-edit{position:absolute;inset-block-start:var(--space-3);inset-inline-end:var(--space-3);background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-2)}
+.hm-id{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-3);padding:var(--space-4)}
+.hm-id__main{display:grid;gap:2px;min-width:0}
+.hm-id__name{display:flex;align-items:center;gap:var(--space-2);min-width:0}
+.hm-id__name h1{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-year{color:var(--color-text-secondary);font-size:var(--fs-body);flex:none}
+.hm-switch{flex:none}
+.hm-switch .mc-iconbtn{width:28px;height:28px;background:var(--color-surface-sunken)}
+.hm-switch .mc-iconbtn .mc-icon{width:18px;height:18px}
+.hm-switch .mc-menu{inset-inline-start:0;inset-inline-end:auto;min-width:240px}
+.hm-exp{display:flex;align-items:center;gap:var(--space-1);flex-wrap:wrap;font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
+.hm-exp>.mc-icon{width:16px;height:16px}
+.hm-exp b{color:var(--color-text);font-weight:var(--fw-semibold)}
+.hm-id__side{display:grid;gap:2px;justify-items:end;text-align:end;flex:none;font-size:var(--fs-small);line-height:var(--lh-small);color:var(--color-text-secondary)}
 
 /* Empty states */
 .hm-empty{padding-block:var(--space-6)}
@@ -33,11 +34,10 @@ a.hm-empty-row{display:block;text-decoration:none;color:inherit}
 /* Hidden label for screen readers (used for the photo placeholder) */
 .mc-visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Desktop: two columns — car & numbers | reminders & activity */
+/* Desktop: two columns — car | documents & reminders */
 @media (min-width:900px){
   .hm .mc-container{max-width:var(--size-content-wide);padding-inline:var(--space-8)}
   .hm-bar{padding-inline:var(--space-8)}
   .hm-grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--space-6);padding-block:var(--space-6)}
-  .hm-car__photo{width:88px;height:88px}
   .hm-col>section:first-child .mc-section-head{margin-block-start:0}
 }

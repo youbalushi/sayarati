@@ -3,7 +3,7 @@
 export const STRINGS = {
   ar: {
     appName: 'سيارتي', appNameAlt: 'My Car',
-    nav: { home: 'الرئيسية', log: 'السجل', reminders: 'التذكيرات', reports: 'التقارير', settings: 'الإعدادات', add: 'إضافة' },
+    nav: { maint: 'الصيانة', home: 'الرئيسية', log: 'السجل', reminders: 'التذكيرات', reports: 'التقارير', settings: 'الإعدادات', add: 'إضافة' },
     types: { fuel: 'وقود', service: 'صيانة', expense: 'مصروف', income: 'دخل' },
     action: { save: 'حفظ', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', add: 'إضافة', retry: 'إعادة المحاولة', undo: 'تراجع', close: 'إغلاق', confirm: 'تأكيد', back: 'رجوع', more: 'المزيد' },
     state: {
@@ -99,6 +99,7 @@ export const STRINGS = {
       deleteQ: 'حذف «{n}»؟', deleteText: 'ستُحذف السيارة مع كل سجلاتها وتذكيراتها ومستنداتها من هذا الجهاز. لا يمكن التراجع.', deleted: 'تم حذف السيارة',
       saved: 'تم حفظ بيانات السيارة', added: 'أُضيفت السيارة', photoSaved: 'تم تحديث الصورة', imageError: 'تعذّر قراءة الصورة. جرّب صورة أخرى.',
       storageFull: 'لم يتم الحفظ: مساحة التخزين في المتصفح ممتلئة. احذف صورًا قديمة أو احفظ نسخة احتياطية ثم حاول مرة أخرى.',
+      insTitlePh: 'مثال: وثيقة التأمين الشامل', editReplace: 'تعديل أو استبدال المستند', noExpiry: 'بدون تاريخ انتهاء', deleteDoc: 'حذف المستند',
       docSaved: 'تم حفظ المستند', deleteDocQ: 'حذف هذا المستند؟', deleteDocText: 'سيُحذف المستند وصورته من هذا الجهاز.', docDeleted: 'تم حذف المستند'
     },
     home: {
@@ -109,12 +110,19 @@ export const STRINGS = {
       noRecords: 'لا توجد عمليات بعد', noRecordsText: 'اضغط زر + لتسجيل أول تعبئة أو صيانة.',
       inKm: 'بعد {n} كم', overKm: 'متأخر {n} كم', inDays: 'بعد {n} يوم', overDays: 'متأخر {n} يوم', due: 'مستحق', soon: 'قريبًا', ok: 'جيد',
       welcomeTitle: 'كل تفاصيل سيارتك في مكان واحد', welcomeText: 'تابع الوقود والصيانة والمصاريف، واعرف استهلاك سيارتك وتكلفة كل كيلومتر.', tryDemo: 'جرّب ببيانات نموذجية',
-      viewOptions: 'خيارات', settings: 'الإعدادات', noPhoto: 'لا توجد صورة', liter: 'لتر'
+      viewOptions: 'خيارات', settings: 'الإعدادات', noPhoto: 'لا توجد صورة', liter: 'لتر',
+      docs: 'مستندات السيارة', ownership: 'ملكية السيارة', insurance: 'وثائق التأمين', otherDocs: 'مستندات أخرى', view: 'عرض', add: 'إضافة',
+      docs1: 'مستند واحد', docs2: 'مستندان', docsFew: '{n} مستندات', docsMany: '{n} مستندًا',
+      expiresOn: 'تنتهي في: {d}', switchCarLabel: 'تبديل السيارة', editCar: 'تعديل السيارة'
+    },
+    maint: {
+      title: 'الصيانة', add: 'إضافة صيانة', total: 'مصروف الصيانة', since: 'منذ البداية', last: 'آخر صيانة',
+      none: 'لا توجد صيانة مسجّلة', noneText: 'سجّل أول صيانة لتظهر هنا مجمّعة حسب الشهر.', monthSpend: 'مصروف الصيانة في الشهر'
     }
   },
   en: {
     appName: 'My Car', appNameAlt: 'سيارتي',
-    nav: { home: 'Home', log: 'Log', reminders: 'Reminders', reports: 'Reports', settings: 'Settings', add: 'Add' },
+    nav: { maint: 'Maintenance', home: 'Home', log: 'Log', reminders: 'Reminders', reports: 'Reports', settings: 'Settings', add: 'Add' },
     types: { fuel: 'Fuel', service: 'Service', expense: 'Expense', income: 'Income' },
     action: { save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', add: 'Add', retry: 'Try again', undo: 'Undo', close: 'Close', confirm: 'Confirm', back: 'Back', more: 'More' },
     state: {
@@ -210,6 +218,7 @@ export const STRINGS = {
       deleteQ: 'Delete “{n}”?', deleteText: 'The vehicle and all its records, reminders and documents will be removed from this device. This can’t be undone.', deleted: 'Vehicle deleted',
       saved: 'Vehicle saved', added: 'Vehicle added', photoSaved: 'Photo updated', imageError: 'Couldn’t read that image. Try another one.',
       storageFull: 'Not saved: the browser’s storage is full. Remove old photos or save a backup, then try again.',
+      insTitlePh: 'e.g. Comprehensive policy', editReplace: 'Edit or replace the document', noExpiry: 'No expiry date', deleteDoc: 'Delete document',
       docSaved: 'Document saved', deleteDocQ: 'Delete this document?', deleteDocText: 'The document and its photo will be removed from this device.', docDeleted: 'Document deleted'
     },
     home: {
@@ -220,7 +229,14 @@ export const STRINGS = {
       noRecords: 'No activity yet', noRecordsText: 'Tap + to log your first fill-up or service.',
       inKm: 'In {n} km', overKm: '{n} km overdue', inDays: 'In {n} days', overDays: '{n} days overdue', due: 'Due', soon: 'Soon', ok: 'Good',
       welcomeTitle: 'Everything about your car in one place', welcomeText: 'Track fuel, service and expenses, and see your consumption and cost per km.', tryDemo: 'Try with sample data',
-      viewOptions: 'Options', settings: 'Settings', noPhoto: 'No photo', liter: 'L'
+      viewOptions: 'Options', settings: 'Settings', noPhoto: 'No photo', liter: 'L',
+      docs: 'Car documents', ownership: 'Ownership (Mulkiya)', insurance: 'Insurance documents', otherDocs: 'Other documents', view: 'View', add: 'Add',
+      docs1: '1 document', docs2: '2 documents', docsFew: '{n} documents', docsMany: '{n} documents',
+      expiresOn: 'Expires: {d}', switchCarLabel: 'Switch car', editCar: 'Edit car'
+    },
+    maint: {
+      title: 'Maintenance', add: 'Add service', total: 'Maintenance spend', since: 'All time', last: 'Last service',
+      none: 'No services logged yet', noneText: 'Log your first service and it will show here, grouped by month.', monthSpend: 'Maintenance spend this month'
     }
   }
 };

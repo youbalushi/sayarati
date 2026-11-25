@@ -31,7 +31,7 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
   const env = await p.evaluate(() => ({ dir: document.documentElement.dir, lang: document.documentElement.lang, theme: document.documentElement.dataset.theme }));
   ok(`${tag}: direction, language and theme applied`, env.dir === (lang === 'ar' ? 'rtl' : 'ltr') && env.lang === lang && env.theme === theme, JSON.stringify(env));
   const bad = [];
-  for (const scr of ['home', 'car', 'log', 'remind', 'reports', 'settings']) {
+  for (const scr of ['home', 'maint', 'log', 'remind', 'reports', 'settings', 'car']) {
     await go(p, scr);
     const r = await p.evaluate(() => {
       scrollTo(0, 1e6);
@@ -42,20 +42,23 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
     });
     if (r.len < 20 || r.over || r.covered || r.raw.length) bad.push(`${scr}:${JSON.stringify(r)}`);
   }
-  ok(`${tag}: all 6 screens render, no sideways scroll, nothing under the nav, no raw text keys`, !bad.length, bad.join(' | '));
+  ok(`${tag}: all 7 screens (+ old #car link) render, no sideways scroll, nothing under the nav, no raw text keys`, !bad.length, bad.join(' | '));
   // sheets
   const sheets = [];
   const sheet = async (name, open, sel) => { await open(); await wait(p, 420); const s = await p.evaluate(q => { const e = document.querySelector('.mc-scrim.is-open .mc-sheet'); return !!e && !!document.querySelector(q) && e.scrollWidth <= e.clientWidth + 1; }, sel); if (!s) sheets.push(name); await esc(p); };
   await go(p, 'home');
   await sheet('type picker', () => p.click(w < 900 ? '#nav-bottom [data-act=fab]' : '#nav-rail [data-act=fab]'), '[data-entry-type]');
   for (const ty of ['fuel', 'service', 'expense', 'income']) await sheet(`${ty} form`, async () => { await p.click(w < 900 ? '#nav-bottom [data-act=fab]' : '#nav-rail [data-act=fab]'); await wait(p, 300); await p.click(`.mc-scrim [data-entry-type=${ty}]`); }, '#en-form');
-  await go(p, 'car'); await sheet('vehicle editor', () => p.click('[data-car=edit]'), '#ve-form');
-  await sheet('catalog', () => p.click('[data-car=catalog]'), '.mc-scrim [data-ct-color]');
+  await go(p, 'home'); await sheet('vehicle editor', () => p.click('.hm-hero [data-car=edit]'), '#ve-form');
+  await sheet('catalog', async () => { await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-cat'); }, '.mc-scrim [data-ct-color]');
+  await sheet('document editor', () => p.click('.hm-docs [data-car=doc-add][data-type=insurance]'), '#de-form');
   await go(p, 'remind'); await sheet('reminder form', () => p.click('.rl [data-act=addrem]'), '#rm-form');
   await sheet('calendar', () => p.click('.rl-card [data-act=ics]'), '[data-act=icsfile]');
   await go(p, 'settings'); await sheet('category editor', () => p.click('[data-set-cat=add]'), '#cat-form');
-  await go(p, 'home'); await sheet('car switcher', () => p.click('[data-home=switch]'), '.mc-scrim [data-car]');
   ok(`${tag}: all 11 sheets open and fit`, !sheets.length, sheets.join(', '));
+  await go(p, 'home'); await p.click('[data-mc-menu=hm-cars]'); await wait(p, 250);
+  ok(`${tag}: car menu opens inside the screen with the car + "add car"`, await p.evaluate(() => { const m = document.getElementById('hm-cars'), r = m.getBoundingClientRect(); return !m.hidden && r.left >= 0 && r.right <= innerWidth && m.querySelectorAll('[data-action=hm-car]').length === 1 && !!m.querySelector('[data-action=hm-addcar]'); }));
+  await p.keyboard.press('Escape'); await wait(p, 200);
   await c.close();
 }
 
@@ -70,24 +73,24 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
   let S = (await store(p)).S;
   const v1 = S.vehicles[0];
   ok('vehicle: add saves make, model, year, plate, tank, odometer', S.vehicles.length === 1 && v1.make === 'toyota' && v1.model === 'Land Cruiser' && +v1.year === 2020 && v1.plate === '12345 أ ب' && +v1.tank === 90 && +v1.odo0 === 120000, JSON.stringify(v1));
-  await go(p, 'car'); await p.click('[data-car=edit]'); await wait(p, 400); await p.fill('#ve-nick', 'سيارة العمل'); await p.fill('#ve-plate', '777'); await p.click('#ve-save'); await wait(p, 400);
+  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.fill('#ve-nick', 'سيارة العمل'); await p.fill('#ve-plate', '777'); await p.click('#ve-save'); await wait(p, 400);
   S = (await store(p)).S;
-  ok('vehicle: edit updates the same car', S.vehicles.length === 1 && S.vehicles[0].id === v1.id && S.vehicles[0].plate === '777' && /سيارة العمل/.test(await p.textContent('.cd h1')));
+  ok('vehicle: edit updates the same car', S.vehicles.length === 1 && S.vehicles[0].id === v1.id && S.vehicles[0].plate === '777' && /سيارة العمل/.test(await p.textContent('.hm-car__name')));
   await go(p, 'settings'); await p.click('.st [data-act=demo]'); await wait(p, 400);
   S = (await store(p)).S; const v2 = S.vehicles.find(v => v.id !== v1.id);
   // give car 1 a record + reminder so the delete has something to remove
   await go(p, 'home');
-  await p.click('[data-home=switch]'); await wait(p, 300); await p.click(`.mc-scrim [data-car="${v1.id}"]`); await wait(p, 300);
+  await p.click('[data-mc-menu=hm-cars]'); await wait(p, 200); await p.click(`#hm-cars [data-action=hm-car][data-value="${v1.id}"]`); await wait(p, 400);
   await p.click('#nav-bottom [data-act=fab]'); await wait(p, 300); await p.click('.mc-scrim [data-entry-type=fuel]'); await wait(p, 300);
   await p.fill('#en-odo', '120400'); await p.fill('#en-liters', '50'); await p.fill('#en-ppl', '0.239'); await p.click('#en-save'); await wait(p, 400);
   await p.click('#nav-bottom [data-act=fab]'); await wait(p, 300); await p.click('.mc-scrim [data-entry-rem]'); await wait(p, 500); await p.click('#rm-save'); await wait(p, 400);
   let D = await store(p);
   const v2recs = Object.values(D.E).flat().filter(x => x.v === v2.id).length, v2rems = D.S.reminders.filter(r => r.v === v2.id).length;
   ok('vehicle: second car gets its own record + reminder', Object.values(D.E).flat().some(x => x.v === v1.id) && D.S.reminders.some(r => r.v === v1.id));
-  await go(p, 'car'); await p.click('[data-car=edit]'); await wait(p, 400); await p.click('#ve-del'); await wait(p, 300);
+  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-del'); await wait(p, 300);
   await p.click('.mc-scrim [data-mc-close]'); await wait(p, 300);
   ok('vehicle: cancelling delete keeps everything', (await store(p)).S.vehicles.length === 2);
-  await go(p, 'car'); await p.click('[data-car=edit]'); await wait(p, 400); await p.click('#ve-del'); await wait(p, 300); await p.click('[data-mc-ok]'); await wait(p, 500);
+  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-del'); await wait(p, 300); await p.click('[data-mc-ok]'); await wait(p, 500);
   D = await store(p);
   ok('vehicle: delete removes the car with its records, reminders and documents only', D.S.vehicles.length === 1 && D.S.vehicles[0].id === v2.id && !Object.values(D.E).flat().some(x => x.v === v1.id) && !D.S.reminders.some(r => r.v === v1.id) && !(D.S.docs || []).some(d => d.v === v1.id)
     && Object.values(D.E).flat().filter(x => x.v === v2.id).length === v2recs && D.S.reminders.filter(r => r.v === v2.id).length === v2rems);
@@ -148,7 +151,7 @@ for (const lang of ['ar', 'en']) for (const theme of ['light', 'dark']) for (con
 {
   const c = await b.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true }); const p = await c.newPage(); watch(p, 'backup');
   await p.goto(`${BASE}/index.html`); await wait(p, 400); await p.click('[data-act=demo]'); await wait(p, 400);
-  await go(p, 'car'); await p.click('[data-car=catalog]'); await wait(p, 400); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await wait(p, 400);
+  await go(p, 'home'); await p.click('.hm-hero [data-car=edit]'); await wait(p, 400); await p.click('#ve-cat'); await wait(p, 300); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await wait(p, 300); await p.click('#ve-save'); await wait(p, 400);
   await go(p, 'settings');
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 5000 }).catch(() => null), p.click('[data-act=drvsave]')]);
   const file = dl && await dl.path(); const bk = file ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
@@ -179,7 +182,7 @@ if (HTTPS_BASE) {
   await p.reload(); await wait(p, 800);
   ok('offline: app loads with no connection', /Camry/.test(await p.textContent('.hm-car__name').catch(() => '')));
   const off = [];
-  for (const scr of ['car', 'log', 'remind', 'reports', 'settings', 'home']) { await go(p, scr); if ((await p.evaluate(() => document.getElementById('main').innerText.trim().length)) < 20) off.push(scr); }
+  for (const scr of ['maint', 'log', 'remind', 'reports', 'settings', 'home']) { await go(p, scr); if ((await p.evaluate(() => document.getElementById('main').innerText.trim().length)) < 20) off.push(scr); }
   ok('offline: every screen works', !off.length, off.join(','));
   ok('offline: fonts and icons come from the cache', await p.evaluate(async () => { await document.fonts.ready; const u = document.querySelector('.mc-icon use'); return document.fonts.check('16px "MyCar Sans"', 'سيارتي') && !!u; }));
   await p.click('#nav-bottom [data-act=fab]'); await wait(p, 300); await p.click('.mc-scrim [data-entry-type=expense]'); await wait(p, 300);

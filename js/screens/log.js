@@ -13,7 +13,7 @@ const money = (ctx, x) => `${num(x, ctx.S.set.dec)} <span class="mc-stat__unit">
 const date = d => { const [y, m, dd] = d.split('-'); return `${+dd} ${t('month')[+m - 1]}${+y !== new Date().getFullYear() ? ' ' + y : ''}`; };
 const fuelName = f => (getLang() === 'en' && f === 'ديزل' ? 'Diesel' : f || '');
 
-function row(ctx, x) {
+export function row(ctx, x) {
   const title = x.t === 'fuel' ? `${num(x.liters, 2)} ${t('home.liter')}${x.fuel ? ' · ' + esc(fuelName(x.fuel)) : ''}` : esc(x.cat || t('types.' + x.t));
   const sub = [date(x.d), x.odo ? `${num(x.odo)} ${t('unit.km')}` : '', x.t === 'fuel' && !x.full ? t('log.notFull') : '', esc(x.place || '')].filter(Boolean).join(' · ');
   const amount = x.t === 'income' ? `<span class="mc-text-tone mc-tone-income">+${money(ctx, x.cost)}</span>` : money(ctx, x.cost);
@@ -36,9 +36,9 @@ export function logList(ctx) {
   }).join('');
 }
 
-export function appBar(ctx, titleKey) {
+export function appBar(ctx, titleKey, { back = '' } = {}) {
   const { S } = ctx, V = ctx.veh(S.cur);
-  return `<header class="mc-appbar lg-appbar">
+  return `<header class="mc-appbar lg-appbar">${back ? `<a class="mc-iconbtn" href="${back}" aria-label="${t('action.back')}">${icon('arrow-left')}</a>` : ''}
     <div class="lg-appbar__id"><h1 class="mc-title">${t(titleKey)}</h1>${V ? (S.vehicles.length > 1
       ? button(vehTitle(V), { variant: 'ghost', size: 'sm', iconEnd: 'chevron-down', attrs: 'data-home="switch" aria-haspopup="dialog"' })
       : `<span class="mc-caption mc-muted">${esc(vehTitle(V))}</span>`) : ''}</div>

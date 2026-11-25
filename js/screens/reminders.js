@@ -34,14 +34,14 @@ function card(ctx, r, st) {
 
 export function renderReminders(ctx) {
   const { S } = ctx;
-  if (!S.vehicles.length) return `<div class="rl">${appBar(ctx, 'rems.title')}${noCar()}</div>`;
+  if (!S.vehicles.length) return `<div class="rl">${appBar(ctx, 'rems.title', { back: '#home' })}${noCar()}</div>`;
   const st = ctx.stats(S.cur);
   const rs = S.reminders.filter(r => r.v === S.cur).map(r => ({ r, s: ctx.rstat(r, st) })).sort((a, b) => b.s.pct - a.s.pct);
-  return `<div class="rl">${appBar(ctx, 'rems.title')}
+  return `<div class="rl">${appBar(ctx, 'rems.title', { back: '#home' })}
     <div class="mc-container rl-wrap">
-      <div class="mc-section-head"><h2 class="mc-title">${t('rems.heading')}</h2>${button(t('rems.add'), { variant: 'tonal', size: 'sm', icon: 'plus', attrs: 'data-act="addrem"' })}</div>
+      ${button(t('car.addReminder'), { variant: 'primary', icon: 'plus', block: true, attrs: 'data-act="addrem"' })}
       ${rs.length ? `<div class="rl-list">${rs.map(x => card(ctx, x.r, st)).join('')}</div>`
-        : `<div class="mc-card">${emptyState({ icon: 'bell', title: t('rems.empty'), text: t('rems.emptyText'), action: button(t('rems.add'), { variant: 'primary', icon: 'plus', attrs: 'data-act="addrem"' }) })}</div>`}
+        : `<div class="mc-card">${emptyState({ icon: 'bell', title: t('rems.empty'), text: t('rems.emptyText') })}</div>`}
       <p class="mc-caption mc-muted rl-note">${icon('info')}<span>${t('rems.note')}</span></p>
     </div></div>`;
 }

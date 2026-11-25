@@ -1,11 +1,11 @@
 // سيارتي — service worker: يعمل التطبيق بدون إنترنت
 // Bump CACHE whenever shipped files change.
-const CACHE = 'sayarati-v14';
+const CACHE = 'sayarati-v15';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
   './css/tokens.css', './css/components.css', './css/home.css', './css/car.css', './css/entry.css', './css/reports.css', './css/settings.css', './css/log.css',
-  './js/ui.js', './js/vehicle.js', './js/i18n.js', './js/screens/home.js', './js/screens/car.js', './js/screens/entry.js', './js/screens/reminder.js', './js/screens/reports.js', './js/screens/settings.js', './js/screens/log.js', './js/screens/reminders.js',
+  './js/ui.js', './js/vehicle.js', './js/i18n.js', './js/screens/home.js', './js/screens/car.js', './js/screens/entry.js', './js/screens/reminder.js', './js/screens/reports.js', './js/screens/settings.js', './js/screens/log.js', './js/screens/reminders.js', './js/screens/maint.js',
   './assets/icons/lucide-sprite.svg',
   './assets/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2', './assets/fonts/ibm-plex-sans-arabic-arabic-500-normal.woff2',
   './assets/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2', './assets/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2',

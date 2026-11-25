@@ -1,27 +1,15 @@
-// سيارتي · My Car — Vehicle details (route #car) + vehicle editor + documents
+// سيارتي · My Car — Home car card + documents section, vehicle editor, document editor/viewer
 // Reads/writes the existing data through ctx. New optional fields (all backward compatible):
 //   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img, added}]
-import { t, getLang, esc, icon, iconTile, button, iconButton, field, badge, listItem, stat, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
+import { t, getLang, esc, icon, button, iconButton, field, badge, listItem, menu, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
 import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, carArt, mountCatalog } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const DOC_TYPES = ['insurance', 'registration', 'inspection', 'license', 'other'];
-const DOC_ICON = { insurance: 'circle-check', registration: 'receipt', inspection: 'gauge', license: 'wallet', other: 'inbox' };
 const FUELS = ['M91', 'M95', 'ديزل'];
-let tab = 'service';
 
 /* ---------- helpers ---------- */
 const safeImg = p => (typeof p === 'string' && /^data:image\/(png|jpe?g|webp);base64,/.test(p) ? p : '');
-function money(ctx, x) {
-  let cur = ctx.S.set.cur || 'ر.ع';
-  if (getLang() === 'en' && cur === 'ر.ع') cur = 'OMR';
-  return `${num(x, ctx.S.set.dec)} <span class="mc-stat__unit">${esc(cur)}</span>`;
-}
-function shortDate(d) {
-  if (!d) return '';
-  const [y, m, dd] = d.split('-');
-  return `${+dd} ${t('month')[+m - 1]}${+y !== new Date().getFullYear() ? ' ' + y : ''}`;
-}
 const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
 const daysTo = d => Math.round((new Date(d) - new Date(today())) / 864e5);
 const docs = (ctx, v) => (ctx.S.docs || []).filter(d => d.v === v).sort((a, b) => (a.expiry || '9999').localeCompare(b.expiry || '9999'));
@@ -31,6 +19,8 @@ function docStatus(d) {
   return n < 0 ? ['danger', t('car.expired')] : n <= 30 ? ['warning', fill(t('car.expiresIn'), n)] : ['success', t('car.valid')];
 }
 const fuelLabel = f => (getLang() === 'en' && f === 'ديزل' ? 'Diesel' : f);
+const fill2 = (s, o) => Object.entries(o).reduce((a, [k, v]) => a.replace('{' + k + '}', v), String(s));
+const longDate = d => { const [y, m, dd] = d.split('-'); return `${+dd} ${t('month')[+m - 1]} ${y}`; };
 
 /** Downscale an image file to a JPEG data URL (keeps storage small). */
 export async function imageToDataURL(file, max, quality) {
@@ -44,97 +34,49 @@ export async function imageToDataURL(file, max, quality) {
   } finally { URL.revokeObjectURL(url); }
 }
 
-/* ---------- page ---------- */
-export function renderCar(ctx) {
-  const { S } = ctx, V = ctx.veh(S.cur);
-  if (!V) { location.hash = 'home'; return ''; }
-  const v = V.id, st = ctx.stats(v), odo = ctx.curOdo(v), img = vehImage(V), isArt = !safeImg(V.photo) && !!img;
-  const cons = st.allCons, L = cons.reduce((a, c) => a + c.l, 0), avg = L ? cons.reduce((a, c) => a + c.dist, 0) / L : 0;
-  const by = st.by, total = st.spend || 0, pct = x => (total ? (x / total) * 100 : 0);
-  const sub = esc(vehSub(V)), title = esc(vehTitle(V));
-  const L1 = getLang();
-
-  const hero = `<section class="mc-card mc-card--flush cd-hero">
+/* ---------- Home: car card ----------
+   photo (pencil = edit car), then name + year with a small arrow to switch car, registration expiry
+   (from the ownership document) on the start side; plate + odometer, small and grey, on the end side. */
+export function carHero(ctx, V) {
+  const { S } = ctx, img = vehImage(V), isArt = !safeImg(V.photo) && !!img, title = esc(vehTitle(V)), odo = ctx.curOdo(V.id);
+  const own = docs(ctx, V.id).find(d => d.type === 'registration'), st = own && own.expiry ? docStatus(own) : null;
+  const cars = S.vehicles.map(c => ({ label: vehTitle(c), sub: [c.year, c.plate ? `<span class="mc-num">${esc(c.plate)}</span>` : ''].filter(Boolean).join(' · '), icon: 'car', action: 'hm-car', value: c.id, checked: c.id === S.cur }));
+  return `<section class="mc-card mc-card--flush hm-hero" aria-label="${title}">
     <div class="cd-photo${img ? (isArt ? ' is-art' : '') : ' is-empty'}" role="img" aria-label="${title}">${img || `${icon('car')}<span class="mc-small">${t('car.noPhoto')}</span>`}
-      <div class="cd-photo__actions">${button(t(img ? 'car.changePhoto' : 'car.addPhoto'), { size: 'sm', icon: 'car', attrs: 'data-car="catalog"' })}</div></div>
-    <div class="cd-id">
-      <h1 class="mc-h2">${title}</h1>
-      <div class="cd-id__meta">${sub ? `<span class="mc-muted">${sub}</span>` : ''}${V.fuel ? badge(fuelLabel(V.fuel), 'neutral') : ''}</div>
+      ${iconButton('pencil', t('home.editCar'), { attrs: 'data-car="edit"' }).replace('class="mc-iconbtn', 'class="mc-iconbtn hm-edit')}</div>
+    <div class="hm-id">
+      <div class="hm-id__main">
+        <div class="hm-id__name">
+          <div class="hm-switch">${menu({ id: 'hm-cars', label: t('home.switchCarLabel'), triggerIcon: 'chevron-down', items: [...cars, { sep: true }, { label: t('home.addCar'), icon: 'plus', action: 'hm-addcar' }] })}</div>
+          <h1 class="mc-h2 hm-car__name">${title}</h1>${V.year ? `<span class="hm-year mc-num">${esc(V.year)}</span>` : ''}
+        </div>
+        ${own && own.expiry ? `<div class="hm-exp">${icon('calendar')}<span>${fill2(t('home.expiresOn'), { d: `<b>${longDate(own.expiry)}</b>` })}</span>${st && st[0] !== 'success' ? badge(st[1], st[0]) : ''}</div>` : ''}
+      </div>
+      <div class="hm-id__side">
+        ${V.plate ? `<span class="mc-num" dir="auto">${esc(V.plate)}</span>` : ''}
+        <span><span class="mc-num">${fmt(odo)}</span> ${t('unit.km')}</span>
+      </div>
     </div>
-    <dl class="cd-facts">
-      <div><dt>${t('car.plate')}</dt><dd>${V.plate ? `<span class="mc-num">${esc(V.plate)}</span>` : '—'}</dd></div>
-      <div><dt>${t('home.odometer')}</dt><dd>${num(odo)} <span class="mc-stat__unit">${t('unit.km')}</span></dd></div>
-    </dl>
   </section>`;
-
-  const summary = `<section class="mc-card cd-sum" aria-labelledby="cd-sum-t">
-    <div class="mc-card__head"><h2 class="mc-title" id="cd-sum-t">${t('car.expenses')}</h2><span class="mc-caption mc-muted">${t('car.allTime')}</span></div>
-    <div class="cd-sum__total">${money(ctx, total)}</div>
-    <div class="cd-bar" role="img" aria-label="${esc(t('car.expenses'))}">${['fuel', 'service', 'expense'].map(k => `<span class="mc-tone-${k}" style="width:${pct(by[k]).toFixed(2)}%"></span>`).join('')}</div>
-    <ul class="cd-legend">${['fuel', 'service', 'expense'].map(k => `<li class="mc-tone-${k}"><i></i><span>${t('types.' + k)}</span><b>${money(ctx, by[k])}</b></li>`).join('')}</ul>
-  </section>
-  <div class="mc-grid-2">
-    ${avg ? stat(t('home.avg'), ctx.S.set.unit === 'l100' ? `${num(100 / avg, 1)} <span class="mc-stat__unit">${L1 === 'ar' ? 'ل/100كم' : 'L/100km'}</span>` : `${num(avg, 1)} <span class="mc-stat__unit">${t('unit.kmpl')}</span>`, fill(t('home.fromFills'), cons.length), 'neutral') : stat(t('home.avg'), '—', t('home.needFills'), 'neutral')}
-    ${stat(t('car.costKm'), st.cpk ? money(ctx, st.cpk) : '—', st.span ? `${fmt(st.span)} ${t('unit.km')}` : '', 'neutral')}
-  </div>`;
-
-  const TABS = [['service', t('car.tabService')], ['fuel', t('car.tabFuel')], ['reminders', t('car.tabReminders')], ['docs', t('car.tabDocs')]];
-  const panel = tabPanel(ctx, V, st);
-  const tabs = `<section class="cd-tabs-wrap">
-    <div class="mc-tabs" role="tablist">${TABS.map(([k, l]) => `<button class="mc-tab" role="tab" id="cd-tab-${k}" aria-controls="cd-panel" aria-selected="${tab === k}" tabindex="${tab === k ? 0 : -1}" data-car-tab="${k}">${l}</button>`).join('')}</div>
-    <div id="cd-panel" role="tabpanel" aria-labelledby="cd-tab-${tab}" class="cd-panel">${panel}</div>
-  </section>`;
-
-  return `<div class="cd">
-    <header class="mc-appbar cd-appbar">
-      <a class="mc-iconbtn" href="#home" aria-label="${t('action.back')}">${icon('arrow-left')}</a>
-      <div class="mc-appbar__title">${t('car.title')}</div>
-      <div class="mc-appbar__actions">${button(t('action.edit'), { variant: 'tonal', size: 'sm', icon: 'pencil', attrs: 'data-car="edit"' })}</div>
-    </header>
-    <div class="mc-container cd-grid">
-      <div class="cd-col">${hero}${summary}</div>
-      <div class="cd-col">${tabs}</div>
-    </div></div>`;
 }
 
-function tabPanel(ctx, V, st) {
-  const v = V.id, it = st.it;
-  const more = type => `<a class="mc-btn mc-btn--ghost mc-btn--sm cd-more" href="#log" data-car-log="${type}">${t('car.viewInLog')}${icon('chevron-right')}</a>`;
-  const empty = (ic, title, action) => `<div class="mc-state cd-empty">${iconTile(ic, 'neutral', 'lg')}<h3 class="mc-state__title">${title}</h3>${action}</div>`;
-  if (tab === 'service') {
-    const xs = it.filter(x => x.t === 'service');
-    if (!xs.length) return empty('wrench', t('car.noService'), button(t('car.addService'), { variant: 'primary', icon: 'plus', attrs: 'data-act="add" data-t="service"' }));
-    return `<div class="mc-list">${xs.slice(0, 20).map(x => listItem({ title: esc(x.cat || t('types.service')), sub: [shortDate(x.d), x.odo ? `${num(x.odo)} ${t('unit.km')}` : '', esc(x.place || '')].filter(Boolean).join(' · '), lead: 'wrench', tone: 'service', trail: money(ctx, x.cost), attrs: `data-act="edit" data-id="${esc(x.id)}"` })).join('')}</div>
-      <div class="cd-panel__foot">${button(t('car.addService'), { variant: 'tonal', size: 'sm', icon: 'plus', attrs: 'data-act="add" data-t="service"' })}${xs.length > 20 ? more('service') : ''}</div>`;
-  }
-  if (tab === 'fuel') {
-    const xs = it.filter(x => x.t === 'fuel');
-    if (!xs.length) return empty('fuel', t('car.noFuel'), button(t('car.addFuel'), { variant: 'primary', icon: 'plus', attrs: 'data-act="add" data-t="fuel"' }));
-    return `<div class="mc-list">${xs.slice(0, 20).map(x => listItem({ title: `${x.fuel ? esc(fuelLabel(x.fuel)) + ' · ' : ''}${num(x.liters, 2)} ${t('home.liter')}`, sub: [shortDate(x.d), x.odo ? `${num(x.odo)} ${t('unit.km')}` : '', x.ppl ? `${num(x.ppl, 3)}/${t('home.liter')}` : '', x.full ? '' : t('car.partial')].filter(Boolean).join(' · '), lead: 'fuel', tone: 'fuel', trail: money(ctx, x.cost), attrs: `data-act="edit" data-id="${esc(x.id)}"` })).join('')}</div>
-      <div class="cd-panel__foot">${button(t('car.addFuel'), { variant: 'tonal', size: 'sm', icon: 'plus', attrs: 'data-act="add" data-t="fuel"' })}${xs.length > 20 ? more('fuel') : ''}</div>`;
-  }
-  if (tab === 'reminders') {
-    const rs = ctx.S.reminders.filter(r => r.v === v).map(r => ({ r, s: ctx.rstat(r, st) })).sort((a, b) => b.s.pct - a.s.pct);
-    if (!rs.length) return empty('bell', t('home.noReminders'), button(t('car.addReminder'), { variant: 'primary', icon: 'plus', attrs: 'data-act="addrem"' }));
-    return `<div class="mc-list">${rs.map(({ r, s }) => {
-      const stt = s.done ? ['success', t('rem.done')] : s.due ? ['danger', t('home.due')] : s.soon ? ['warning', t('home.soon')] : ['neutral', t('home.ok')];
-      const parts = [];
-      if (s.km != null) parts.push(s.km <= 0 ? fill(t('home.overKm'), fmt(-s.km)) : fill(t('home.inKm'), fmt(s.km)));
-      else if (s.days != null) parts.push(s.days <= 0 ? fill(t('home.overDays'), fmt(-s.days)) : fill(t('home.inDays'), fmt(s.days)));
-      if (s.dueDate) parts.push(shortDate(s.dueDate));
-      if (s.done) parts.push(shortDate(r.done));
-      if (r.alert === false) parts.push(t('rem.alertOff'));
-      return listItem({ title: esc(r.name), sub: parts.join(' · '), lead: 'bell', tone: stt[0] === 'neutral' ? 'service' : stt[0], trail: badge(stt[1], stt[0]), attrs: `data-act="editrem" data-id="${esc(r.id)}"`, compact: true });
-    }).join('')}</div>
-      <div class="cd-panel__foot">${button(t('car.addReminder'), { variant: 'tonal', size: 'sm', icon: 'plus', attrs: 'data-act="addrem"' })}<a class="mc-btn mc-btn--ghost mc-btn--sm cd-more" href="#remind">${t('home.seeAll')}${icon('chevron-right')}</a></div>`;
-  }
-  const ds = docs(ctx, v);
-  if (!ds.length) return empty('receipt', t('car.noDocs'), `<p class="mc-state__text">${t('car.noDocsText')}</p>${button(t('car.addDoc'), { variant: 'primary', icon: 'plus', attrs: 'data-car="doc-add"' })}`);
-  return `<div class="mc-list">${ds.map(d => {
-    const s = docStatus(d);
-    return listItem({ title: esc(d.title || t('car.doc.' + d.type)), sub: [d.number ? `<span class="mc-num">${esc(d.number)}</span>` : '', d.expiry ? `${t('car.expiry')} ${shortDate(d.expiry)}` : '', d.img ? t('car.hasImage') : ''].filter(Boolean).join(' · '), lead: DOC_ICON[d.type] || 'inbox', tone: 'info', trail: s ? badge(s[1], s[0]) : '', attrs: `data-car="doc-open" data-id="${esc(d.id)}"` });
-  }).join('')}</div>
-    <div class="cd-panel__foot">${button(t('car.addDoc'), { variant: 'tonal', size: 'sm', icon: 'plus', attrs: 'data-car="doc-add"' })}</div>`;
+/* ---------- Home: documents ----------
+   Ownership: one document (View when there is one, Add when not). Insurance: several (count + View, or Add).
+   Older documents of other types stay reachable under "Other documents" (shown only when there are some). */
+const docCount = n => (getLang() === 'ar' ? (n === 1 ? t('home.docs1') : n === 2 ? t('home.docs2') : n <= 10 ? fill(t('home.docsFew'), n) : fill(t('home.docsMany'), n)) : n === 1 ? t('home.docs1') : fill(t('home.docsFew'), n));
+export function docsSection(ctx, V) {
+  const ds = docs(ctx, V.id), own = ds.find(d => d.type === 'registration'), ins = ds.filter(d => d.type === 'insurance');
+  const other = ds.filter(d => d.type !== 'insurance' && (d.type !== 'registration' || d !== own));
+  const viewBtn = attrs => button(t('home.view'), { variant: 'outline', size: 'sm', icon: 'eye', attrs });
+  const addBtn = attrs => button(t('home.add'), { variant: 'tonal', size: 'sm', icon: 'plus', attrs });
+  const row = (title, sub, tone, trail) => listItem({ tag: 'div', compact: true, title, sub, lead: 'receipt', tone, trail });
+  return `<section aria-labelledby="hm-docs">
+    <div class="mc-section-head"><h2 class="mc-title" id="hm-docs">${t('home.docs')}</h2></div>
+    <div class="mc-list hm-docs">
+      ${row(t('home.ownership'), '', 'primary', own ? viewBtn(`data-car="doc-open" data-id="${esc(own.id)}"`) : addBtn('data-car="doc-add" data-type="registration"'))}
+      ${row(t('home.insurance'), ins.length ? docCount(ins.length) : '', 'warning', ins.length ? viewBtn('data-car="doc-list" data-type="insurance"') : addBtn('data-car="doc-add" data-type="insurance"'))}
+      ${other.length ? row(t('home.otherDocs'), docCount(other.length), 'neutral', viewBtn('data-car="doc-list" data-type="other"')) : ''}
+    </div></section>`;
 }
 
 /* ---------- vehicle editor (add + edit) ---------- */
@@ -244,37 +186,24 @@ export function openVehicleEditor(ctx, id = null) {
 }
 
 /* ---------- catalog sheet (from the photo on the details page) ---------- */
-function openCatalogSheet(ctx) {
-  const V = ctx.veh(ctx.S.cur);
-  const root = openSheet({ title: t('catalog.title'), body: `<div id="ct-root" class="mc-stack"></div><p class="mc-caption mc-muted" style="margin:0">${t('catalog.note')}</p>`,
-    footer: `<label class="mc-btn mc-btn--outline">${icon('upload')}<span>${t('catalog.fromDevice')}</span><input type="file" accept="image/*" data-car="photo" hidden></label>` });
-  const ok = mountCatalog(root.querySelector('#ct-root'), { make: V.make, model: V.model, color: V.photoCat ? V.photoCat.color : 'silver' }, pick => {
-    const prev = { photo: V.photo, photoCat: V.photoCat };
-    V.photoCat = pick; delete V.photo;
-    if (!ctx.save(['g'])) { Object.assign(V, prev); if (!prev.photo) delete V.photo; toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
-    closeSheet(); ctx.render(); toast(t('car.photoSaved'), { tone: 'success' });
-  });
-  if (!ok) {
-    const b = document.createElement('div'); b.innerHTML = button(t('catalog.setModel'), { variant: 'primary', block: true, icon: 'pencil', attrs: 'data-ct-setmodel' });
-    root.querySelector('#ct-root').appendChild(b.firstElementChild);
-    root.querySelector('[data-ct-setmodel]').addEventListener('click', () => { closeSheet(true); openVehicleEditor(ctx, V.id); });
-  }
-}
-
 /* ---------- documents ---------- */
-function openDocEditor(ctx, id = null) {
-  const old = id ? (ctx.S.docs || []).find(d => d.id === id) : null, D = old || { type: 'insurance' };
+// type is fixed when adding from Home (ownership / insurance); the type picker stays for older documents of other types.
+function openDocEditor(ctx, id = null, presetType = null) {
+  const old = id ? (ctx.S.docs || []).find(d => d.id === id) : null, D = old || { type: presetType || 'insurance' };
+  const fixed = !old && presetType || (old && ['registration', 'insurance'].includes(old.type));
   let img = safeImg(D.img);
   const body = `<form class="mc-stack" id="de-form" novalidate>
-    ${field({ id: 'de-type', label: t('car.docType'), options: DOC_TYPES.map(k => [k, t('car.doc.' + k)]), value: D.type })}
-    ${field({ id: 'de-title', label: t('car.docTitle'), optional: t('car.optional'), value: D.title || '', placeholder: t('car.docTitlePh') })}
+    ${fixed ? `<input type="hidden" id="de-type" value="${esc(D.type)}">` : field({ id: 'de-type', label: t('car.docType'), options: DOC_TYPES.map(k => [k, t('car.doc.' + k)]), value: D.type })}
+    ${D.type === 'registration' && fixed ? `<input type="hidden" id="de-title" value="${esc(D.title || '')}">` : field({ id: 'de-title', label: t('car.docTitle'), optional: t('car.optional'), value: D.title || '', placeholder: t(D.type === 'insurance' ? 'car.insTitlePh' : 'car.docTitlePh') })}
     <div class="mc-grid-2">${field({ id: 'de-num', label: t('car.docNumber'), optional: t('car.optional'), value: D.number || '' })}${field({ id: 'de-exp', label: t('car.expiry'), optional: t('car.optional'), type: 'date', value: D.expiry || '' })}</div>
     <div class="mc-field"><span class="mc-field__label">${t('car.docImage')} <small>(${t('car.optional')})</small></span>
       <div class="cd-doc-img${img ? '' : ' is-empty'}" id="de-prev">${img ? `<img src="${img}" alt="">` : icon('receipt')}</div>
       <div class="mc-row"><label class="mc-btn mc-btn--tonal mc-btn--sm">${icon('upload')}<span>${t('car.choosePhoto')}</span><input type="file" accept="image/*" id="de-file" hidden></label>
         ${button(t('car.removePhoto'), { variant: 'ghost', size: 'sm', attrs: `id="de-rm" ${img ? '' : 'hidden'}` })}</div></div>
+    ${old ? `<div class="mc-divider"></div>${button(t('car.deleteDoc'), { variant: 'danger', icon: 'trash-2', block: true, attrs: 'id="de-del"' })}` : ''}
   </form>`;
-  const root = openSheet({ title: t(old ? 'car.editDoc' : 'car.addDoc'), body,
+  const head = old ? (old.title || docName(old.type)) : docName(D.type);
+  const root = openSheet({ title: old ? head : `${t('car.addDoc')} · ${head}`, body,
     footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'id="de-save"' }) });
   const $ = s => root.querySelector(s);
   $('#de-file').addEventListener('change', async e => {
@@ -289,25 +218,38 @@ function openDocEditor(ctx, id = null) {
     const before = JSON.stringify(ctx.S.docs || []);
     ctx.S.docs = old ? ctx.S.docs.map(d => (d.id === nd.id ? nd : d)) : [...(ctx.S.docs || []), nd];
     if (!ctx.save(['g'])) { ctx.S.docs = JSON.parse(before); toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
-    closeSheet(); tab = 'docs'; ctx.render(); toast(t('car.docSaved'), { tone: 'success' });
+    closeSheet(); ctx.render(); toast(t('car.docSaved'), { tone: 'success' });
+  });
+  const del = $('#de-del');
+  if (del) del.addEventListener('click', async () => {
+    closeSheet(true);
+    if (await confirmDialog({ title: t('car.deleteDocQ'), text: t('car.deleteDocText'), confirmText: t('action.delete') })) {
+      const keep = old; ctx.S.docs = ctx.S.docs.filter(x => x.id !== old.id); ctx.save(['g']); ctx.render();
+      toast(t('car.docDeleted'), { action: t('action.undo'), onAction: () => { ctx.S.docs.push(keep); ctx.save(['g']); ctx.render(); } });
+    }
   });
 }
+const docName = type => (type === 'registration' ? t('home.ownership') : type === 'insurance' ? t('home.insurance') : t('car.doc.' + type));
+// viewer: the document large, its expiry; the pencil edits or replaces it (delete lives in the editor)
 function openDocViewer(ctx, id) {
   const d = (ctx.S.docs || []).find(x => x.id === id); if (!d) return;
   const s = docStatus(d), img = safeImg(d.img);
   const row = (k, v) => (v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : '');
-  const root = openSheet({ title: d.title || t('car.doc.' + d.type),
-    body: `${img ? `<img class="cd-doc-full" src="${img}" alt="${esc(d.title || t('car.doc.' + d.type))}">` : ''}
-      <dl class="cd-facts cd-facts--list">${row(t('car.docType'), esc(t('car.doc.' + d.type)))}${row(t('car.docNumber'), d.number ? `<span class="mc-num">${esc(d.number)}</span>` : '')}${row(t('car.expiry'), d.expiry ? `${shortDate(d.expiry)} ${s ? badge(s[1], s[0]) : ''}` : '')}</dl>`,
-    footer: button(t('action.delete'), { variant: 'danger', icon: 'trash-2', attrs: 'id="dv-del"' }) + button(t('action.edit'), { variant: 'primary', icon: 'pencil', attrs: 'id="dv-edit"' }) });
+  const root = openSheet({ title: d.title || docName(d.type),
+    actions: iconButton('pencil', t('car.editReplace'), { attrs: 'id="dv-edit"' }),
+    body: `${img ? `<img class="cd-doc-full" src="${img}" alt="${esc(d.title || docName(d.type))}">` : `<div class="cd-doc-img is-empty">${icon('receipt')}</div>`}
+      <dl class="cd-facts cd-facts--list">${['registration', 'insurance'].includes(d.type) ? '' : row(t('car.docType'), esc(t('car.doc.' + d.type)))}${row(t('car.docNumber'), d.number ? `<span class="mc-num">${esc(d.number)}</span>` : '')}${row(t('car.expiry'), d.expiry ? `${longDate(d.expiry)} ${s ? badge(s[1], s[0]) : ''}` : '')}</dl>` });
   root.querySelector('#dv-edit').addEventListener('click', () => { closeSheet(true); openDocEditor(ctx, id); });
-  root.querySelector('#dv-del').addEventListener('click', async () => {
-    closeSheet();
-    if (await confirmDialog({ title: t('car.deleteDocQ'), text: t('car.deleteDocText'), confirmText: t('action.delete') })) {
-      const keep = d; ctx.S.docs = ctx.S.docs.filter(x => x.id !== id); ctx.save(['g']); ctx.render();
-      toast(t('car.docDeleted'), { action: t('action.undo'), onAction: () => { ctx.S.docs.push(keep); ctx.save(['g']); ctx.render(); } });
-    }
-  });
+}
+// a folder of documents (insurance, or older types): each opens the viewer; insurance can always take more
+function openDocList(ctx, kind) {
+  const V = ctx.veh(ctx.S.cur), ds = docs(ctx, V.id), own = ds.find(d => d.type === 'registration');
+  const list = kind === 'insurance' ? ds.filter(d => d.type === 'insurance') : ds.filter(d => d.type !== 'insurance' && d !== own);
+  const body = `<div class="mc-list">${list.map(d => { const s = docStatus(d);
+    return listItem({ title: esc(d.title || docName(d.type)), sub: d.expiry ? `${fill2(t('home.expiresOn'), { d: longDate(d.expiry) })}${s ? ' ' + badge(s[1], s[0]) : ''}` : t('car.noExpiry'),
+      lead: 'receipt', tone: kind === 'insurance' ? 'warning' : 'neutral', chevron: true, attrs: `data-car="doc-open" data-id="${esc(d.id)}"` }); }).join('')}</div>`;
+  openSheet({ title: kind === 'insurance' ? t('home.insurance') : t('home.otherDocs'), body,
+    footer: kind === 'insurance' ? button(t('car.addDoc'), { variant: 'primary', icon: 'plus', block: true, attrs: 'data-car="doc-add" data-type="insurance"' }) : '' });
 }
 
 /* ---------- behaviour (registered once) ---------- */
@@ -315,30 +257,12 @@ let bound = false;
 export function initCar(ctx) {
   if (bound) return; bound = true;
   document.addEventListener('click', e => {
-    const tb = e.target.closest('[data-car-tab]');
-    if (tb) { tab = tb.dataset.carTab; ctx.render(); document.getElementById('cd-tab-' + tab)?.focus(); return; }
-    const lg = e.target.closest('[data-car-log]');
-    if (lg) { ctx.setLogFilter(lg.dataset.carLog); return; }
     const b = e.target.closest('[data-car]'); if (!b) return;
-    const a = b.dataset.car;
+    const a = b.dataset.car, inSheet = !!b.closest('.mc-scrim');
+    const go = fn => { if (inSheet) { closeSheet(true); } fn(); };
     if (a === 'edit') openVehicleEditor(ctx, ctx.S.cur);
-    else if (a === 'catalog') openCatalogSheet(ctx);
-    else if (a === 'doc-add') openDocEditor(ctx);
-    else if (a === 'doc-open') openDocViewer(ctx, b.dataset.id);
-  });
-  document.addEventListener('keydown', e => {
-    const tb = e.target.closest && e.target.closest('[data-car-tab]'); if (!tb || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
-    const all = [...document.querySelectorAll('[data-car-tab]')], i = all.indexOf(tb), rtl = document.documentElement.dir === 'rtl';
-    const step = (e.key === 'ArrowRight') !== rtl ? 1 : -1;
-    const n = e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : (i + step + all.length) % all.length;
-    e.preventDefault(); all[n].click();
-  });
-  document.addEventListener('change', async e => {
-    if (e.target.dataset && e.target.dataset.car === 'photo' && e.target.files[0]) {
-      const V = ctx.veh(ctx.S.cur), prev = { photo: V.photo, photoCat: V.photoCat };
-      try { V.photo = await imageToDataURL(e.target.files[0], 900, 0.82); delete V.photoCat; } catch (err) { toast(t('car.imageError'), { tone: 'danger' }); return; }
-      if (!ctx.save(['g'])) { if (prev.photo) V.photo = prev.photo; else delete V.photo; if (prev.photoCat) V.photoCat = prev.photoCat; toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
-      closeSheet(); ctx.render(); toast(t('car.photoSaved'), { tone: 'success' });
-    }
+    else if (a === 'doc-add') go(() => openDocEditor(ctx, null, b.dataset.type || null));
+    else if (a === 'doc-open') go(() => openDocViewer(ctx, b.dataset.id));
+    else if (a === 'doc-list') openDocList(ctx, b.dataset.type);
   });
 }

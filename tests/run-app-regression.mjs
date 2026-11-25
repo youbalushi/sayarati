@@ -102,30 +102,33 @@ ok('CSV export downloads', csv && /\.csv$/.test(csv.suggestedFilename()), csv &&
 await p.click('[data-set-cat=add]'); await p.waitForTimeout(250); await p.fill('#cat-name', 'اختبار'); await p.click('#cat-save'); await p.waitForTimeout(250);
 ok('add category', await p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S.cats.service.includes('اختبار')));
 
-/* ---- home screen (design system) ---- */
+/* ---- home screen: car card · documents · upcoming reminders ---- */
+const carMenu = async (sel) => { await p.click('[data-mc-menu=hm-cars]'); await p.waitForTimeout(150); await p.click(`#hm-cars ${sel}`); await p.waitForTimeout(400); };
+const S_ = () => p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S);
 await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(300);
-ok('home: greeting, car card, odometer, 2 stats', await p.evaluate(() => !!document.querySelector('.hm-greet h1') && !!document.querySelector('.hm-car .mc-display') && document.querySelectorAll('.hm .mc-stat').length === 2));
-const odoShown = await p.evaluate(() => document.querySelector('.hm-car .mc-display').textContent.replace(/,/g, ''));
+ok('home: greeting, car card with photo, name, year, plate + odometer', await p.evaluate(() => !!document.querySelector('.hm-greet h1') && !!document.querySelector('.hm-hero .cd-photo') && !!document.querySelector('.hm-car__name') && /2021/.test(document.querySelector('.hm-year').textContent) && document.querySelectorAll('.hm-id__side>span').length === 2));
+ok('home: no "change photo" button; a pencil edits the car', await p.evaluate(() => !document.querySelector('.hm [data-car=catalog]') && !!document.querySelector('.hm-hero .cd-photo [data-car=edit]')));
+const odoShown = await p.evaluate(() => document.querySelector('.hm-id__side>span:last-child .mc-num').textContent.replace(/,/g, ''));
 const odoData = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.cur; return String(Math.max(...Object.values(d.E).flat().filter(x => x.v === v).map(x => +x.odo || 0))); });
 ok('home: odometer equals highest recorded reading', odoShown === odoData, `${odoShown} vs ${odoData}`);
-ok('home: ≤2 reminders and ≤5 recent items', await p.evaluate(() => { const l = document.querySelectorAll('.hm .mc-list'); return l[0].children.length <= 2 && l[1].children.length <= 5; }));
-await p.click('.hm .mc-list [data-act=edit]'); await p.waitForTimeout(250);
-ok('home: tapping an activity opens its edit form', await p.isVisible('#en-form'));
-await p.keyboard.press('Escape'); await p.waitForTimeout(250);
-// switch cars: add a second car, then switch back through the sheet
-await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('[data-addcar]'); await p.waitForTimeout(500);
+ok('home: order is car → documents → reminders; no expense summary, no maintenance list', await p.evaluate(() => { const t = document.querySelector('.hm').innerText; return t.indexOf('مستندات السيارة') < t.indexOf('التذكيرات القادمة') && !document.querySelector('.hm .cd-sum, .hm .mc-stat, .hm [data-act=edit]'); }));
+ok('home: ≤2 reminders + "see all" to the reminders page', await p.evaluate(() => document.querySelectorAll('.hm section[aria-labelledby=hm-rem] .mc-list-item').length <= 2 && !!document.querySelector('.hm a[href="#remind"]') && !document.querySelector('.hm [data-act=addrem]')));
+ok('home: documents start with "Add" for ownership and insurance', await p.evaluate(() => document.querySelectorAll('.hm-docs [data-car=doc-add]').length === 2 && !document.querySelector('.hm-docs [data-car=doc-open]')));
+// switch cars through the arrow menu: add a second car, then switch back
+await carMenu('[data-action=hm-addcar]');
 await p.selectOption('#ve-make', 'nissan'); await p.selectOption('#ve-model', 'Patrol'); await p.click('#ve-save'); await p.waitForTimeout(300);
 ok('home: new car becomes current', (await p.textContent('.hm-car__name')).includes('Patrol'));
-await p.click('[data-home=switch]'); await p.waitForTimeout(300);
-const cars = await p.$$eval('.mc-scrim [data-car]', els => els.length);
-await p.click('.mc-scrim [data-car]:not([aria-current])'); await p.waitForTimeout(300);
-ok('home: switcher lists all cars and switches', cars === 2 && (await p.textContent('.hm-car__name')).includes('Camry'), `${cars} cars`);
+await p.click('[data-mc-menu=hm-cars]'); await p.waitForTimeout(150);
+const cars = await p.$$eval('#hm-cars [data-action=hm-car]', els => els.map(e => e.getAttribute('aria-checked')));
+await p.click('#hm-cars [data-action=hm-car][aria-checked=false]'); await p.waitForTimeout(400);
+ok('home: arrow menu lists all cars (current checked) + add, and switches', cars.length === 2 && cars.filter(x => x === 'true').length === 1 && (await p.textContent('.hm-car__name')).includes('Camry'), JSON.stringify(cars));
 // FAB → add picker
 await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250);
-ok('home: + opens the add picker', await p.isVisible('.en-types')); await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelector('#ov') && (document.querySelector('#ov').hidden = true));
+ok('home: + opens the add picker', await p.isVisible('.en-types')); await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+ok('nav: right→left home · maintenance · (+) · log · reports', await p.evaluate(() => [...document.querySelectorAll('#nav-bottom .mc-bottomnav__inner>*')].map(e => e.getAttribute('href') || 'fab').join() === '#home,#maint,fab,#log,#reports'));
 // language + theme via the settings menu
 await p.click('[data-mc-menu=hm-menu]'); await p.click('#hm-menu [data-action=hm-lang][data-value=en]'); await p.waitForTimeout(300);
-ok('home: English switches to LTR', await p.evaluate(() => document.documentElement.dir === 'ltr' && /Odometer/.test(document.querySelector('.hm-odo').textContent)));
+ok('home: English switches to LTR', await p.evaluate(() => document.documentElement.dir === 'ltr' && /Car documents/.test(document.querySelector('.hm').textContent) && /Maintenance/.test(document.getElementById('nav-bottom').textContent)));
 await p.evaluate(() => { location.hash = 'log'; }); await p.waitForTimeout(250);
 ok('log follows the language (English, LTR)', await p.evaluate(() => !document.getElementById('main').hasAttribute('dir') && document.documentElement.dir === 'ltr' && document.querySelector('.lg h1').textContent === 'Log'));
 await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250);
@@ -136,70 +139,86 @@ ok('home: no horizontal overflow', await p.evaluate(() => document.documentEleme
 await p.setViewportSize({ width: 1440, height: 900 }); await p.waitForTimeout(300);
 ok('desktop: side rail replaces bottom nav', await p.evaluate(() => getComputedStyle(document.getElementById('nav-rail')).display !== 'none' && getComputedStyle(document.getElementById('nav-bottom')).display === 'none'));
 ok('desktop: two-column home', await p.evaluate(() => getComputedStyle(document.querySelector('.hm-grid')).gridTemplateColumns.split(' ').length === 2));
-/* ---- vehicle details (#car) ---- */
 await p.setViewportSize({ width: 390, height: 844 });
-await p.click('.hm-car__link'); await p.waitForTimeout(300);
-ok('car: home card opens #car', await p.evaluate(() => location.hash === '#car' && !!document.querySelector('.cd h1')));
-ok('car: plate + odometer facts, expense summary, 4 tabs', await p.evaluate(() => document.querySelectorAll('.cd-facts>div').length === 2 && !!document.querySelector('.cd-sum__total') && document.querySelectorAll('[data-car-tab]').length === 4));
-const sumOk = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.cur; const tot = Object.values(d.E).flat().filter(x => x.v === v && x.t !== 'income').reduce((a, x) => a + (+x.cost || 0), 0); return Math.abs(parseFloat(document.querySelector('.cd-sum__total').textContent.replace(/[^\d.]/g, '')) - tot) < 0.01; });
-ok('car: expense total equals stored records', sumOk);
-const nService = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); return Object.values(d.E).flat().filter(x => x.v === d.S.cur && x.t === 'service').length; });
-ok('car: service tab lists the car\'s service records', (await p.$$eval('#cd-panel .mc-list-item', e => e.length)) === Math.min(20, nService), String(nService));
-await p.click('[data-car-tab=fuel]'); await p.waitForTimeout(200);
-ok('car: fuel tab shows fill-ups', (await p.$$eval('#cd-panel .mc-list-item', e => e.length)) > 0);
-await p.focus('[data-car-tab=fuel]'); await p.keyboard.press(await p.evaluate(() => document.documentElement.dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight')); await p.waitForTimeout(200);
-ok('car: arrow keys move between tabs', await p.evaluate(() => document.activeElement.dataset.carTab === 'reminders' && document.querySelector('[data-car-tab=reminders]').getAttribute('aria-selected') === 'true'));
-// photo from gallery
+// old #car links land on Home
+await p.evaluate(() => { location.hash = 'car'; }); await p.waitForTimeout(300);
+ok('old #car link shows Home', await p.evaluate(() => !!document.querySelector('.hm-hero') && document.querySelector('#nav-bottom [aria-current]').getAttribute('href') === '#home'));
+/* ---- maintenance screen ---- */
+await p.click('#nav-bottom a[href="#maint"]'); await p.waitForTimeout(300);
+const D0 = await p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')));
+const svc = Object.values(D0.E).flat().filter(x => x.v === D0.S.cur && x.t === 'service');
+ok('maint: lists every service of the car, grouped by month', await p.evaluate(n => document.querySelectorAll('.mt [data-act=edit]').length === n && document.querySelectorAll('.mt .lg-month').length >= 2, svc.length));
+ok('maint: total maintenance spend matches the records', await p.evaluate(tot => Math.abs(parseFloat(document.querySelector('.mt .mc-stat__value').textContent.replace(/[^\d.]/g, '')) - tot) < 0.001, svc.reduce((a, x) => a + x.cost, 0)));
+await p.click('.mt [data-act=add]'); await p.waitForTimeout(350);
+ok('maint: "Add service" opens the service form', await p.evaluate(() => !!document.getElementById('en-form') && !document.querySelector('.en-types')));
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+await p.click('.mt [data-act=edit]'); await p.waitForTimeout(350);
+ok('maint: tapping a service opens it for editing', await p.evaluate(() => !!document.getElementById('en-del')));
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+/* ---- reminders page (from "see all") ---- */
+await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250); await p.click('.hm a[href="#remind"]'); await p.waitForTimeout(300);
+ok('reminders page: back arrow, Add on top, all reminders', await p.evaluate(n => !!document.querySelector('.rl .mc-appbar a[href="#home"]') && document.querySelector('.rl-wrap').firstElementChild.dataset.act === 'addrem' && document.querySelectorAll('.rl-card').length === n, (D0.S.reminders || []).filter(r => r.v === D0.S.cur).length));
+await p.click('.rl-wrap > [data-act=addrem]'); await p.waitForTimeout(450);
+ok('reminders page: Add opens the reminder form', await p.evaluate(() => !!document.getElementById('rm-form')));
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+/* ---- documents: ownership (one), insurance (several), viewer with pencil ---- */
 const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP4z8DAwMDAxMDAwMDAAAANHQEDK+mmyAAAAABJRU5ErkJggg==';
-// catalog: locked to the registered make + model; only the color is chosen
-await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
-ok('catalog: shows only the car\'s make + model', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !sc.querySelector('[data-ct-make],[data-ct-model],[data-ct-q]') && /Camry/.test(sc.querySelector('.ct-locked__id').textContent) && sc.querySelectorAll('[data-ct-color]').length === 8; }));
-await p.click('.mc-scrim [data-ct-color=red]'); await p.waitForTimeout(100); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(400);
-ok('catalog: stores the car\'s own model + chosen color', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.photoCat && v.photoCat.model === 'Camry' && v.photoCat.body === 'sedan' && v.photoCat.color === 'red' && !v.photo && !!document.querySelector('.cd-photo .mc-carart'); }));
-ok('catalog: a mismatched saved drawing still renders the registered model', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); v.photoCat.body = 'pickup'; v.photoCat.model = 'Hilux'; localStorage.setItem('sayarati-v1', JSON.stringify(d)); return true; }));
-await p.reload(); await p.waitForTimeout(400);
-ok('catalog: … drawn as the car\'s sedan, not the stored pickup', await p.evaluate(() => !document.querySelector('.cd-photo .mc-carart path[d*="L298 74"]') && !!document.querySelector('.cd-photo .mc-carart')));
-await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
-await p.setInputFiles('.mc-scrim [data-car=photo]', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(600);
-ok('car: photo from gallery is stored and shown', await p.evaluate(() => { const v = JSON.parse(localStorage.getItem('sayarati-v1')).S.vehicles.find(x => x.id === JSON.parse(localStorage.getItem('sayarati-v1')).S.cur); return /^data:image\/jpeg;base64,/.test(v.photo) && !v.photoCat && !!document.querySelector('.cd-photo img'); }));
-// edit: Arabic digits, validation
-await p.click('[data-car=edit]'); await p.waitForTimeout(300);
+const png = { name: 'doc.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') };
+await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250);
+await p.click('.hm-docs [data-car=doc-add][data-type=registration]'); await p.waitForTimeout(350);
+ok('ownership: editor has no type picker (fixed type)', await p.evaluate(() => document.getElementById('de-type').type === 'hidden' && document.getElementById('de-type').value === 'registration'));
+await p.fill('#de-num', 'R-77'); await p.fill('#de-exp', '2027-03-14'); await p.setInputFiles('#de-file', png); await p.waitForTimeout(500); await p.click('#de-save'); await p.waitForTimeout(350);
+ok('ownership: saved; row shows View (no more Add)', await p.evaluate(() => !!document.querySelector('.hm-docs [data-car=doc-open]') && !document.querySelector('.hm-docs [data-type=registration]')));
+ok('car card: "expires" line comes from the ownership document', await p.evaluate(() => /14 مارس 2027/.test(document.querySelector('.hm-exp').textContent)));
+await p.click('.hm-docs [data-car=doc-open]'); await p.waitForTimeout(350);
+ok('viewer: image, expiry and a pencil in the header (no delete there)', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !!sc.querySelector('.cd-doc-full') && !!sc.querySelector('.mc-sheet__head #dv-edit') && !sc.querySelector('#dv-del') && /2027/.test(sc.textContent); }));
+await p.click('#dv-edit'); await p.waitForTimeout(350);
+ok('pencil: opens the editor with the document (replace image / change expiry / delete)', await p.evaluate(() => document.getElementById('de-num').value === 'R-77' && !!document.getElementById('de-file') && !!document.getElementById('de-del')));
+await p.fill('#de-exp', '2020-01-01'); await p.click('#de-save'); await p.waitForTimeout(350);
+ok('car card: expired ownership shows a danger badge', await p.evaluate(() => /danger/.test(document.querySelector('.hm-exp .mc-badge').className)));
+await p.click('.hm-docs [data-car=doc-add][data-type=insurance]'); await p.waitForTimeout(350);
+await p.fill('#de-title', 'وثيقة التأمين الشامل'); await p.fill('#de-exp', '2027-04-04'); await p.setInputFiles('#de-file', png); await p.waitForTimeout(500); await p.click('#de-save'); await p.waitForTimeout(350);
+await p.click('.hm-docs [data-car=doc-list][data-type=insurance]'); await p.waitForTimeout(350);
+await p.click('.mc-scrim [data-car=doc-add][data-type=insurance]'); await p.waitForTimeout(400);
+await p.fill('#de-title', 'البطاقة البرتقالية'); await p.click('#de-save'); await p.waitForTimeout(350);
+ok('insurance: several documents; row shows the count + View', await p.evaluate(() => /مستندان/.test(document.querySelector('.hm-docs').textContent) && !!document.querySelector('.hm-docs [data-car=doc-list][data-type=insurance]')));
+await p.click('.hm-docs [data-car=doc-list][data-type=insurance]'); await p.waitForTimeout(350);
+ok('insurance list: both documents, expiry or "no expiry", Add stays', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return sc.querySelectorAll('[data-car=doc-open]').length === 2 && /بدون تاريخ انتهاء/.test(sc.textContent) && !!sc.querySelector('[data-car=doc-add]'); }));
+await p.click('.mc-scrim [data-car=doc-open]'); await p.waitForTimeout(400);
+ok('insurance list → viewer', await p.evaluate(() => !!document.querySelector('.mc-scrim #dv-edit')));
+await p.click('#dv-edit'); await p.waitForTimeout(350); await p.click('#de-del'); await p.waitForTimeout(350); await p.click('[data-mc-ok]'); await p.waitForTimeout(400);
+ok('document delete (pencil → delete → confirm)', (await S_()).docs.filter(d => d.type === 'insurance').length === 1);
+// an older document of another type stays reachable
+await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); d.S.docs.push({ id: 'oldlic', v: d.S.cur, type: 'license', title: 'رخصة', added: '2025-01-01' }); localStorage.setItem('sayarati-v1', JSON.stringify(d)); }); await p.reload(); await p.waitForTimeout(400);
+ok('older documents of other types: "Other documents" row lists them', await p.evaluate(() => !!document.querySelector('.hm-docs [data-type=other]')));
+await p.click('.hm-docs [data-type=other]'); await p.waitForTimeout(350);
+ok('… and opens them', await p.evaluate(() => document.querySelectorAll('.mc-scrim [data-car=doc-open]').length === 1)); await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+/* ---- vehicle editor (pencil on the photo) ---- */
+await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300);
+await p.click('#ve-cat'); await p.waitForTimeout(250);
+ok('editor catalog: shows only the car\'s make + model', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !sc.querySelector('[data-ct-make],[data-ct-model],[data-ct-q]') && /Camry/.test(sc.querySelector('.ct-locked__id').textContent) && sc.querySelectorAll('[data-ct-color]').length === 8; }));
+await p.click('.mc-scrim [data-ct-color=red]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200); await p.click('#ve-save'); await p.waitForTimeout(350);
+ok('editor catalog: stores the car\'s own model + chosen color', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.photoCat && v.photoCat.model === 'Camry' && v.photoCat.body === 'sedan' && v.photoCat.color === 'red' && !v.photo && !!document.querySelector('.hm-hero .cd-photo .mc-carart'); }));
+await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); v.photoCat.body = 'pickup'; v.photoCat.model = 'Hilux'; localStorage.setItem('sayarati-v1', JSON.stringify(d)); }); await p.reload(); await p.waitForTimeout(400);
+ok('catalog: a mismatched saved drawing still renders the registered model (sedan)', await p.evaluate(() => !document.querySelector('.cd-photo .mc-carart path[d*="L298 74"]') && !!document.querySelector('.cd-photo .mc-carart')));
+await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300);
+await p.setInputFiles('#ve-file', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(600); await p.click('#ve-save'); await p.waitForTimeout(350);
+ok('editor: photo from the device is stored and shown on Home', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return /^data:image\/jpeg;base64,/.test(v.photo) && !!document.querySelector('.hm-hero .cd-photo img'); }));
+await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300);
 await p.selectOption('#ve-make', ''); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(150);
-ok('car: no make/model and no nickname is rejected', await p.evaluate(() => document.getElementById('ve-make').getAttribute('aria-invalid') === 'true' && !!document.querySelector('#ve-err [role=alert]')));
+ok('editor: no make/model and no nickname is rejected', await p.evaluate(() => document.getElementById('ve-make').getAttribute('aria-invalid') === 'true' && !!document.querySelector('#ve-err [role=alert]')));
 await p.selectOption('#ve-make', 'toyota'); await p.waitForTimeout(100);
-ok('car: model list follows the make', await p.evaluate(() => [...document.querySelectorAll('#ve-model option')].some(o => o.value === 'Land Cruiser')));
+ok('editor: model list follows the make', await p.evaluate(() => [...document.querySelectorAll('#ve-model option')].some(o => o.value === 'Land Cruiser')));
 await p.selectOption('#ve-model', 'Land Cruiser'); await p.fill('#ve-year', '٢٠٢١'); await p.click('#ve-save'); await p.waitForTimeout(300);
-await p.click('[data-car=edit]'); await p.waitForTimeout(300); await p.click('#ve-rm'); await p.click('#ve-cat'); await p.waitForTimeout(200);
-ok('editor catalog: locked to the selected model', await p.evaluate(() => /Land Cruiser/.test(document.querySelector('.mc-scrim .ct-locked__id').textContent)));
-await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200);
-await p.selectOption('#ve-model', 'Hilux'); await p.waitForTimeout(150);
-ok('editor: changing the model redraws the picture for the new model', await p.evaluate(() => !!document.querySelector('#ve-photo .mc-carart path[d*="L298 74"]')));
-await p.selectOption('#ve-model', 'Land Cruiser'); await p.click('#ve-save'); await p.waitForTimeout(300);
-ok('editor: saved drawing belongs to the saved model', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.photoCat && v.photoCat.model === 'Land Cruiser' && v.photoCat.body === 'suv' && !v.photo; }));
-ok('car: edits saved (Arabic-digit year → 2021)', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.year === 2021 && v.make === 'toyota' && v.model === 'Land Cruiser' && v.odo0 === 62000; }));
-ok('car: title and subtitle do not repeat', await p.evaluate(() => { const h = document.querySelector('.cd h1').textContent.trim(), sub = document.querySelector('.cd-id__meta').textContent; return h === 'تويوتا Land Cruiser' && !sub.includes('Land Cruiser') && sub.includes('2021'); }));
-await p.click('[data-car=edit]'); await p.waitForTimeout(300); await p.fill('#ve-nick', 'سيارة العائلة'); await p.click('#ve-save'); await p.waitForTimeout(300);
-ok('car: nickname becomes the title, make/model move to the subtitle', await p.evaluate(() => document.querySelector('.cd h1').textContent.trim() === 'سيارة العائلة' && /Land Cruiser · 2021/.test(document.querySelector('.cd-id__meta').textContent)));
-await p.click('[data-car=edit]'); await p.waitForTimeout(300); await p.selectOption('#ve-make', '__other'); await p.fill('#ve-make-t', 'Geely'); await p.fill('#ve-model-t', 'Coolray'); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(300);
-await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
-ok('catalog: model outside the catalog → guidance + set model button, nothing to pick', await p.evaluate(() => { const sc = document.querySelector('.mc-scrim'); return !!sc.querySelector('.mc-alert') && !!sc.querySelector('[data-ct-setmodel]') && !sc.querySelector('[data-ct-use]'); }));
-await p.keyboard.press('Escape'); await p.waitForTimeout(300);
-ok('car: “Other” make/model saved as typed', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.make === 'Geely' && v.model === 'Coolray' && document.querySelector('.cd h1').textContent.trim() === 'Geely Coolray'; }));
-// documents
-await p.click('[data-car-tab=docs]'); await p.waitForTimeout(200); await p.click('#cd-panel [data-car=doc-add]'); await p.waitForTimeout(300);
-await p.fill('#de-exp', '2020-01-01'); await p.click('#de-save'); await p.waitForTimeout(300);
-await p.click('#cd-panel [data-car=doc-add]'); await p.waitForTimeout(300); await p.selectOption('#de-type', 'registration'); await p.fill('#de-num', 'R-77');
-await p.setInputFiles('#de-file', { name: 'doc.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(500); await p.click('#de-save'); await p.waitForTimeout(300);
-ok('car: documents saved, expired one first with danger badge', await p.evaluate(() => (JSON.parse(localStorage.getItem('sayarati-v1')).S.docs || []).length === 2 && /danger/.test(document.querySelector('#cd-panel .mc-badge').className)));
-await p.click('#cd-panel [data-car=doc-open]'); await p.waitForTimeout(300); await p.click('#dv-del'); await p.waitForTimeout(350); await p.click('[data-mc-ok]'); await p.waitForTimeout(300);
-ok('car: document delete (with confirm)', await p.evaluate(() => (JSON.parse(localStorage.getItem('sayarati-v1')).S.docs || []).length === 1));
-// first car: real photo from the device again (the editor tests above replaced it with a drawing)
-await p.evaluate(() => { location.hash = 'car'; }); await p.waitForTimeout(250); await p.click('[data-car=catalog]'); await p.waitForTimeout(300);
-await p.setInputFiles('.mc-scrim [data-car=photo]', { name: 'car.png', mimeType: 'image/png', buffer: Buffer.from(img.split(',')[1], 'base64') }); await p.waitForTimeout(600);
+ok('editor: edits saved (Arabic-digit year → 2021); name + year on the card', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.year === 2021 && v.model === 'Land Cruiser' && document.querySelector('.hm-car__name').textContent.trim() === 'تويوتا Land Cruiser' && document.querySelector('.hm-year').textContent.trim() === '2021'; }));
+await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300); await p.fill('#ve-nick', 'سيارة العائلة'); await p.click('#ve-save'); await p.waitForTimeout(300);
+ok('editor: nickname becomes the title', (await p.textContent('.hm-car__name')).trim() === 'سيارة العائلة');
+await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300); await p.selectOption('#ve-make', '__other'); await p.fill('#ve-make-t', 'Geely'); await p.fill('#ve-model-t', 'Coolray'); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(300);
+ok('editor: “Other” make/model saved as typed', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); return v.make === 'Geely' && v.model === 'Coolray' && document.querySelector('.hm-car__name').textContent.trim() === 'Geely Coolray'; }));
 // give the second car a catalog drawing so the backup holds all three image kinds
-await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250); await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('.mc-scrim [data-car]:not([aria-current])'); await p.waitForTimeout(300);
-await p.evaluate(() => { location.hash = 'car'; }); await p.waitForTimeout(250); await p.click('[data-car=catalog]'); await p.waitForTimeout(300); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(300);
-await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250); await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('.mc-scrim [data-car]:not([aria-current])'); await p.waitForTimeout(300);
+await carMenu('[data-action=hm-car][aria-checked=false]');
+await p.click('.hm-hero [data-car=edit]'); await p.waitForTimeout(300); await p.click('#ve-cat'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-ct-color=blue]'); await p.click('.mc-scrim [data-ct-use]'); await p.waitForTimeout(200); await p.click('#ve-save'); await p.waitForTimeout(300);
+await carMenu('[data-action=hm-car][aria-checked=false]');
 const [bk2] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.evaluate(() => { location.hash = 'settings'; }).then(() => p.waitForTimeout(250)).then(() => p.click('[data-act=drvsave]'))]);
 const bkText = bk2 ? (await import('node:fs')).readFileSync(await bk2.path(), 'utf8') : '';
 ok('backup includes photos, catalog image, documents', /"photo":"data:image\/jpeg/.test(bkText) && /"photoCat":\{/.test(bkText) && /"img":"data:image\/jpeg/.test(bkText) && /"model":"Coolray"/.test(bkText));
@@ -212,15 +231,14 @@ await q.goto(`${BASE}/index.html#settings`); await q.waitForTimeout(400);
 await q.setInputFiles('#imp', bkFile); await q.waitForTimeout(300); await q.click('[data-mc-ok]'); await q.waitForTimeout(400);
 const after = await q.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')).S; return JSON.stringify({ v: d.vehicles.map(x => [x.make, x.model, x.photo || '', JSON.stringify(x.photoCat || null)]), docs: d.docs.map(x => [x.type, x.number, x.img || '']) }); });
 ok('restore: vehicles, photos, catalog images and documents identical', after === before, `${before.length} chars`);
-await q.evaluate(() => { location.hash = 'car'; }); await q.waitForTimeout(300);
-ok('restore: uploaded car photo renders', await q.evaluate(() => !!document.querySelector('.cd-photo img')));
-await q.click('[data-car-tab=docs]'); await q.waitForTimeout(200); await q.click('#cd-panel [data-car=doc-open]'); await q.waitForTimeout(300);
+await q.evaluate(() => { location.hash = 'home'; }); await q.waitForTimeout(300);
+ok('restore: uploaded car photo renders', await q.evaluate(() => !!document.querySelector('.hm-hero .cd-photo img')));
+await q.click('.hm-docs [data-car=doc-open]'); await q.waitForTimeout(350);
 ok('restore: document image renders', await q.evaluate(() => { const i = document.querySelector('.cd-doc-full'); return !!i && i.naturalWidth > 0; }));
 await q.keyboard.press('Escape'); await q.waitForTimeout(250);
-await q.evaluate(() => { location.hash = 'home'; }); await q.waitForTimeout(250); await q.click('[data-home=switch]'); await q.waitForTimeout(300); await q.click('.mc-scrim [data-car]:not([aria-current])'); await q.waitForTimeout(300);
-ok('restore: catalog drawing renders for the other car', await q.evaluate(() => !!document.querySelector('.hm-car__photo .mc-carart') || !!document.querySelector('.hm-car__photo img')));
+await q.click('[data-mc-menu=hm-cars]'); await q.waitForTimeout(150); await q.click('#hm-cars [data-action=hm-car][aria-checked=false]'); await q.waitForTimeout(400);
+ok('restore: catalog drawing renders for the other car', await q.evaluate(() => !!document.querySelector('.hm-hero .cd-photo .mc-carart')));
 await ctx2.close();
-ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'; return true; }) && await p.waitForTimeout(200).then(() => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)));
 /* ---- data saved before make/model existed (name only) ---- */
 {
   const c3 = await b.newContext({ viewport: { width: 390, height: 844 } }); const r = await c3.newPage();
@@ -228,12 +246,11 @@ ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'
   await r.addInitScript(() => { if (!localStorage.getItem('sayarati-v1')) localStorage.setItem('sayarati-v1', JSON.stringify({ S: { vehicles: [{ id: 'old1', name: 'لاندكروزر 2015', plate: '1234', fuel: 'M95', tank: 90, odo0: 150000 }], cur: 'old1', reminders: [], set: { cur: 'ر.ع', dec: 3, unit: 'kmpl' } }, E: { '2026': [{ id: 'e1', v: 'old1', t: 'fuel', d: '2026-11-01', odo: 151000, liters: 60, ppl: 0.239, cost: 14.34, full: true, fuel: 'M95' }] } })); });
   await r.goto(`${BASE}/index.html`); await r.waitForTimeout(400);
   ok('old data: home shows the saved name', (await r.textContent('.hm-car__name')).trim() === 'لاندكروزر 2015');
-  await r.evaluate(() => { location.hash = 'car'; }); await r.waitForTimeout(300);
-  ok('old data: details page shows the name, no empty subtitle', await r.evaluate(() => document.querySelector('.cd h1').textContent.trim() === 'لاندكروزر 2015' && !/·\s*$/.test(document.querySelector('.cd-id__meta').textContent)));
+  ok('old data: card shows plate + odometer, no year, no expiry line', await r.evaluate(() => !document.querySelector('.hm-year') && !document.querySelector('.hm-exp') && /1234/.test(document.querySelector('.hm-id__side').textContent)));
   await r.click('[data-car=edit]'); await r.waitForTimeout(300);
   ok('old data: editor keeps the name as nickname, make empty', await r.evaluate(() => document.getElementById('ve-nick').value === 'لاندكروزر 2015' && document.getElementById('ve-make').value === ''));
   await r.click('#ve-save'); await r.waitForTimeout(300);
-  ok('old data: saving unchanged keeps the same title', (await r.textContent('.cd h1')).trim() === 'لاندكروزر 2015');
+  ok('old data: saving unchanged keeps the same title', (await r.textContent('.hm-car__name')).trim() === 'لاندكروزر 2015');
   await c3.close();
 }
 
@@ -261,9 +278,9 @@ ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'
   await q.click('#rm-save'); await q.waitForTimeout(350);
   let S1 = await st(); const added = S1.reminders.find(r => r.name === 'زيت المحرك — اختبار');
   ok('rem: add saves title, vehicle, type, both triggers, alert, note', S1.reminders.length === nR0 + 1 && added && added.v === S1.cur && added.cat === 'تغيير زيت المحرك' && added.by === 'both' && added.odoDue === odoNow + 300 && /^\d{4}-\d\d-\d\d$/.test(added.date) && added.alert === true && added.note === 'زيت 5W-30' && added.km === 5000 && added.months === 6, JSON.stringify(added));
-  ok('rem: soon (300 km left) shows first on Home', await q.evaluate(n => document.querySelector('.hm .mc-list').textContent.includes(n), 'زيت المحرك — اختبار'));
+  ok('rem: soon (300 km left) shows first on Home', await q.evaluate(n => document.querySelector('.hm section[aria-labelledby=hm-rem] .mc-list').textContent.includes(n), 'زيت المحرك — اختبار'));
   // edit from the car page: alert off → leaves Home, calendar button hidden
-  await q.evaluate(() => { location.hash = 'car'; }); await q.waitForTimeout(300); await q.click('[data-car-tab=reminders]'); await q.waitForTimeout(150);
+  await q.evaluate(() => { location.hash = 'remind'; }); await q.waitForTimeout(300);
   await q.click(`[data-act=editrem][data-id="${added.id}"]`); await q.waitForTimeout(400);
   ok('rem: edit opens with saved values', await q.evaluate(() => document.getElementById('rm-name').value === 'زيت المحرك — اختبار' && document.getElementById('rm-note').value === 'زيت 5W-30' && document.querySelector('[data-rm-by=both]').getAttribute('aria-pressed') === 'true' && !!document.getElementById('rm-del')));
   await q.fill('#rm-name', 'زيت المحرك'); await q.click('.mc-scrim .mc-switch'); await q.waitForTimeout(80);
@@ -295,8 +312,8 @@ ok('car: no horizontal overflow', await p.evaluate(() => { location.hash = 'car'
   await q.selectOption('#en-cat', 'فرامل'); await q.fill('#en-odo', String(odoNow + 880)); await q.fill('#en-cost', '40'); await q.click('#en-save'); await q.waitForTimeout(350);
   one = (await st()).reminders.find(r => r.id === one.id);
   ok('rem: one-off reminder completed → marked done, no due left', one.done === today && !one.odoDue, JSON.stringify(one));
-  await q.evaluate(() => { location.hash = 'car'; }); await q.waitForTimeout(300); await q.click('[data-car-tab=reminders]'); await q.waitForTimeout(150);
-  ok('rem: done reminder shows "تمّ" on the car page, off Home', await q.evaluate(id => /تمّ/.test(document.querySelector(`[data-act=editrem][data-id="${id}"]`).textContent), one.id));
+  await q.evaluate(() => { location.hash = 'remind'; }); await q.waitForTimeout(300);
+  ok('rem: done reminder shows "تمّ" on the reminders page', await q.evaluate(id => /تمّ/.test(document.querySelector(`[data-act=editrem][data-id="${id}"]`).closest('.rl-card').querySelector('.mc-badge').textContent), one.id));
   // delete with undo, then delete
   await q.click(`[data-act=editrem][data-id="${one.id}"]`); await q.waitForTimeout(400); await q.click('#rm-del'); await q.waitForTimeout(300);
   ok('rem: delete removes it', !(await st()).reminders.some(r => r.id === one.id));

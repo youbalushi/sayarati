@@ -184,7 +184,8 @@ h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;
 <script type="module">
 import * as UI from './js/ui.js';
 import { renderHome, initHome } from './js/screens/home.js';
-import { renderCar, initCar, openVehicleEditor } from './js/screens/car.js';
+import { initCar, openVehicleEditor } from './js/screens/car.js';
+import { renderMaint } from './js/screens/maint.js';
 import { openEntryForm, openTypePicker } from './js/screens/entry.js';
 import { openReminderForm } from './js/screens/reminder.js';
 import { renderReports, afterRenderReports, initReports } from './js/screens/reports.js';
@@ -283,7 +284,7 @@ function connect(){}
 
 const {openSheet,closeSheet}=UI;
 
-const tab=()=>{const h=location.hash.slice(1);return ['home','car','log','remind','reports','settings'].includes(h)?h:'home'};
+const tab=()=>{const h=location.hash.slice(1);return ['home','car','maint','log','remind','reports','settings'].includes(h)?h:'home'};
 
 /* ---------- screens ---------- */
 function home(){return renderHome(homeCtx)}
@@ -308,7 +309,7 @@ const settingsCtx={get S(){return S},get E(){return E},all,cats,CATS,render:()=>
   wipe:()=>{const keys=['g',...Object.keys(E)];Object.keys(E).forEach(k=>E[k]=[]);S=defS();persist(keys);location.hash='home';render();UI.toast(UI.t('set.wiped'))}};
 const logCtx={get S(){return S},get LF(){return LF},items,veh,render:()=>render()};
 const remCtx={get S(){return S},veh,stats,rstat,render:()=>render()};
-const SCR={home,car:()=>renderCar(carCtx),log:()=>renderLog(logCtx),remind:()=>renderReminders(remCtx),reports:()=>renderReports(reportsCtx),settings:()=>renderSettings(settingsCtx)};
+const SCR={home,car:home,maint:()=>renderMaint(logCtx),log:()=>renderLog(logCtx),remind:()=>renderReminders(remCtx),reports:()=>renderReports(reportsCtx),settings:()=>renderSettings(settingsCtx)};
 
 /* ---------- phone calendar (.ics) ---------- */
 function icsFor(r){
@@ -335,7 +336,7 @@ function render(){
   if(S.vehicles.length&&!veh(S.cur))S.cur=S.vehicles[0].id;
   const t=tab();
   $('#main').innerHTML=SCR[t]();
-  renderNav(t==='car'?'home':t==='settings'?'':t);
+  renderNav(t==='car'||t==='remind'?'home':t==='settings'?'':t);
   afterRenderReports(reportsCtx);
 }
 /* ---------- forms ---------- */
@@ -433,7 +434,7 @@ if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceW
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 /* ---------- shell navigation (design system) ---------- */
 function renderNav(cur){
-  const items=[['home','house','nav.home'],['log','list','nav.log'],['remind','bell','nav.reminders'],['reports','chart-column','nav.reports']];
+  const items=[['home','house','nav.home'],['maint','wrench','nav.maint'],['log','list','nav.log'],['reports','chart-column','nav.reports']]; // right → left in Arabic: home · maintenance · (+) · log · reports
   const a=([k,ic,l])=>`<a class="mc-navitem" href="#${k}" ${k===cur?'aria-current="page"':''}><span class="mc-navitem__pill">${UI.icon(ic)}</span>${UI.esc(UI.t(l))}</a>`;
   const fab=`<button class="mc-fab" type="button" data-act="fab" aria-label="${UI.esc(UI.t('nav.add'))}">${UI.icon('plus')}</button>`;
   $('#nav-bottom').innerHTML=`<div class="mc-bottomnav__inner">${a(items[0])}${a(items[1])}${fab}${a(items[2])}${a(items[3])}</div>`;

@@ -81,7 +81,7 @@ export function menu({ id, label, triggerIcon = 'ellipsis-vertical', items, up =
     if (it.sep) return '<div class="mc-menu__sep" role="separator"></div>';
     if (it.heading) return `<div class="mc-menu__label" role="presentation">${esc(it.heading)}</div>`;
     const role = it.checked !== undefined ? 'menuitemradio' : 'menuitem';
-    return `<button type="button" class="mc-menu__item${it.danger ? ' mc-menu__item--danger' : ''}" role="${role}" ${it.checked !== undefined ? `aria-checked="${!!it.checked}"` : ''} ${it.action ? `data-action="${esc(it.action)}"` : ''} ${it.value != null ? `data-value="${esc(it.value)}"` : ''} tabindex="-1">${it.icon ? icon(it.icon) : ''}<span>${esc(it.label)}</span>${it.checked ? icon('check', { size: 'sm' }) : ''}</button>`;
+    return `<button type="button" class="mc-menu__item${it.danger ? ' mc-menu__item--danger' : ''}" role="${role}" ${it.checked !== undefined ? `aria-checked="${!!it.checked}"` : ''} ${it.action ? `data-action="${esc(it.action)}"` : ''} ${it.value != null ? `data-value="${esc(it.value)}"` : ''} tabindex="-1">${it.icon ? icon(it.icon) : ''}<span>${esc(it.label)}${it.sub ? `<small class="mc-menu__sub">${it.sub}</small>` : ''}</span>${it.checked ? icon('check', { size: 'sm' }) : ''}</button>`;
   }).join('');
   return `<div class="mc-menu-anchor"><button type="button" class="mc-iconbtn${filled ? ' mc-iconbtn--filled' : ''}" aria-label="${esc(label)}" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}" data-mc-menu="${id}">${icon(triggerIcon)}</button>
     <div class="mc-menu${up ? ' mc-menu--up' : ''}" id="${id}" role="menu" aria-label="${esc(label)}" hidden>${body}</div></div>`;
@@ -178,14 +178,14 @@ let skipPop = 0; // history.back() we triggered ourselves must not close the nex
 window.addEventListener('popstate', () => { if (skipPop) { skipPop--; return; } if (openLayer && openLayer.pushed) { openLayer.pushed = false; closeSheet(); } });
 
 /** openSheet({title, body, footer, dialog, center, onClose}) → root. Esc, scrim tap and Back close it. */
-export function openSheet({ title = '', body = '', footer = '', dialog = false, center = false, onClose } = {}) {
+export function openSheet({ title = '', body = '', footer = '', dialog = false, center = false, onClose, actions = '' } = {}) {
   if (openLayer) closeSheet(true);
   const scrim = document.createElement('div');
   scrim.className = 'mc-scrim' + (center ? ' mc-scrim--center' : '');
   const tid = 'mc-sheet-title-' + Date.now();
   scrim.innerHTML = `<div class="mc-sheet${dialog ? ' mc-dialog' : ''}" role="${dialog ? 'alertdialog' : 'dialog'}" aria-modal="true" ${title ? `aria-labelledby="${tid}"` : ''}>
     ${dialog ? '' : '<div class="mc-sheet__grab" aria-hidden="true"></div>'}
-    ${title && !dialog ? `<div class="mc-sheet__head"><h2 class="mc-sheet__title" id="${tid}">${esc(title)}</h2>${iconButton('x', t('action.close'), { attrs: 'data-mc-close' })}</div>` : ''}
+    ${title && !dialog ? `<div class="mc-sheet__head"><h2 class="mc-sheet__title" id="${tid}">${esc(title)}</h2>${actions ? `<div class="mc-sheet__actions">${actions}${iconButton('x', t('action.close'), { attrs: 'data-mc-close' })}</div>` : iconButton('x', t('action.close'), { attrs: 'data-mc-close' })}</div>` : ''}
     <div class="mc-sheet__body">${body}</div>${footer ? `<div class="mc-sheet__foot">${footer}</div>` : ''}</div>`;
   document.body.appendChild(scrim);
   openLayer = { el: scrim, onClose, prevFocus: document.activeElement, pushed: false };
