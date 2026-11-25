@@ -1,11 +1,11 @@
 // سيارتي — service worker: يعمل التطبيق بدون إنترنت
 // Bump CACHE whenever shipped files change.
-const CACHE = 'sayarati-v8';
+const CACHE = 'sayarati-v9';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
-  './css/tokens.css', './css/components.css', './css/home.css', './css/car.css',
-  './js/ui.js', './js/vehicle.js', './js/i18n.js', './js/screens/home.js', './js/screens/car.js',
+  './css/tokens.css', './css/components.css', './css/home.css', './css/car.css', './css/entry.css',
+  './js/ui.js', './js/vehicle.js', './js/i18n.js', './js/screens/home.js', './js/screens/car.js', './js/screens/entry.js',
   './assets/icons/lucide-sprite.svg',
   './assets/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2', './assets/fonts/ibm-plex-sans-arabic-arabic-500-normal.woff2',
   './assets/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2', './assets/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2',

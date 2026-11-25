@@ -1,0 +1,16 @@
+/* سيارتي · My Car — record forms (en-). Design-system tokens only. */
+.en-types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2)}
+.en-type{display:grid;justify-items:center;gap:var(--space-1);padding:var(--space-4) var(--space-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);
+  background:var(--color-surface);color:var(--color-text);cursor:pointer;text-align:center}
+@media (hover:hover){.en-type:hover{border-color:var(--_solid);background:var(--_soft)}}
+.en-type:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.en-type .mc-icontile{margin-block-end:var(--space-1)}
+.en-type__name{font-weight:var(--fw-bold)}
+.en-type__desc{font-size:var(--fs-caption);line-height:var(--lh-caption);color:var(--color-text-secondary)}
+.en-form{gap:var(--space-4)}
+.en-group{display:grid;gap:var(--space-3);padding-block-end:var(--space-4);border-block-end:1px solid var(--color-border)}
+.en-odo-hint{margin-block-start:calc(-1 * var(--space-2))}
+.en-odo-hint:empty{display:none}
+#en-odo-msg:empty,#en-err:empty{display:none}
+.en-title-ic{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:var(--radius-sm);background:var(--_soft);color:var(--_c);vertical-align:middle;margin-inline-end:var(--space-2)}
+.en-title-ic .mc-icon{width:18px;height:18px}

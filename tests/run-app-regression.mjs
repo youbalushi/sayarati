@@ -19,11 +19,11 @@ await p.click('[data-act=demo]'); await p.waitForTimeout(300);
 const n0 = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat().length);
 ok('sample data loads', n0 > 20, n0 + ' records');
 
-await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250); await p.click('.types [data-t=fuel]'); await p.waitForTimeout(250);
-await p.fill('#ef input[name=odo]', '80000'); await p.fill('#ef input[name=liters]', '40');
-const cost = await p.inputValue('#ef input[name=cost]');
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-entry-type=fuel]'); await p.waitForTimeout(250);
+await p.fill('#en-odo', '80000'); await p.fill('#en-liters', '40');
+const cost = await p.inputValue('#en-cost');
 ok('fuel form auto-computes total', +cost > 0, cost);
-await p.click('#ef button[type=submit]'); await p.waitForTimeout(300);
+await p.click('#en-save'); await p.waitForTimeout(300);
 const n1 = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat().length);
 ok('adding a fill-up saves a record', n1 === n0 + 1, `${n0} → ${n1}`);
 
@@ -36,11 +36,57 @@ for (const tab of ['log', 'remind', 'reports', 'settings']) {
 }
 await p.evaluate(() => { location.hash = 'log'; }); await p.waitForTimeout(250);
 await p.click('.row[data-act=edit]'); await p.waitForTimeout(250);
-await p.click('[data-act=delentry]'); await p.waitForTimeout(250);
+await p.click('#en-del'); await p.waitForTimeout(250);
 const n2 = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat().length);
-await p.click('[data-act=undo]'); await p.waitForTimeout(250);
+await p.click('.mc-toast__action'); await p.waitForTimeout(250);
 const n3 = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat().length);
 ok('delete + undo', n2 === n1 - 1 && n3 === n1, `${n1} → ${n2} → ${n3}`);
+/* ---- record forms (design system) ---- */
+const recs = () => p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat());
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250);
+ok('picker: 4 record types + reminder', await p.evaluate(() => document.querySelectorAll('.mc-scrim [data-entry-type]').length === 4 && !!document.querySelector('.mc-scrim [data-entry-rem]')));
+await p.click('.mc-scrim [data-entry-type=fuel]'); await p.waitForTimeout(250);
+ok('fuel: last price per liter prefilled, odometer hint shown', await p.evaluate(() => +document.getElementById('en-ppl').value > 0 && /\d/.test(document.querySelector('.en-odo-hint').textContent)));
+await p.click('#en-save'); await p.waitForTimeout(200);
+ok('fuel: empty save → errors on liters, total, odometer', await p.evaluate(() => ['en-liters', 'en-cost', 'en-odo'].every(id => document.getElementById(id).getAttribute('aria-invalid') === 'true') && !!document.querySelector('#en-err [role=alert]')));
+await p.fill('#en-ppl', '0.250'); await p.fill('#en-cost', '١٠'); await p.waitForTimeout(100);
+ok('fuel: total + price → liters (Arabic digits accepted)', (await p.inputValue('#en-liters')) === '40.00');
+await p.fill('#en-liters', '20'); await p.waitForTimeout(100);
+ok('fuel: liters + price → total', (await p.inputValue('#en-cost')) === '5.000');
+await p.fill('#en-odo', '70000'); await p.press('#en-odo', 'Tab'); await p.waitForTimeout(150);
+ok('fuel: lower odometer → explained warning, not an error', await p.evaluate(() => { const m = document.querySelector('#en-odo-msg [role=status]'); return !!m && /79,072|80,000/.test(m.textContent) && document.getElementById('en-odo').getAttribute('aria-invalid') !== 'true'; }));
+const n0f = (await recs()).length;
+await p.click('#en-save'); await p.waitForTimeout(300);
+ok('fuel: saving with a warning is still allowed (as before)', (await recs()).length === n0f + 1);
+const saved = (await recs()).find(r => r.odo === 70000);
+ok('fuel: record fields unchanged in shape', saved && saved.t === 'fuel' && saved.liters === 20 && saved.ppl === 0.25 && saved.cost === 5 && saved.full === true && typeof saved.fuel === 'string', JSON.stringify(saved));
+// edit + delete the test record
+await p.evaluate(id => { document.querySelector(`[data-act=edit][data-id="${id}"]`) || (location.hash = 'log'); }, saved.id); await p.waitForTimeout(250);
+await p.click(`[data-act=edit][data-id="${saved.id}"]`); await p.waitForTimeout(250);
+ok('edit: form opens with saved values', (await p.inputValue('#en-liters')) === '20' && (await p.inputValue('#en-odo')) === '70000');
+await p.click('#en-del'); await p.waitForTimeout(250);
+ok('edit: delete removes it', (await recs()).length === n0f);
+// service resets a matching reminder
+await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(200);
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-entry-type=service]'); await p.waitForTimeout(250);
+ok('service: category list from settings, odometer optional', await p.evaluate(() => document.querySelectorAll('#en-cat option').length > 5 && /\(/.test(document.querySelector('label[for=en-odo]').textContent)));
+await p.selectOption('#en-cat', 'إطارات'); await p.fill('#en-cost', '80'); await p.fill('#en-odo', '79500'); await p.click('#en-save'); await p.waitForTimeout(300);
+ok('service: matching reminder reset to this service', await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const r = d.S.reminders.find(x => x.name === 'إطارات'); return r && r.lastOdo === 79500; }));
+ok('service: toast says the reminder was reset', /إطارات/.test(await p.evaluate(() => document.querySelector('.mc-toast-region')?.textContent || '')));
+// expense + income
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-entry-type=expense]'); await p.waitForTimeout(250);
+await p.click('#en-save'); await p.waitForTimeout(150);
+ok('expense: missing amount → error on amount only', await p.evaluate(() => document.getElementById('en-cost').getAttribute('aria-invalid') === 'true' && document.getElementById('en-odo').getAttribute('aria-invalid') !== 'true'));
+await p.fill('#en-cost', '3'); await p.click('#en-save'); await p.waitForTimeout(300);
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250); await p.click('.mc-scrim [data-entry-type=income]'); await p.waitForTimeout(250);
+await p.fill('#en-cost', '12'); await p.click('#en-save'); await p.waitForTimeout(300);
+ok('expense + income saved', await p.evaluate(() => { const all = Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat(); return all.some(x => x.t === 'expense' && x.cost === 3) && all.some(x => x.t === 'income' && x.cost === 12); }));
+// reminder "done" opens the new form prefilled
+await p.evaluate(() => { location.hash = 'remind'; }); await p.waitForTimeout(250);
+await p.click('[data-act=donerem]'); await p.waitForTimeout(300);
+ok('reminder “done” opens the service form with its category', await p.evaluate(() => !!document.getElementById('en-form') && document.getElementById('en-cat').value.length > 0 && +document.getElementById('en-odo').value > 0));
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(200);
 
 await p.evaluate(() => { location.hash = 'remind'; }); await p.waitForTimeout(250);
 await p.click('[data-act=ics]'); await p.waitForTimeout(200);
@@ -64,7 +110,7 @@ const odoData = await p.evaluate(() => { const d = JSON.parse(localStorage.getIt
 ok('home: odometer equals highest recorded reading', odoShown === odoData, `${odoShown} vs ${odoData}`);
 ok('home: ≤2 reminders and ≤5 recent items', await p.evaluate(() => { const l = document.querySelectorAll('.hm .mc-list'); return l[0].children.length <= 2 && l[1].children.length <= 5; }));
 await p.click('.hm .mc-list [data-act=edit]'); await p.waitForTimeout(250);
-ok('home: tapping an activity opens its edit form', await p.isVisible('#ef'));
+ok('home: tapping an activity opens its edit form', await p.isVisible('#en-form'));
 await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 // switch cars: add a second car, then switch back through the sheet
 await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('[data-addcar]'); await p.waitForTimeout(500);
@@ -76,7 +122,7 @@ await p.click('.mc-scrim [data-car]:not([aria-current])'); await p.waitForTimeou
 ok('home: switcher lists all cars and switches', cars === 2 && (await p.textContent('.hm-car__name')).includes('Camry'), `${cars} cars`);
 // FAB → add picker
 await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250);
-ok('home: + opens the add picker', await p.isVisible('.types')); await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelector('#ov') && (document.querySelector('#ov').hidden = true));
+ok('home: + opens the add picker', await p.isVisible('.en-types')); await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelector('#ov') && (document.querySelector('#ov').hidden = true));
 // language + theme via the settings menu
 await p.click('[data-mc-menu=hm-menu]'); await p.click('#hm-menu [data-action=hm-lang][data-value=en]'); await p.waitForTimeout(300);
 ok('home: English switches to LTR', await p.evaluate(() => document.documentElement.dir === 'ltr' && /Odometer/.test(document.querySelector('.hm-odo').textContent)));
