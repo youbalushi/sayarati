@@ -10,37 +10,41 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/components.css">
 <style>
-/* Showcase-only styles (not part of the design system) */
-.ds-head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);padding:var(--space-5) 0 var(--space-2)}
-.ds-brand{display:flex;align-items:center;gap:var(--space-3);flex:1}
-.ds-mark{width:48px;height:48px;border-radius:var(--radius-md);background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;flex:none}
-.ds-mark .mc-icon{width:28px;height:28px}
-.ds-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2);width:100%}
-.ds-sec{padding-block:var(--space-5);border-block-start:1px solid var(--color-border)}
-.ds-sec>h2{margin-block-end:var(--space-1)}
-.ds-sec>p.mc-muted{margin:0 0 var(--space-4)}
+/* Showcase-only layout (not part of the design system) */
+.ds-brand{display:flex;align-items:center;gap:var(--space-3);flex:1;padding-inline:var(--space-2);min-width:0}
+.ds-mark{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center;flex:none}
+.ds-brand b{display:block;font-size:var(--fs-title);line-height:1.2}
+.ds-brand small{display:block;font-size:var(--fs-caption);line-height:var(--lh-caption);color:var(--color-text-secondary)}
+.ds-sec{padding-block:var(--space-8) var(--space-2)}
+.ds-sec+.ds-sec{border-block-start:1px solid var(--color-border)}
+.ds-sec>header{margin-block-end:var(--space-4)}
+.ds-sec>header p{margin:4px 0 0}
+.ds-demo{display:grid;gap:var(--space-3)}
+.ds-demo+.ds-demo{margin-block-start:var(--space-5)}
 .ds-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--space-2)}
 .ds-sw{display:flex;gap:var(--space-2);align-items:center;padding:var(--space-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface)}
-.ds-sw i{width:36px;height:36px;border-radius:var(--radius-xs);flex:none;border:1px solid var(--color-border)}
-.ds-sw b{display:block;font-size:var(--fs-caption);line-height:16px;font-weight:600}
-.ds-sw code{font-size:11px;color:var(--color-text-secondary);direction:ltr;unicode-bidi:isolate}
-.ds-type{display:grid;gap:var(--space-2)}
-.ds-type>div{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);border-block-end:1px dashed var(--color-border);padding-block-end:var(--space-2)}
-.ds-type code,.ds-spec{font-size:11px;color:var(--color-text-secondary);direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.ds-sw i{width:36px;height:36px;border-radius:var(--radius-xs);flex:none;box-shadow:inset 0 0 0 1px var(--color-border)}
+.ds-sw b{display:block;font-size:var(--fs-caption);line-height:var(--lh-caption);font-weight:600}
+.ds-code{font-size:11px;line-height:16px;color:var(--color-text-secondary);direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-family:ui-monospace,Menlo,Consolas,monospace}
+.ds-type>div{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);padding-block:var(--space-2);border-block-end:1px solid var(--color-border)}
+.ds-type>div:last-child{border:0}
 .ds-spaces{display:grid;gap:6px}
-.ds-spaces>div{display:flex;align-items:center;gap:var(--space-3)}
+.ds-spaces>div{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:var(--space-3)}
 .ds-spaces span{height:12px;border-radius:3px;background:var(--color-primary)}
 .ds-radii{display:flex;flex-wrap:wrap;gap:var(--space-3)}
-.ds-radii>div{width:64px;height:64px;background:var(--color-primary-soft);border:2px solid var(--color-primary);display:grid;place-items:center;font-size:11px}
-.ds-static{position:static!important;transform:none!important;opacity:1!important}
-.ds-frame{border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;background:var(--color-bg)}
-.ds-frame .mc-bottomnav{position:relative;padding-bottom:0}
-.ds-frame .mc-appbar{position:relative}
-.ds-overlay-demo{position:relative;border-radius:var(--radius-lg);overflow:hidden;background:var(--color-scrim);padding:var(--space-6) var(--space-3) 0;display:flex;align-items:flex-end;justify-content:center}
-.ds-overlay-demo .mc-sheet{transform:none;max-width:100%}
-.ds-overlay-demo.center{align-items:center;padding:var(--space-6)}
-.ds-overlay-demo.center .mc-sheet{border-radius:var(--radius-xl)}
-.ds-toast-demo .mc-toast{animation:none}
+.ds-radii>div{width:60px;height:60px;background:var(--color-primary-soft);border:2px solid var(--color-primary);display:grid;place-items:center}
+.ds-states{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:var(--space-2) var(--space-2);align-items:center}
+.ds-states>.mc-btn{width:100%;padding-inline:var(--space-2)}
+.ds-frame{border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:visible;background:var(--color-bg)}
+.ds-frame .mc-appbar{position:relative;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.ds-frame .mc-bottomnav{position:relative;padding-bottom:0;border-radius:0 0 var(--radius-lg) var(--radius-lg)}
+.ds-overlay{border-radius:var(--radius-lg);overflow:hidden;background:var(--color-scrim);padding:var(--space-6) var(--space-3) 0;display:flex;align-items:flex-end;justify-content:center}
+.ds-overlay .mc-sheet{transform:none;max-width:100%}
+.ds-overlay--center{align-items:center;padding:var(--space-6)}
+.ds-overlay--center .mc-sheet{border-radius:var(--radius-xl)}
+.ds-overlay--center .mc-sheet{border-block-end:1px solid var(--color-border)}
+.ds-static .mc-toast{animation:none}
+.ds-menu-open .mc-menu{position:static;animation:none;max-width:none}
 </style>
 <script>
 /* Set theme/lang before first paint (no flash) */
@@ -51,229 +55,238 @@ document.documentElement.lang=l==='en'?'en':'ar';document.documentElement.dir=l=
 </script>
 </head>
 <body class="mc">
-<main class="mc-container" id="app" aria-live="polite"></main>
+<header class="mc-appbar" id="bar"></header>
+<main class="mc-container" id="app"></main>
 
 <script type="module">
-import { initPrefs, setLang, setTheme, getLang, getThemePref, t, esc, icon, button, iconButton, field, badge, progress, listItem, stat, emptyState, alertBox, skeletonRow, openSheet, closeSheet, confirmDialog, toast, num, parseNum } from './js/ui.js';
+import { initPrefs, setLang, setTheme, getLang, getThemePref, t, esc, icon, iconTile, button, iconButton, menu, field, switchControl, checkbox, segmented, badge, progress, listItem, stat, section, emptyState, alertBox, skeletonRow, openSheet, closeSheet, confirmDialog, toast, toastHTML, num, parseNum } from './js/ui.js';
 
 /* Demo copy for the showcase only */
 const D = {
-  ar: { title: 'نظام التصميم', sub: 'المكونات المشتركة لتطبيق سيارتي',
+  ar: { title: 'نظام التصميم', view: 'خيارات العرض', theme: 'المظهر', lang: 'اللغة',
     colors: 'الألوان', colorsSub: 'ألوان الهوية المعتمدة كما تظهر في الوضع الحالي.',
-    type: 'الخطوط', typeSub: 'IBM Plex Sans Arabic للعربية و IBM Plex Sans للإنجليزية، في عائلة واحدة.',
-    space: 'المسافات والزوايا', spaceSub: 'شبكة 4px، وأزرار لا تقل عن 44px.',
-    buttons: 'الأزرار', inputs: 'حقول الإدخال', cards: 'البطاقات والإحصاءات', lists: 'القوائم', badges: 'الشارات والتقدّم',
-    nav: 'التنقل', overlays: 'النوافذ المنبثقة', states: 'التحميل والأخطاء والبيانات الفارغة',
-    sample: 'سجل سيارتك بدون إعلانات', odometer: 'عداد المسافة',
-    primary: 'حفظ التعبئة', tonal: 'إضافة تذكير', outline: 'تصدير', ghost: 'عرض الكل', danger: 'حذف السجل', disabled: 'غير متاح', loading: 'جارٍ الحفظ',
-    liters: 'اللترات', price: 'سعر اللتر', station: 'المحطة', note: 'ملاحظة', notePh: 'اكتب ملاحظة اختيارية…', odoErr: 'القراءة أقل من آخر تعبئة (79,072 كم)', fuelType: 'نوع الوقود', searchPh: 'بحث في السجل…',
-    fullTank: 'تعبئة الخزان بالكامل', remindMe: 'نبّهني قبل الموعد',
+    type: 'الخطوط', typeSub: 'عائلة واحدة: IBM Plex Sans Arabic للحروف العربية و IBM Plex Sans للإنجليزية والأرقام. الأحجام الصغيرة بالعربية أكبر بـ 1px.',
+    space: 'المسافات والزوايا', spaceSub: 'شبكة 4px، وكل عنصر قابل للضغط لا يقل عن 44px.',
+    buttons: 'الأزرار', buttonsSub: 'إجراء أساسي واحد في كل شاشة، والإجراءات الأخرى ثانوية أو داخل قائمة «المزيد».',
+    variants: 'الأنواع', sizes: 'الأحجام', states: 'الحالات', iconBtns: 'أزرار الأيقونات', pattern: 'نمط شريط الإجراءات',
+    stDefault: 'عادي', stHover: 'تمرير', stFocus: 'تركيز', stActive: 'ضغط', stDisabled: 'معطّل', stLoading: 'تحميل',
+    forms: 'النماذج والحقول', formsSub: 'كل مجموعة حقول داخل قسم بعنوان، وكل وظيفة لها عنصر تحكم واحد.',
+    fillTitle: 'بيانات التعبئة', fillDesc: 'الحقول الأساسية لتسجيل تعبئة وقود.',
+    validTitle: 'رسائل التحقق', validDesc: 'الرسالة توضح ما حدث، ولماذا، وما المطلوب.',
+    choiceTitle: 'عناصر الاختيار', choiceDesc: 'مفتاح لإعداد فوري، ومربع اختيار لاختيار عدة عناصر، وأزرار مقسّمة لتبديل العرض، وفلاتر للتصفية.',
+    exportWhat: 'ما الذي تريد تصديره؟', period: 'فترة التقرير', filter: 'تصفية السجل',
+    liters: 'اللترات', price: 'سعر اللتر', odo: 'قراءة العداد', fuelType: 'نوع الوقود', station: 'المحطة', note: 'ملاحظة', optional: 'اختياري', notePh: 'مثال: رحلة إلى صلالة', searchPh: 'ابحث في السجل…',
+    fullTank: 'تعبئة الخزان بالكامل', fullTankDesc: 'يُستخدم لحساب الاستهلاك بدقة',
+    errT: 'القراءة أقل من آخر قراءة مسجّلة', errX: `أدخلت <span class="mc-num">78,450</span> كم، وآخر قراءة <span class="mc-num">79,072</span> كم بتاريخ 13 نوفمبر. صحّح الرقم، أو عدّل التعبئة السابقة إذا كانت هي الخطأ.`, errA: 'عرض التعبئة السابقة',
+    warnT: 'قفزة كبيرة في العداد', warnX: `زادت القراءة <span class="mc-num">20,927</span> كم خلال 5 أيام. تأكد من الرقم، وإذا كان صحيحًا اضغط «حفظ».`,
+    cards: 'البطاقات والإحصاءات', lists: 'القوائم والإعدادات', listsSub: 'قوائم السجلات، ومجموعات الإعدادات بعناوين منفصلة.', badges: 'الشارات والتقدّم',
+    nav: 'التنقل', navSub: 'الشريط العلوي: عنوان + إجراء أساسي واحد + قائمة «المزيد».',
+    overlays: 'النوافذ المنبثقة', states2: 'التحميل والأخطاء والبيانات الفارغة',
     thisMonth: 'مصروف هذا الشهر', costKm: 'تكلفة الكيلومتر', avg: 'متوسط الاستهلاك', distance: 'المسافة', vsLast: 'عن الشهر الماضي',
-    oil: 'تغيير زيت المحرك', oilSub: 'بعد 1,240 كم · 12 يناير 2027', ins: 'تأمين السيارة', insSub: 'ينتهي بعد 9 أيام',
+    oil: 'تغيير زيت المحرك', oilSub: 'بعد 1,240 كم · 12 يناير 2027', done: 'تمّت', cal: 'أضف لتقويم الهاتف',
     r1: 'M91 · 35.47 لتر', r1s: '13 نوفمبر · 78,690 كم · شل', r2: 'تغيير زيت المحرك', r2s: '31 أكتوبر · 77,827 كم', r3: 'غسيل', r3s: '28 أكتوبر', r4: 'توصيل', r4s: '20 أكتوبر',
-    recent: 'آخر السجلات', seeAll: 'عرض الكل',
+    recent: 'آخر السجلات', seeAll: 'عرض الكل', prefs: 'التفضيلات', data: 'البيانات',
+    backupRemind: 'تذكير النسخ الاحتياطي', backupRemindDesc: 'كل 14 يومًا', unit: 'وحدة الاستهلاك', cats: 'الأصناف', catsSub: '13 صنف صيانة', export: 'تصدير Excel', backup: 'نسخة في Google Drive',
     good: 'جيد', soon: 'قريبًا', due: 'مستحق', synced: 'محفوظ', info: 'معلومة',
     tabs: ['الكل', 'وقود', 'صيانة', 'مصروف'], periods: ['3 أشهر', '6 أشهر', 'سنة', 'الكل'],
-    sheetTitle: 'إضافة تعبئة', openSheet: 'فتح نافذة سفلية', openDialog: 'فتح نافذة تأكيد', showToast: 'إظهار تنبيه',
+    sheetTitle: 'إضافة تعبئة', editFill: 'تعديل التعبئة', share: 'مشاركة', dup: 'تكرار', del: 'حذف السجل',
+    openSheet: 'فتح نافذة سفلية', moreDemos: 'المزيد من الأمثلة', openDialog: 'نافذة تأكيد', showToast: 'إشعار مؤقت',
     delTitle: 'حذف هذا السجل؟', delText: 'سيُحذف السجل نهائيًا من هذا الجهاز.', toastMsg: 'تم حذف السجل', saved: 'تم الحفظ',
     alertInfo: 'آخر نسخة احتياطية قبل 16 يومًا', alertInfoT: 'احفظ نسخة في Google Drive لحماية بياناتك.',
     alertOk: 'تم الحفظ', alertOkT: 'أُضيفت التعبئة وحُدّث الاستهلاك.',
-    alertWarn: 'قراءة العداد غير معتادة', alertWarnT: 'قفزة 20,927 كم عن آخر تعبئة — تأكد من الرقم.',
-    alertErr: 'تعذّر قراءة الملف', alertErrT: 'الملف ليس نسخة احتياطية صالحة من سيارتي.',
-    skeleton: 'هيكل التحميل', spinner: 'مؤشر التحميل', empty: 'لا توجد بيانات', error: 'خطأ',
-    theme: 'المظهر', lang: 'اللغة' },
-  en: { title: 'Design System', sub: 'Shared components for My Car',
+    alertWarn: 'التذكير مستحق خلال 3 أيام', alertWarnT: 'تغيير زيت المحرك — موعده 28 نوفمبر.',
+    alertErr: 'تعذّر قراءة الملف', alertErrT: 'الملف ليس نسخة احتياطية صالحة من سيارتي. اختر ملفًا ينتهي بـ .json.',
+    skeleton: 'هيكل التحميل', exportCsv: 'تصدير' },
+  en: { title: 'Design System', view: 'View options', theme: 'Theme', lang: 'Language',
     colors: 'Colors', colorsSub: 'Approved brand colors as resolved in the current theme.',
-    type: 'Typography', typeSub: 'IBM Plex Sans Arabic for Arabic and IBM Plex Sans for English, in one family.',
-    space: 'Spacing & radius', spaceSub: '4px grid, touch targets of at least 44px.',
-    buttons: 'Buttons', inputs: 'Inputs', cards: 'Cards & stats', lists: 'Lists', badges: 'Badges & progress',
-    nav: 'Navigation', overlays: 'Overlays', states: 'Loading, errors & empty states',
-    sample: 'Your car log, without ads', odometer: 'Odometer',
-    primary: 'Save fill-up', tonal: 'Add reminder', outline: 'Export', ghost: 'See all', danger: 'Delete record', disabled: 'Unavailable', loading: 'Saving',
-    liters: 'Liters', price: 'Price per liter', station: 'Station', note: 'Note', notePh: 'Add an optional note…', odoErr: 'Lower than the last fill-up (79,072 km)', fuelType: 'Fuel type', searchPh: 'Search the log…',
-    fullTank: 'Filled the tank completely', remindMe: 'Remind me before the date',
+    type: 'Typography', typeSub: 'One family: IBM Plex Sans Arabic for Arabic glyphs, IBM Plex Sans for Latin and digits. Small Arabic sizes are 1px larger.',
+    space: 'Spacing & radius', spaceSub: '4px grid; every tappable element is at least 44px.',
+    buttons: 'Buttons', buttonsSub: 'One primary action per screen; other actions are secondary or live in a “More” menu.',
+    variants: 'Variants', sizes: 'Sizes', states: 'States', iconBtns: 'Icon buttons', pattern: 'Action bar pattern',
+    stDefault: 'Default', stHover: 'Hover', stFocus: 'Focus', stActive: 'Active', stDisabled: 'Disabled', stLoading: 'Loading',
+    forms: 'Forms & fields', formsSub: 'Fields are grouped in titled sections, with one control per function.',
+    fillTitle: 'Fill-up details', fillDesc: 'The core fields for logging a fill-up.',
+    validTitle: 'Validation messages', validDesc: 'Each message says what happened, why, and what to do.',
+    choiceTitle: 'Selection controls', choiceDesc: 'Switch for an instant setting, checkbox for picking several items, segmented buttons to change a view, chips to filter.',
+    exportWhat: 'What do you want to export?', period: 'Report period', filter: 'Filter the log',
+    liters: 'Liters', price: 'Price per liter', odo: 'Odometer', fuelType: 'Fuel type', station: 'Station', note: 'Note', optional: 'optional', notePh: 'e.g. Trip to Salalah', searchPh: 'Search the log…',
+    fullTank: 'Filled the tank completely', fullTankDesc: 'Used to calculate consumption accurately',
+    errT: 'Lower than the last recorded reading', errX: `You entered <span class="mc-num">78,450</span> km, but the last reading was <span class="mc-num">79,072</span> km on 13 Nov. Correct the number, or edit the previous fill-up if that one is wrong.`, errA: 'View previous fill-up',
+    warnT: 'Unusually large jump', warnX: `The reading went up <span class="mc-num">20,927</span> km in 5 days. Check the number; if it’s right, tap “Save”.`,
+    cards: 'Cards & stats', lists: 'Lists & settings', listsSub: 'Record lists, and settings grouped under separate headings.', badges: 'Badges & progress',
+    nav: 'Navigation', navSub: 'App bar: title + one primary action + a “More” menu.',
+    overlays: 'Overlays', states2: 'Loading, errors & empty states',
     thisMonth: 'Spent this month', costKm: 'Cost per km', avg: 'Average consumption', distance: 'Distance', vsLast: 'vs last month',
-    oil: 'Engine oil change', oilSub: 'In 1,240 km · 12 Jan 2027', ins: 'Car insurance', insSub: 'Expires in 9 days',
+    oil: 'Engine oil change', oilSub: 'In 1,240 km · 12 Jan 2027', done: 'Done', cal: 'Add to phone calendar',
     r1: 'M91 · 35.47 L', r1s: '13 Nov · 78,690 km · Shell', r2: 'Engine oil change', r2s: '31 Oct · 77,827 km', r3: 'Car wash', r3s: '28 Oct', r4: 'Delivery', r4s: '20 Oct',
-    recent: 'Recent records', seeAll: 'See all',
+    recent: 'Recent records', seeAll: 'See all', prefs: 'Preferences', data: 'Data',
+    backupRemind: 'Backup reminder', backupRemindDesc: 'Every 14 days', unit: 'Consumption unit', cats: 'Categories', catsSub: '13 service categories', export: 'Export to Excel', backup: 'Copy to Google Drive',
     good: 'Good', soon: 'Soon', due: 'Due', synced: 'Saved', info: 'Info',
     tabs: ['All', 'Fuel', 'Service', 'Expense'], periods: ['3 months', '6 months', 'Year', 'All'],
-    sheetTitle: 'Add fill-up', openSheet: 'Open bottom sheet', openDialog: 'Open confirm dialog', showToast: 'Show toast',
+    sheetTitle: 'Add fill-up', editFill: 'Edit fill-up', share: 'Share', dup: 'Duplicate', del: 'Delete record',
+    openSheet: 'Open bottom sheet', moreDemos: 'More examples', openDialog: 'Confirm dialog', showToast: 'Toast',
     delTitle: 'Delete this record?', delText: 'The record will be permanently removed from this device.', toastMsg: 'Record deleted', saved: 'Saved',
     alertInfo: 'Last backup was 16 days ago', alertInfoT: 'Save a copy to Google Drive to protect your data.',
     alertOk: 'Saved', alertOkT: 'Fill-up added and consumption updated.',
-    alertWarn: 'Unusual odometer reading', alertWarnT: 'A jump of 20,927 km since the last fill-up — check the number.',
-    alertErr: 'Couldn’t read the file', alertErrT: 'This isn’t a valid My Car backup file.',
-    skeleton: 'Skeleton', spinner: 'Spinner', empty: 'Empty', error: 'Error',
-    theme: 'Theme', lang: 'Language' }
+    alertWarn: 'Reminder due in 3 days', alertWarnT: 'Engine oil change — due 28 Nov.',
+    alertErr: 'Couldn’t read the file', alertErrT: 'This isn’t a valid My Car backup. Choose a file ending in .json.',
+    skeleton: 'Skeleton', exportCsv: 'Export' }
 };
 const d = k => D[getLang()][k];
-const omr = x => `${num(x, 3)} ${t('unit.currency')}`;
-
-const COLOR_TOKENS = [['--color-primary', 'Primary'], ['--color-bg', 'Background'], ['--color-surface', 'Surface'], ['--color-surface-elevated', 'Elevated'],
-  ['--color-text', 'Text'], ['--color-text-secondary', 'Text 2'], ['--color-border', 'Border'], ['--color-primary-text', 'Primary text'],
+const omr = x => `${num(x, 3)} <span class="mc-stat__unit">${t('unit.currency')}</span>`;
+const COLOR_TOKENS = [['--color-primary', 'Primary'], ['--color-primary-text', 'Primary text'], ['--color-bg', 'Background'], ['--color-surface', 'Surface'], ['--color-surface-elevated', 'Elevated'],
+  ['--color-text', 'Text'], ['--color-text-secondary', 'Text secondary'], ['--color-border', 'Border'], ['--color-border-control', 'Control border'],
   ['--color-success', 'Success'], ['--color-warning', 'Warning'], ['--color-danger', 'Danger'], ['--color-info', 'Info']];
 const hex = v => { const c = document.createElement('canvas').getContext('2d'); c.fillStyle = v; return c.fillStyle.toUpperCase(); };
+const sec = (id, title, sub, inner) => `<section class="ds-sec" id="${id}"><header><h2 class="mc-h2">${title}</h2>${sub ? `<p class="mc-small mc-muted">${sub}</p>` : ''}</header>${inner}</section>`;
+const demo = (label, inner) => `<div class="ds-demo">${label ? `<div class="mc-overline">${label}</div>` : ''}${inner}</div>`;
+const odoField = (id, msg) => field({ id, label: d('odo'), inputmode: 'numeric', value: msg && msg.tone === 'warning' ? '99999' : msg ? '78450' : '78690', unit: t('unit.km'), lead: 'gauge', msg });
+const fillFields = (p) => `<div class="mc-grid-2">${field({ id: p + 'l', label: d('liters'), inputmode: 'decimal', value: '35.47', unit: t('unit.liter') })}${field({ id: p + 'p', label: d('price'), inputmode: 'decimal', value: '0.233', unit: t('unit.currency') })}</div>${odoField(p + 'o')}`;
 
-function sheetBody() {
-  return `<div class="mc-grid-2">${field({ id: 's-l', label: d('liters'), inputmode: 'decimal', value: '35.47', unit: t('unit.liter') })}${field({ id: 's-p', label: d('price'), inputmode: 'decimal', value: '0.233', unit: t('unit.currency') })}</div>
-    ${field({ id: 's-o', label: t('unit.km') === 'km' ? 'Odometer' : 'العداد', inputmode: 'numeric', value: '78690', unit: t('unit.km'), lead: 'gauge' })}
-    <label class="mc-switch"><span>${esc(d('fullTank'))}</span><input type="checkbox" checked></label>`;
+function renderBar() {
+  const L = getLang(), pref = getThemePref();
+  document.getElementById('bar').innerHTML = `
+    <div class="ds-brand"><span class="ds-mark">${icon('car')}</span><div><b>${t('appName')} · ${t('appNameAlt')}</b><small>${d('title')}</small></div></div>
+    <div class="mc-appbar__actions">${menu({ id: 'm-view', label: d('view'), triggerIcon: 'sliders-horizontal', items: [
+      { heading: d('theme') }, ...['light', 'dark', 'auto'].map(k => ({ label: t('theme.' + k), icon: { light: 'sun', dark: 'moon', auto: 'refresh-cw' }[k], action: 'theme', value: k, checked: pref === k })),
+      { sep: true }, { heading: d('lang') }, ...['ar', 'en'].map(k => ({ label: t('lang.' + k), icon: 'languages', action: 'lang', value: k, checked: L === k }))] })}</div>`;
 }
 
 function render() {
-  const L = getLang(), th = document.documentElement.dataset.theme, pref = getThemePref();
+  const L = getLang();
   document.title = `${t('appName')} — ${d('title')}`;
-  document.getElementById('app').innerHTML = `
-  <header class="ds-head">
-    <div class="ds-brand"><div class="ds-mark">${icon('car')}</div>
-      <div><h1 class="mc-h2">${t('appName')} <span class="mc-muted mc-title" style="font-weight:500">· ${t('appNameAlt')}</span></h1><div class="mc-small mc-muted">${d('title')} — ${d('sub')}</div></div></div>
-    <div class="ds-controls">
-      <div class="mc-seg" role="group" aria-label="${d('theme')}">${['light', 'dark', 'auto'].map(k => `<button type="button" data-theme-set="${k}" aria-pressed="${pref === k}">${t('theme.' + k)}</button>`).join('')}</div>
-      <div class="mc-seg" role="group" aria-label="${d('lang')}">${['ar', 'en'].map(k => `<button type="button" data-lang-set="${k}" aria-pressed="${L === k}">${t('lang.' + k)}</button>`).join('')}</div>
-    </div>
-  </header>
+  renderBar();
+  const stRow = (key, opt) => `<span class="mc-caption mc-muted">${d(key)}</span>${['primary', 'tonal', 'outline'].map(v => button(t('action.save'), { variant: v, ...opt })).join('')}`;
+  document.getElementById('app').innerHTML =
+  sec('colors', d('colors'), d('colorsSub'),
+    `<div class="ds-swatches">${COLOR_TOKENS.map(([v, n]) => `<div class="ds-sw"><i style="background:var(${v})"></i><div><b>${n}</b><span class="ds-code">${esc(hex(getComputedStyle(document.documentElement).getPropertyValue(v).trim()))}</span></div></div>`).join('')}</div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('colors')}</h2><p class="mc-small mc-muted">${d('colorsSub')}</p>
-    <div class="ds-swatches">${COLOR_TOKENS.map(([v, n]) => { const val = getComputedStyle(document.documentElement).getPropertyValue(v).trim(); return `<div class="ds-sw"><i style="background:var(${v})"></i><div><b>${n}</b><code>${esc(hex(val))}</code></div></div>`; }).join('')}</div>
-  </section>
+  sec('type', d('type'), d('typeSub'), `<div class="mc-card ds-type">
+      <div><span class="mc-display mc-num">79,072</span><span class="ds-code">Display 40</span></div>
+      <div><span class="mc-h1">${t('appName')}</span><span class="ds-code">H1 30</span></div>
+      <div><span class="mc-h2">${d('recent')}</span><span class="ds-code">H2 24</span></div>
+      <div><span class="mc-h3">${d('fillTitle')}</span><span class="ds-code">H3 20</span></div>
+      <div><span class="mc-title">${d('oil')}</span><span class="ds-code">Title 18</span></div>
+      <div><span class="mc-body">${d('alertOkT')}</span><span class="ds-code">Body 16</span></div>
+      <div><span class="mc-label">${d('liters')}</span><span class="ds-code">Label ${L === 'ar' ? 15 : 14}</span></div>
+      <div><span class="mc-small mc-muted">${d('r1s')}</span><span class="ds-code">Small ${L === 'ar' ? 15 : 14}</span></div>
+      <div><span class="mc-caption mc-muted">${d('vsLast')}</span><span class="ds-code">Caption ${L === 'ar' ? 13 : 12}</span></div></div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('type')}</h2><p class="mc-small mc-muted">${d('typeSub')}</p>
-    <div class="ds-type">
-      <div><span class="mc-display mc-num">79,072</span><code>Display 40/44 · 700</code></div>
-      <div><span class="mc-h1">${t('appName')}</span><code>H1 30/38 · 700</code></div>
-      <div><span class="mc-h2">${d('sample')}</span><code>H2 24/32 · 700</code></div>
-      <div><span class="mc-h3">${d('recent')}</span><code>H3 20/28 · 600</code></div>
-      <div><span class="mc-title">${d('oil')}</span><code>Title 18/26 · 600</code></div>
-      <div><span class="mc-body">${d('alertOkT')}</span><code>Body 16/24 · 400</code></div>
-      <div><span class="mc-label">${d('liters')}</span><code>Label 14/20 · 500</code></div>
-      <div><span class="mc-small mc-muted">${d('r1s')}</span><code>Small 14/20 · 400</code></div>
-      <div><span class="mc-caption mc-muted">${d('vsLast')}</span><code>Caption 12/16 · 400</code></div>
-    </div>
-  </section>
+  sec('space', d('space'), d('spaceSub'), `<div class="mc-card">
+      <div class="ds-spaces">${[1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map(n => `<div><span class="ds-code">space-${n} · ${n * 4}</span><span style="width:var(--space-${n})"></span></div>`).join('')}</div>
+      <div class="mc-divider" style="margin-block:var(--space-4)"></div>
+      <div class="ds-radii">${['xs', 'sm', 'md', 'lg', 'xl', 'full'].map(k => `<div style="border-radius:var(--radius-${k})"><span class="ds-code">${k}</span></div>`).join('')}</div></div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('space')}</h2><p class="mc-small mc-muted">${d('spaceSub')}</p>
-    <div class="ds-spaces">${[1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map(n => `<div><code class="ds-spec" style="width:72px">space-${n}</code><span style="width:var(--space-${n})"></span><span class="mc-caption mc-muted mc-num" style="background:none">${n * 4}px</span></div>`).join('')}</div>
-    <div class="ds-radii" style="margin-top:var(--space-4)">${[['xs', 6], ['sm', 10], ['md', 14], ['lg', 20], ['xl', 28], ['full', 999]].map(([k, v]) => `<div style="border-radius:var(--radius-${k})"><span class="mc-num">${k}</span></div>`).join('')}</div>
-  </section>
+  sec('buttons', d('buttons'), d('buttonsSub'),
+    demo(d('variants'), `<div class="mc-row">${button(t('action.save'), { variant: 'primary', icon: 'check' })}${button(d('cal'), { variant: 'tonal', icon: 'calendar-plus' })}${button(d('exportCsv'), { variant: 'outline', icon: 'download' })}${button(d('seeAll'), { variant: 'ghost', iconEnd: 'chevron-right' })}${button(t('action.delete'), { variant: 'danger', icon: 'trash-2' })}</div>`) +
+    demo(d('sizes'), `<div class="mc-row">${button(t('action.save'), { variant: 'primary', size: 'sm' })}${button(t('action.save'), { variant: 'primary' })}${button(t('action.save'), { variant: 'primary', size: 'lg' })}</div>`) +
+    demo(d('states'), `<div class="mc-card"><div class="ds-states"><span></span>${['Primary', 'Tonal', 'Outline'].map(n => `<span class="ds-code" style="text-align:center">${n}</span>`).join('')}
+      ${stRow('stDefault', {})}${stRow('stHover', { state: 'hover' })}${stRow('stFocus', { state: 'focus' })}${stRow('stActive', { state: 'active' })}${stRow('stDisabled', { disabled: true })}
+      <span class="mc-caption mc-muted">${d('stLoading')}</span>${['primary', 'tonal', 'outline'].map(v => button(t('action.save'), { variant: v, busy: true })).join('')}</div></div>`) +
+    demo(d('iconBtns'), `<div class="mc-row">${iconButton('arrow-left', t('action.back'))}${iconButton('search', 'Search')}${iconButton('pencil', t('action.edit'), { filled: true })}${iconButton('ellipsis-vertical', t('action.more'), { filled: true })}<button class="mc-fab" type="button" aria-label="${t('nav.add')}">${icon('plus')}</button></div>`) +
+    demo(d('pattern'), `<div class="mc-card"><div class="mc-actions">${button(t('action.save'), { variant: 'primary', size: 'lg', icon: 'check' })}${button(t('action.cancel'), { variant: 'outline', size: 'lg' })}${menu({ id: 'm-act', label: t('action.more'), filled: true, up: true, items: [{ label: d('dup'), icon: 'refresh-cw' }, { label: d('share'), icon: 'upload' }, { sep: true }, { label: d('del'), icon: 'trash-2', danger: true }] })}</div></div>`)) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('buttons')}</h2>
-    <div class="mc-stack">
-      <div class="mc-row">${button(d('primary'), { variant: 'primary', icon: 'check' })}${button(d('tonal'), { variant: 'tonal', icon: 'calendar-plus' })}${button(d('outline'), { variant: 'outline', icon: 'download' })}</div>
-      <div class="mc-row">${button(d('ghost'), { variant: 'ghost', iconEnd: 'chevron-right' })}${button(d('danger'), { variant: 'danger', icon: 'trash-2' })}${button(d('disabled'), { disabled: true })}</div>
-      <div class="mc-row">${button(t('action.save'), { variant: 'primary', size: 'sm' })}${button(t('action.save'), { variant: 'primary' })}${button(t('action.save'), { variant: 'primary', size: 'lg' })}${button(d('loading'), { variant: 'primary', busy: true })}</div>
-      ${button(d('primary'), { variant: 'primary', size: 'lg', block: true })}
-      <div class="mc-row">${iconButton('search', 'search')}${iconButton('pencil', t('action.edit'), { filled: true })}${iconButton('ellipsis-vertical', t('action.more'), { filled: true })}${iconButton('arrow-left', t('action.back'), { filled: true })}<button class="mc-fab" type="button" aria-label="${t('nav.add')}">${icon('plus')}</button></div>
-    </div>
-  </section>
+  sec('forms', d('forms'), d('formsSub'), `<div class="mc-stack">
+    ${section({ title: d('fillTitle'), desc: d('fillDesc'), bodies: [
+      fillFields('f-') + `<div class="mc-grid-2">${field({ id: 'f-t', label: d('fuelType'), options: ['M91', 'M95', L === 'ar' ? 'ديزل' : 'Diesel'], value: 'M91' })}${field({ id: 'f-s', label: d('station'), lead: 'map-pin', value: L === 'ar' ? 'شل' : 'Shell' })}</div>`,
+      switchControl({ label: d('fullTank'), desc: d('fullTankDesc'), checked: true }) + field({ id: 'f-n', label: d('note'), optional: d('optional'), rows: 2, placeholder: d('notePh') })] })}
+    ${section({ title: d('validTitle'), desc: d('validDesc'), bodies: [
+      odoField('v-e', { tone: 'danger', title: d('errT'), text: d('errX'), action: `<button type="button" class="mc-link">${d('errA')}</button>` }),
+      odoField('v-w', { tone: 'warning', title: d('warnT'), text: d('warnX') })] })}
+    ${section({ title: d('choiceTitle'), desc: d('choiceDesc'), bodies: [
+      `<div><div class="mc-label">${d('exportWhat')}</div>${checkbox({ label: t('types.fuel'), checked: true })}${checkbox({ label: t('types.service'), checked: true })}${checkbox({ label: t('types.expense') })}</div>`,
+      `<div class="mc-field"><span class="mc-field__label">${d('period')}</span>${segmented(d('periods').map((p, i) => [String(i), p]), '1')}</div>
+       <div class="mc-field"><span class="mc-field__label">${d('filter')}</span><div class="mc-chips" role="group">${d('tabs').map((p, i) => `<button type="button" class="mc-chip" aria-pressed="${i === 0}">${p}</button>`).join('')}</div>
+       <div class="mc-inputgroup">${icon('search')}<input class="mc-input" type="search" placeholder="${esc(d('searchPh'))}" aria-label="${esc(d('searchPh'))}"></div></div>`] })}
+  </div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('inputs')}</h2>
-    <div class="mc-stack">
-      <div class="mc-grid-2">${field({ id: 'f-l', label: d('liters'), inputmode: 'decimal', value: '35.47', unit: t('unit.liter') })}${field({ id: 'f-p', label: d('price'), inputmode: 'decimal', placeholder: '0.000', unit: t('unit.currency') })}</div>
-      ${field({ id: 'f-o', label: t('unit.km') === 'km' ? 'Odometer' : 'العداد', inputmode: 'numeric', value: '78450', unit: t('unit.km'), lead: 'gauge', error: d('odoErr') })}
-      <div class="mc-grid-2">${field({ id: 'f-t', label: d('fuelType'), options: ['M91', 'M95', L === 'ar' ? 'ديزل' : 'Diesel'], value: 'M91' })}${field({ id: 'f-s', label: d('station'), lead: 'map-pin', value: L === 'ar' ? 'شل' : 'Shell' })}</div>
-      ${field({ id: 'f-n', label: d('note'), rows: 2, placeholder: d('notePh'), hint: L === 'ar' ? 'اختياري' : 'Optional' })}
-      <div class="mc-inputgroup">${icon('search')}<input class="mc-input" type="search" placeholder="${esc(d('searchPh'))}" aria-label="${esc(d('searchPh'))}"></div>
-      <div class="mc-card" style="padding-block:var(--space-1)"><label class="mc-switch"><span>${d('fullTank')}</span><input type="checkbox" checked></label>
-        <label class="mc-switch"><span>${d('remindMe')}</span><input type="checkbox"></label></div>
-      <label class="mc-check"><input type="checkbox" checked><span>${d('fullTank')}</span></label>
-      <div class="mc-seg" role="group">${d('periods').map((p, i) => `<button type="button" aria-pressed="${i === 1}">${p}</button>`).join('')}</div>
-      <div class="mc-chips" role="group">${d('tabs').map((p, i) => `<button type="button" class="mc-chip" aria-pressed="${i === 0}">${p}</button>`).join('')}</div>
-    </div>
-  </section>
-
-  <section class="ds-sec"><h2 class="mc-h3">${d('cards')}</h2>
-    <div class="mc-stack">
-      <div class="mc-grid-2">${stat(d('thisMonth'), omr(34.158), `−12% ${d('vsLast')}`, 'down')}${stat(d('costKm'), omr(0.034))}${stat(d('avg'), `${num(12.4, 1)} <span class="mc-small mc-muted">${t('unit.kmpl')}</span>`, '+4%', 'up')}${stat(d('distance'), `${num(3284)} <span class="mc-small mc-muted">${t('unit.km')}</span>`)}</div>
+  sec('cards', d('cards'), '', `<div class="mc-stack">
+      <div class="mc-grid-2">${stat(d('thisMonth'), omr(34.158), `<span class="mc-num">−12%</span> ${d('vsLast')}`, 'success')}${stat(d('costKm'), omr(0.034))}${stat(d('avg'), `${num(12.4, 1)} <span class="mc-stat__unit">${t('unit.kmpl')}</span>`, `<span class="mc-num">+4%</span> ${d('vsLast')}`, 'success')}${stat(d('distance'), `${num(3284)} <span class="mc-stat__unit">${t('unit.km')}</span>`)}</div>
       <div class="mc-card mc-card--elevated">
-        <div class="mc-card__head"><div class="mc-row" style="gap:var(--space-3)"><span class="mc-list-item__lead mc-tone-service">${icon('wrench')}</span><div><div class="mc-title">${d('oil')}</div><div class="mc-small mc-muted">${d('oilSub')}</div></div></div>${badge(d('soon'), 'warning')}</div>
+        <div class="mc-card__head"><div class="mc-row" style="gap:var(--space-3);flex-wrap:nowrap">${iconTile('wrench', 'service')}<div><div class="mc-title">${d('oil')}</div><div class="mc-small mc-muted">${d('oilSub')}</div></div></div>${badge(d('soon'), 'warning')}</div>
         ${progress(76, 'warning')}
-        <div class="mc-row" style="margin-top:var(--space-3)">${button(L === 'ar' ? 'تمّت' : 'Done', { variant: 'primary', size: 'sm', icon: 'check' })}${button(L === 'ar' ? 'أضف لتقويم الهاتف' : 'Add to phone calendar', { variant: 'tonal', size: 'sm', icon: 'calendar-plus' })}</div>
-      </div>
-    </div>
-  </section>
+        <div class="mc-actions" style="margin-top:var(--space-4)">${button(d('done'), { variant: 'primary', icon: 'check' })}${button(d('cal'), { variant: 'tonal', icon: 'calendar-plus' })}</div>
+      </div></div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('lists')}</h2>
-    <div class="mc-section-head"><h3 class="mc-title">${d('recent')}</h3>${button(d('seeAll'), { variant: 'ghost', size: 'sm', iconEnd: 'chevron-right' })}</div>
+  sec('lists', d('lists'), d('listsSub'),
+    `<div class="mc-section-head"><h3 class="mc-title">${d('recent')}</h3>${button(d('seeAll'), { variant: 'ghost', size: 'sm', iconEnd: 'chevron-right' })}</div>
     <div class="mc-list">
       ${listItem({ title: d('r1'), sub: d('r1s'), lead: 'fuel', tone: 'fuel', trail: omr(8.265) })}
       ${listItem({ title: d('r2'), sub: d('r2s'), lead: 'wrench', tone: 'service', trail: omr(18.5) })}
       ${listItem({ title: d('r3'), sub: d('r3s'), lead: 'receipt', tone: 'expense', trail: omr(3) })}
-      ${listItem({ title: d('r4'), sub: d('r4s'), lead: 'wallet', tone: 'income', trail: `<span style="color:var(--color-success-text)">+${omr(12)}</span>` })}
-      ${listItem({ title: t('nav.settings'), sub: t('lang.ar') + ' · ' + t('theme.auto'), lead: 'settings', tone: 'fuel', chevron: true })}
+      ${listItem({ title: d('r4'), sub: d('r4s'), lead: 'wallet', tone: 'income', trail: `<span class="mc-text-tone mc-tone-income">+${num(12, 3)}</span>` })}
     </div>
-  </section>
+    <div class="mc-group-label">${d('prefs')}</div>
+    <div class="mc-list">
+      <div class="mc-list-item mc-list-item--compact">${switchControl({ label: d('backupRemind'), desc: d('backupRemindDesc'), checked: true })}</div>
+      <div class="mc-list-item mc-list-item--compact"><span class="mc-list-item__body"><span class="mc-list-item__title">${d('unit')}</span></span><span class="mc-list-item__trail"><select class="mc-select" aria-label="${d('unit')}"><option>${t('unit.kmpl')}</option><option>L/100km</option></select></span></div>
+      ${listItem({ title: d('cats'), sub: d('catsSub'), chevron: true, compact: true })}
+    </div>
+    <div class="mc-group-label">${d('data')}</div>
+    <div class="mc-list">
+      ${listItem({ title: d('backup'), lead: 'cloud-upload', tone: 'info', chevron: true, compact: true })}
+      ${listItem({ title: d('export'), lead: 'download', tone: 'success', chevron: true, compact: true })}
+    </div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('badges')}</h2>
-    <div class="mc-row" style="margin-bottom:var(--space-4)">${badge(d('good'), 'success')}${badge(d('soon'), 'warning')}${badge(d('due'), 'danger')}${badge(d('info'), 'info')}${badge(d('synced'), 'primary')}${badge('M91')}</div>
-    <div class="mc-stack">${progress(30, 'success')}${progress(76, 'warning')}${progress(100, 'danger')}${progress(55)}</div>
-  </section>
+  sec('badges', d('badges'), '', `<div class="mc-card"><div class="mc-row" style="margin-bottom:var(--space-4)">${badge(d('good'), 'success')}${badge(d('soon'), 'warning')}${badge(d('due'), 'danger')}${badge(d('info'), 'info')}${badge(d('synced'), 'primary')}${badge('M91', 'neutral')}</div>
+    <div class="mc-stack">${progress(30, 'success')}${progress(76, 'warning')}${progress(100, 'danger')}${progress(55)}</div></div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('nav')}</h2>
-    <div class="ds-frame">
-      <div class="mc-appbar">${iconButton('arrow-left', t('action.back'))}<div class="mc-appbar__title">${d('sheetTitle')}</div>${iconButton('ellipsis-vertical', t('action.more'))}</div>
-      <div style="padding:var(--space-4)">
-        <div class="mc-tabs" role="tablist">${d('tabs').map((p, i) => `<button class="mc-tab" role="tab" aria-selected="${i === 1}">${p}</button>`).join('')}</div>
-        <div style="height:56px"></div>
-      </div>
+  sec('nav', d('nav'), d('navSub'), `<div class="ds-frame">
+      <div class="mc-appbar">${iconButton('arrow-left', t('action.back'))}<div class="mc-appbar__title">${d('editFill')}</div>
+        <div class="mc-appbar__actions">${button(t('action.save'), { variant: 'primary' })}${menu({ id: 'm-bar', label: t('action.more'), items: [{ label: d('dup'), icon: 'refresh-cw' }, { label: d('share'), icon: 'upload' }, { sep: true }, { label: d('del'), icon: 'trash-2', danger: true }] })}</div></div>
+      <div style="padding:var(--space-3) var(--space-4) var(--space-12)"><div class="mc-tabs" role="tablist">${d('tabs').map((p, i) => `<button class="mc-tab" role="tab" aria-selected="${i === 1}">${p}</button>`).join('')}</div></div>
       <nav class="mc-bottomnav" aria-label="nav"><div class="mc-bottomnav__inner">
         <a class="mc-navitem" href="#" aria-current="page"><span class="mc-navitem__pill">${icon('house')}</span>${t('nav.home')}</a>
         <a class="mc-navitem" href="#"><span class="mc-navitem__pill">${icon('list')}</span>${t('nav.log')}</a>
         <button class="mc-fab" type="button" aria-label="${t('nav.add')}">${icon('plus')}</button>
         <a class="mc-navitem" href="#"><span class="mc-navitem__pill">${icon('bell')}</span>${t('nav.reminders')}</a>
         <a class="mc-navitem" href="#"><span class="mc-navitem__pill">${icon('chart-column')}</span>${t('nav.reports')}</a>
-      </div></nav>
-    </div>
-    <p class="mc-caption mc-muted">${L === 'ar' ? 'من عرض 900px يتحول الشريط السفلي إلى شريط جانبي بنفس العناصر.' : 'From 900px wide, the bottom bar becomes a side rail with the same items.'}</p>
-  </section>
+      </div></nav></div>
+    <div class="ds-demo" style="margin-top:var(--space-5)"><div class="mc-overline">${L === 'ar' ? 'قائمة «المزيد» مفتوحة' : '“More” menu, open'}</div>
+      <div class="ds-menu-open" style="max-width:260px"><div class="mc-menu" role="presentation">${[['refresh-cw', d('dup')], ['upload', d('share')]].map(([i, l]) => `<div class="mc-menu__item">${icon(i)}<span>${l}</span></div>`).join('')}<div class="mc-menu__sep"></div><div class="mc-menu__item mc-menu__item--danger">${icon('trash-2')}<span>${d('del')}</span></div></div></div></div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('overlays')}</h2>
-    <div class="mc-row" style="margin-bottom:var(--space-4)">${button(d('openSheet'), { variant: 'tonal', attrs: 'data-demo="sheet"' })}${button(d('openDialog'), { variant: 'outline', attrs: 'data-demo="dialog"' })}${button(d('showToast'), { variant: 'outline', attrs: 'data-demo="toast"' })}</div>
+  sec('overlays', d('overlays'), '', `<div class="mc-actions" style="margin-bottom:var(--space-5)">${button(d('openSheet'), { variant: 'primary', attrs: 'data-demo="sheet"' })}${menu({ id: 'm-demo', label: d('moreDemos'), filled: true, items: [{ label: d('openDialog'), icon: 'trash-2', action: 'dialog' }, { label: d('showToast'), icon: 'info', action: 'toast' }] })}</div>
     <div class="mc-stack">
-      <div class="ds-overlay-demo"><div class="mc-sheet" role="presentation"><div class="mc-sheet__grab"></div>
+      <div class="ds-overlay"><div class="mc-sheet" role="presentation"><div class="mc-sheet__grab"></div>
         <div class="mc-sheet__head"><h3 class="mc-sheet__title">${d('sheetTitle')}</h3>${iconButton('x', t('action.close'))}</div>
-        <div class="mc-sheet__body">${sheetBody()}</div>
+        <div class="mc-sheet__body">${fillFields('s-')}</div>
         <div class="mc-sheet__foot">${button(t('action.cancel'), { variant: 'outline' })}${button(t('action.save'), { variant: 'primary' })}</div></div></div>
-      <div class="ds-overlay-demo center"><div class="mc-sheet mc-dialog" role="presentation"><div class="mc-sheet__body"><div class="mc-dialog__icon mc-tone-danger">${icon('trash-2')}</div><h3 class="mc-title">${d('delTitle')}</h3><p class="mc-small mc-muted" style="margin:0">${d('delText')}</p></div>
+      <div class="ds-overlay ds-overlay--center"><div class="mc-sheet mc-dialog" role="presentation"><div class="mc-sheet__body">${iconTile('trash-2', 'danger', 'lg')}<h3 class="mc-title">${d('delTitle')}</h3><p class="mc-small mc-muted" style="margin:0">${d('delText')}</p></div>
         <div class="mc-sheet__foot">${button(t('action.cancel'), { variant: 'outline' })}${button(t('action.delete'), { variant: 'danger' })}</div></div></div>
-      <div class="ds-toast-demo"><div class="mc-toast"><span class="mc-toast__msg">${d('toastMsg')}</span><button class="mc-toast__action" type="button">${t('action.undo')}</button></div></div>
-      <div class="ds-toast-demo"><div class="mc-toast mc-toast--success">${icon('circle-check')}<span class="mc-toast__msg">${d('saved')}</span></div></div>
-    </div>
-  </section>
+      <div class="ds-static mc-stack">${toastHTML(d('toastMsg'), { action: t('action.undo') })}${toastHTML(d('saved'), { tone: 'success' })}</div>
+    </div>`) +
 
-  <section class="ds-sec"><h2 class="mc-h3">${d('states')}</h2>
-    <div class="mc-stack">
-      <div class="mc-caption mc-muted">${d('skeleton')}</div>
-      <div class="mc-list">${skeletonRow()}${skeletonRow()}${skeletonRow()}</div>
-      <div class="mc-row"><div class="mc-spinner" role="status" aria-label="${t('state.loading')}"></div><span class="mc-small mc-muted">${t('state.loading')}</span></div>
-      <div class="mc-card">${emptyState({ icon: 'fuel', title: t('state.emptyTitle'), text: t('state.emptyText'), action: button(d('primary'), { variant: 'primary', icon: 'plus' }) })}</div>
-      <div class="mc-card">${emptyState({ icon: 'circle-alert', tone: 'error', title: t('state.errorTitle'), text: t('state.errorText'), action: button(t('action.retry'), { variant: 'outline', icon: 'refresh-cw' }) })}</div>
+  sec('states', d('states2'), '', `<div class="mc-stack">
+      ${demo(d('skeleton'), `<div class="mc-list">${skeletonRow()}${skeletonRow()}</div><div class="mc-row"><div class="mc-spinner" role="status" aria-label="${t('state.loading')}"></div><span class="mc-small mc-muted">${t('state.loading')}</span></div>`)}
+      <div class="mc-card">${emptyState({ icon: 'fuel', title: t('state.emptyTitle'), text: t('state.emptyText'), action: button(d('sheetTitle'), { variant: 'primary', icon: 'plus' }) })}</div>
+      <div class="mc-card">${emptyState({ icon: 'circle-alert', tone: 'danger', title: t('state.errorTitle'), text: t('state.errorText'), action: button(t('action.retry'), { variant: 'outline', icon: 'refresh-cw' }) })}</div>
       ${alertBox({ tone: 'info', title: d('alertInfo'), text: d('alertInfoT') })}
       ${alertBox({ tone: 'success', title: d('alertOk'), text: d('alertOkT') })}
       ${alertBox({ tone: 'warning', title: d('alertWarn'), text: d('alertWarnT') })}
       ${alertBox({ tone: 'danger', title: d('alertErr'), text: d('alertErrT') })}
-    </div>
-  </section>
-  <p class="mc-caption mc-muted" style="padding-block:var(--space-6)">Icons: Lucide (ISC) · Fonts: IBM Plex (OFL)</p>`;
+    </div>`) +
+  `<p class="mc-caption mc-muted" style="padding-block:var(--space-8)">Icons: Lucide (ISC) · Fonts: IBM Plex (OFL)</p>`;
 }
 
-document.addEventListener('click', async e => {
-  const b = e.target.closest('button,a'); if (!b) return;
-  if (b.matches('a[href="#"]')) e.preventDefault();
-  if (b.dataset.themeSet) setTheme(b.dataset.themeSet);
-  else if (b.dataset.langSet) setLang(b.dataset.langSet);
-  else if (b.dataset.demo === 'sheet') {
-    const root = openSheet({ title: d('sheetTitle'), body: sheetBody(), footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'data-ok' }) });
+document.addEventListener('mc:select', async e => {
+  const { action, value } = e.detail;
+  if (action === 'theme') setTheme(value);
+  else if (action === 'lang') setLang(value);
+  else if (action === 'dialog') { if (await confirmDialog({ title: d('delTitle'), text: d('delText'), confirmText: t('action.delete') })) toast(d('toastMsg'), { action: t('action.undo'), onAction: () => toast(d('saved'), { tone: 'success' }) }); }
+  else if (action === 'toast') toast(d('toastMsg'), { action: t('action.undo') });
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-demo]'); if (e.target.closest('a[href="#"]')) e.preventDefault();
+  if (b && b.dataset.demo === 'sheet') {
+    const root = openSheet({ title: d('sheetTitle'), body: fillFields('o-'), footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'data-ok' }) });
     root.querySelector('[data-ok]').addEventListener('click', () => { closeSheet(); toast(d('saved'), { tone: 'success' }); });
-  } else if (b.dataset.demo === 'dialog') {
-    if (await confirmDialog({ title: d('delTitle'), text: d('delText'), confirmText: t('action.delete') })) toast(d('toastMsg'), { action: t('action.undo'), onAction: () => toast(d('saved'), { tone: 'success' }) });
-  } else if (b.dataset.demo === 'toast') toast(d('toastMsg'), { action: t('action.undo') });
+  }
 });
 document.addEventListener('mc:lang', render);
 document.addEventListener('mc:theme', render);
 initPrefs();
 render();
-window.__mcParse = parseNum; // exposed for tests
+window.__mcParse = parseNum;
 </script>
 </body>
 </html>

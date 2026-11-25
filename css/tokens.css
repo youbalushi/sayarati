@@ -86,11 +86,14 @@
   --color-surface-elevated:var(--ink-50);
   --color-surface-sunken:#EEF0F3;
   --color-border:var(--ink-200);
-  --color-border-strong:#CDD2DA;
+  --color-border-strong:#CDD2DA;               /* dividers inside cards, segmented track */
+  --color-border-control:#8B929D;              /* input / switch / checkbox outline — 3.1:1 on surface (WCAG 1.4.11) */
+  --color-control-bg:var(--ink-50);
 
   --color-text:var(--ink-text-light);
   --color-text-secondary:var(--ink-450);
-  --color-text-disabled:#AEB4BE;
+  --color-text-disabled:#9AA1AB;
+  --color-disabled-bg:#EDEFF2;
 
   --color-primary:var(--orange-500);
   --color-primary-hover:#DC762A;
@@ -107,6 +110,7 @@
   --color-scrim:rgba(17,19,24,.45);
   --color-skeleton:#E9ECF0; --color-skeleton-shine:#F6F7F9;
   --color-focus:var(--orange-500);
+  --focus-ring:0 0 0 2px var(--color-bg),0 0 0 4px var(--color-focus);
 
   --shadow-1:0 1px 2px rgba(17,19,24,.06),0 1px 3px rgba(17,19,24,.06);
   --shadow-2:0 4px 12px rgba(17,19,24,.08),0 1px 3px rgba(17,19,24,.06);
@@ -123,10 +127,13 @@
   --color-surface-sunken:#161A21;
   --color-border:var(--ink-800);
   --color-border-strong:#3C4350;
+  --color-border-control:#646C7A;              /* 3.3:1 on control background */
+  --color-control-bg:#161A21;
 
   --color-text:var(--ink-text-dark);
   --color-text-secondary:var(--ink-500);
-  --color-text-disabled:#5B6370;
+  --color-text-disabled:#6B7380;
+  --color-disabled-bg:#22272F;
 
   --color-primary:var(--orange-400);
   --color-primary-hover:#F59B50;
@@ -143,6 +150,7 @@
   --color-scrim:rgba(0,0,0,.6);
   --color-skeleton:#232832; --color-skeleton-shine:#2C323D;
   --color-focus:var(--orange-400);
+  --focus-ring:0 0 0 2px var(--color-bg),0 0 0 4px var(--color-focus);
 
   --shadow-1:0 1px 2px rgba(0,0,0,.4);
   --shadow-2:0 4px 14px rgba(0,0,0,.35);
@@ -150,5 +158,23 @@
   --shadow-fab:0 8px 22px rgba(242,140,56,.28);
 }
 
-/* Arabic text sets slightly taller lines for diacritics and ascenders */
-:root:lang(ar){--lh-body:26px;--lh-small:22px;--lh-title:28px}
+/* Arabic: Plex Arabic has a smaller x-height than Latin at the same size, so
+   small sizes step up 1px and every size gets taller lines for dots/diacritics. */
+:root:lang(ar){
+  --fs-caption:13px; --lh-caption:20px;
+  --fs-small:15px;   --lh-small:24px;
+  --lh-body:26px;
+  --lh-title:28px;
+  --lh-h3:30px; --lh-h2:36px; --lh-h1:42px;
+}
+
+/* ---------- 4. Tones ------------------------------------------------
+   One tone system shared by badges, alerts, icon tiles, progress, field
+   messages and stat deltas. Components read --_c (text/icon), --_soft
+   (tinted background) and --_solid (fills).                           */
+.mc-tone-primary,.mc-tone-fuel{--_c:var(--color-primary-text);--_soft:var(--color-primary-soft);--_solid:var(--color-primary)}
+.mc-tone-success,.mc-tone-income{--_c:var(--color-success-text);--_soft:var(--color-success-soft);--_solid:var(--color-success)}
+.mc-tone-warning,.mc-tone-expense{--_c:var(--color-warning-text);--_soft:var(--color-warning-soft);--_solid:var(--color-warning)}
+.mc-tone-danger{--_c:var(--color-danger-text);--_soft:var(--color-danger-soft);--_solid:var(--color-danger)}
+.mc-tone-info,.mc-tone-service{--_c:var(--color-info-text);--_soft:var(--color-info-soft);--_solid:var(--color-info)}
+.mc-tone-neutral{--_c:var(--color-text-secondary);--_soft:var(--color-surface-sunken);--_solid:var(--color-text-secondary)}
