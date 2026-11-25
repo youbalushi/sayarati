@@ -95,7 +95,7 @@ export function field({ id, label, optional = '', type = 'text', value = '', pla
   let control;
   if (options) control = `<select class="mc-select" ${common}>${options.map(o => { const [v, l] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${String(v) === String(value) ? 'selected' : ''}>${esc(l)}</option>`; }).join('')}</select>`;
   else if (rows) control = `<textarea class="mc-textarea" rows="${rows}" ${common} placeholder="${esc(placeholder)}">${esc(value)}</textarea>`;
-  else control = `<input class="mc-input" type="${type}" ${inputmode ? `inputmode="${inputmode}"` : ''} ${common} value="${esc(value)}" placeholder="${esc(placeholder)}">`;
+  else control = `<input class="mc-input" type="${type}" ${type === 'text' && !inputmode ? 'dir="auto"' : ''} ${inputmode ? `inputmode="${inputmode}"` : ''} ${common} value="${esc(value)}" placeholder="${esc(placeholder)}">`;
   if (unit || lead) control = `<div class="mc-inputgroup">${lead ? icon(lead) : ''}${control}${unit ? `<span class="mc-inputgroup__unit">${esc(unit)}</span>` : ''}</div>`;
   const m = msg ? `<div class="mc-field__msg${tone(msg.tone)}" id="${id}-msg" role="${msg.tone === 'danger' ? 'alert' : 'status'}">${icon(msg.tone === 'danger' ? 'circle-alert' : 'triangle-alert', { size: 'sm' })}<div>${msg.title ? `<strong>${esc(msg.title)}</strong>` : ''}${msg.text}${msg.action ? `<br>${msg.action}` : ''}</div></div>` : '';
   return `<div class="mc-field${msg ? ` mc-field--${msg.tone === 'danger' ? 'error' : 'warning'}` : ''}"><label class="mc-field__label" for="${esc(id)}">${esc(label)}${optional ? ` <small>(${esc(optional)})</small>` : ''}</label>${control}

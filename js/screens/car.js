@@ -2,6 +2,7 @@
 // Reads/writes the existing data through ctx. New optional fields (all backward compatible):
 //   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img, added}]
 import { t, getLang, esc, icon, iconTile, button, iconButton, field, badge, listItem, stat, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
+import { MAKES, makeLabel, modelsOf, bodyOf, vehTitle, vehSub, legacyName, vehImage, carArt, mountCatalog } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const DOC_TYPES = ['insurance', 'registration', 'inspection', 'license', 'other'];
@@ -47,17 +48,17 @@ export async function imageToDataURL(file, max, quality) {
 export function renderCar(ctx) {
   const { S } = ctx, V = ctx.veh(S.cur);
   if (!V) { location.hash = 'home'; return ''; }
-  const v = V.id, st = ctx.stats(v), odo = ctx.curOdo(v), photo = safeImg(V.photo);
+  const v = V.id, st = ctx.stats(v), odo = ctx.curOdo(v), img = vehImage(V), isArt = !safeImg(V.photo) && !!img;
   const cons = st.allCons, L = cons.reduce((a, c) => a + c.l, 0), avg = L ? cons.reduce((a, c) => a + c.dist, 0) / L : 0;
   const by = st.by, total = st.spend || 0, pct = x => (total ? (x / total) * 100 : 0);
-  const sub = [V.model, V.year].filter(Boolean).map(esc).join(' · ');
+  const sub = esc(vehSub(V)), title = esc(vehTitle(V));
   const L1 = getLang();
 
   const hero = `<section class="mc-card mc-card--flush cd-hero">
-    <div class="cd-photo${photo ? '' : ' is-empty'}">${photo ? `<img src="${photo}" alt="${esc(V.name)}">` : `${icon('car')}<span class="mc-small">${t('car.noPhoto')}</span>`}
-      <label class="mc-btn mc-btn--sm cd-photo__btn">${icon('upload')}<span>${t(photo ? 'car.changePhoto' : 'car.addPhoto')}</span><input type="file" accept="image/*" data-car="photo" hidden></label></div>
+    <div class="cd-photo${img ? (isArt ? ' is-art' : '') : ' is-empty'}" role="img" aria-label="${title}">${img || `${icon('car')}<span class="mc-small">${t('car.noPhoto')}</span>`}
+      <div class="cd-photo__actions">${button(t(img ? 'car.changePhoto' : 'car.addPhoto'), { size: 'sm', icon: 'car', attrs: 'data-car="catalog"' })}</div></div>
     <div class="cd-id">
-      <h1 class="mc-h2">${esc(V.name)}</h1>
+      <h1 class="mc-h2">${title}</h1>
       <div class="cd-id__meta">${sub ? `<span class="mc-muted">${sub}</span>` : ''}${V.fuel ? badge(fuelLabel(V.fuel), 'neutral') : ''}</div>
     </div>
     <dl class="cd-facts">
@@ -137,35 +138,78 @@ function tabPanel(ctx, V, st) {
 /* ---------- vehicle editor (add + edit) ---------- */
 export function openVehicleEditor(ctx, id = null) {
   const old = id ? ctx.veh(id) : null, V = old || { fuel: 'M91' };
-  let photo = safeImg(V.photo);
+  let photo = safeImg(V.photo), photoCat = V.photoCat || null;
+  const known = !!MAKES.find(m => m[0] === V.make);
+  const nick0 = V.nick || (!V.make && !V.model ? V.name || '' : '');
   const yearNow = new Date().getFullYear();
-  const body = `<form class="mc-stack" id="ve-form" novalidate>
+  const makeOpts = [['', t('car.choose')], ...MAKES.map(m => [m[0], makeLabel(m[0])]), ['__other', t('car.other')]];
+  const modelOpts = mk => [['', t('car.choose')], ...modelsOf(mk).map(x => [x[0], x[0]]), ['__other', t('car.other')]];
+  const make0 = V.make ? (known ? V.make : '__other') : '';
+  const model0 = V.model ? (known && modelsOf(V.make).some(x => x[0] === V.model) ? V.model : '__other') : '';
+  const preview = () => (photo ? `<img src="${photo}" alt="">` : photoCat ? carArt(photoCat.body, photoCat.color) : icon('car'));
+  const body = `<div id="ve-formview"><form class="mc-stack" id="ve-form" novalidate>
     <div class="cd-edit-photo">
-      <div class="cd-edit-photo__img${photo ? '' : ' is-empty'}" id="ve-photo">${photo ? `<img src="${photo}" alt="">` : icon('car')}</div>
-      <div class="mc-row"><label class="mc-btn mc-btn--tonal mc-btn--sm">${icon('upload')}<span>${t('car.choosePhoto')}</span><input type="file" accept="image/*" id="ve-file" hidden></label>
-        ${button(t('car.removePhoto'), { variant: 'ghost', size: 'sm', attrs: `id="ve-rm" ${photo ? '' : 'hidden'}` })}</div>
+      <div class="cd-edit-photo__img${photo || photoCat ? '' : ' is-empty'}" id="ve-photo">${preview()}</div>
+      <div class="mc-row">${button(t('catalog.fromCatalog'), { variant: 'tonal', size: 'sm', icon: 'car', attrs: 'id="ve-cat"' })}
+        <label class="mc-btn mc-btn--ghost mc-btn--sm">${icon('upload')}<span>${t('catalog.fromDevice')}</span><input type="file" accept="image/*" id="ve-file" hidden></label>
+        ${button(t('car.removePhoto'), { variant: 'ghost', size: 'sm', attrs: `id="ve-rm" ${photo || photoCat ? '' : 'hidden'}` })}</div>
     </div>
-    ${field({ id: 've-name', label: t('car.name'), value: V.name || '', placeholder: t('car.namePh') })}
-    <div class="mc-grid-2">${field({ id: 've-model', label: t('car.model'), optional: t('car.optional'), value: V.model || '', placeholder: t('car.modelPh') })}${field({ id: 've-year', label: t('car.year'), optional: t('car.optional'), value: V.year || '', inputmode: 'numeric', placeholder: String(yearNow) })}</div>
+    <div class="mc-grid-2">
+      <div class="mc-stack" style="gap:var(--space-2)">${field({ id: 've-make', label: t('car.make'), options: makeOpts, value: make0 })}
+        <div id="ve-make-o" ${make0 === '__other' ? '' : 'hidden'}>${field({ id: 've-make-t', label: t('car.otherMake'), value: known ? '' : V.make || '' })}</div></div>
+      <div class="mc-stack" style="gap:var(--space-2)"><div id="ve-model-w">${field({ id: 've-model', label: t('car.model'), options: modelOpts(known ? V.make : ''), value: model0 })}</div>
+        <div id="ve-model-o" ${model0 === '__other' || make0 === '__other' ? '' : 'hidden'}>${field({ id: 've-model-t', label: t('car.otherModel'), value: model0 === '__other' || make0 === '__other' ? V.model || '' : '', placeholder: t('car.modelPh') })}</div></div>
+    </div>
+    <div class="mc-grid-2">${field({ id: 've-year', label: t('car.year'), optional: t('car.optional'), value: V.year || '', inputmode: 'numeric', placeholder: String(yearNow) })}${field({ id: 've-nick', label: t('car.nick'), optional: t('car.optional'), value: nick0, placeholder: t('car.namePh') })}</div>
+    <div class="mc-field__hint" style="margin-top:-6px">${t('car.nickHint')}</div>
     <div class="mc-grid-2">${field({ id: 've-plate', label: t('car.plate'), optional: t('car.optional'), value: V.plate || '' })}${field({ id: 've-fuel', label: t('car.fuel'), options: FUELS.map(f => [f, fuelLabel(f)]), value: V.fuel || 'M91' })}</div>
     <div class="mc-grid-2">${field({ id: 've-tank', label: t('car.tank'), optional: t('car.optional'), value: V.tank || '', inputmode: 'decimal', unit: t('home.liter') })}${field({ id: 've-odo', label: t('car.odo0'), optional: t('car.optional'), value: V.odo0 || '', inputmode: 'numeric', unit: t('unit.km') })}</div>
     <div id="ve-err"></div>
     ${old ? `<div class="mc-divider"></div>${button(t('car.deleteCar'), { variant: 'danger', icon: 'trash-2', block: true, attrs: 'id="ve-del"' })}` : ''}
-  </form>`;
+  </form></div>
+  <div id="ve-catview" class="mc-stack" hidden><div id="ve-ct" class="mc-stack"></div><p class="mc-caption mc-muted" style="margin:0">${t('catalog.note')}</p></div>`;
   const root = openSheet({ title: t(old ? 'car.editTitle' : 'home.addCar'), body,
     footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'id="ve-save"' }) });
   const $ = s => root.querySelector(s);
+  const showPhoto = () => { $('#ve-photo').className = 'cd-edit-photo__img' + (photo || photoCat ? '' : ' is-empty'); $('#ve-photo').innerHTML = preview(); $('#ve-rm').hidden = !(photo || photoCat); };
   $('#ve-file').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
-    try { photo = await imageToDataURL(f, 900, 0.82); $('#ve-photo').className = 'cd-edit-photo__img'; $('#ve-photo').innerHTML = `<img src="${photo}" alt="">`; $('#ve-rm').hidden = false; }
+    try { photo = await imageToDataURL(f, 900, 0.82); photoCat = null; showPhoto(); }
     catch (err) { toast(t('car.imageError'), { tone: 'danger' }); }
   });
-  $('#ve-rm').addEventListener('click', () => { photo = ''; $('#ve-photo').className = 'cd-edit-photo__img is-empty'; $('#ve-photo').innerHTML = icon('car'); $('#ve-rm').hidden = true; });
+  $('#ve-rm').addEventListener('click', () => { photo = ''; photoCat = null; showPhoto(); });
+  // make → model options; "Other…" reveals a text field
+  const syncMake = () => {
+    const mk = $('#ve-make').value;
+    $('#ve-make-o').hidden = mk !== '__other';
+    if (mk === '__other' || !mk) { $('#ve-model-w').hidden = mk === '__other'; $('#ve-model-o').hidden = mk !== '__other'; if (!mk) $('#ve-model').innerHTML = modelOpts('').map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(''); return; }
+    $('#ve-model-w').hidden = false;
+    const cur = $('#ve-model').value;
+    $('#ve-model').innerHTML = modelOpts(mk).map(([v, l]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`).join('');
+    $('#ve-model-o').hidden = $('#ve-model').value !== '__other';
+  };
+  $('#ve-make').addEventListener('change', syncMake);
+  $('#ve-model').addEventListener('change', () => { $('#ve-model-o').hidden = $('#ve-model').value !== '__other'; });
+  if (make0 === '__other') { $('#ve-model-w').hidden = true; }
+  // catalog view inside the same sheet (form state is kept)
+  const foot = root.querySelector('.mc-sheet__foot'), head = root.querySelector('.mc-sheet__title');
+  $('#ve-cat').addEventListener('click', () => {
+    $('#ve-formview').hidden = true; $('#ve-catview').hidden = false; foot.hidden = true; head.textContent = t('catalog.title');
+    const mk = $('#ve-make').value;
+    mountCatalog($('#ve-ct'), { make: mk && mk !== '__other' ? mk : '', model: $('#ve-model').value, color: photoCat ? photoCat.color : 'silver' }, pick => {
+      photoCat = pick; photo = '';
+      if (!$('#ve-make').value || $('#ve-make').value === pick.make) { $('#ve-make').value = pick.make; syncMake(); $('#ve-model').value = pick.model; $('#ve-model-o').hidden = true; }
+      $('#ve-catview').hidden = true; $('#ve-formview').hidden = false; foot.hidden = false; head.textContent = t(old ? 'car.editTitle' : 'home.addCar'); showPhoto(); $('#ve-cat').focus();
+    });
+    $('#ve-ct').querySelector('input,button')?.focus();
+  });
   $('#ve-save').addEventListener('click', () => {
     const val = s => $(s).value.trim();
-    const name = val('#ve-name'), year = val('#ve-year') ? parseNum(val('#ve-year')) : '';
+    const mkSel = $('#ve-make').value, make = mkSel === '__other' ? val('#ve-make-t') : mkSel;
+    const mdSel = $('#ve-model').value, model = mkSel === '__other' || mdSel === '__other' ? val('#ve-model-t') : mdSel;
+    const nick = val('#ve-nick'), year = val('#ve-year') ? parseNum(val('#ve-year')) : '';
     const errs = [];
-    if (!name) errs.push(['ve-name', t('car.errName')]);
+    if (!(make && model) && !nick) errs.push([make ? (mkSel === '__other' || mdSel === '__other' ? 've-model-t' : 've-model') : 've-make', t('car.errName')]);
     if (year !== '' && !(year >= 1950 && year <= yearNow + 1)) errs.push(['ve-year', fill(t('car.errYear'), yearNow + 1)]);
     root.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
     if (errs.length) {
@@ -173,9 +217,10 @@ export function openVehicleEditor(ctx, id = null) {
       $('#ve-err').innerHTML = `<div class="mc-alert mc-tone-danger" role="alert">${icon('circle-alert')}<div>${errs.map(e => esc(e[1])).join('<br>')}</div></div>`;
       $('#' + errs[0][0]).focus(); return;
     }
-    const nv = { ...(old || {}), id: old ? old.id : ctx.uid(), name, model: val('#ve-model'), year: year === '' ? '' : Math.round(year), plate: val('#ve-plate'),
-      fuel: $('#ve-fuel').value, tank: parseNum(val('#ve-tank')) || 0, odo0: parseNum(val('#ve-odo')) || 0, photo };
-    if (!photo) delete nv.photo;
+    const nv = { ...(old || {}), id: old ? old.id : ctx.uid(), make, model, nick, year: year === '' ? '' : Math.round(year), plate: val('#ve-plate'),
+      fuel: $('#ve-fuel').value, tank: parseNum(val('#ve-tank')) || 0, odo0: parseNum(val('#ve-odo')) || 0, photo, photoCat };
+    if (!photo) delete nv.photo; if (!photoCat) delete nv.photoCat; if (!nick) delete nv.nick;
+    nv.name = legacyName(nv);
     const before = JSON.stringify(ctx.S.vehicles), beforeCur = ctx.S.cur;
     if (old) ctx.S.vehicles = ctx.S.vehicles.map(z => (z.id === nv.id ? nv : z));
     else { ctx.S.vehicles.push(nv); ctx.S.cur = nv.id; }
@@ -185,7 +230,20 @@ export function openVehicleEditor(ctx, id = null) {
   const del = $('#ve-del');
   if (del) del.addEventListener('click', async () => {
     closeSheet();
-    if (await confirmDialog({ title: fill(t('car.deleteQ'), old.name), text: t('car.deleteText'), confirmText: t('action.delete') })) { ctx.deleteVehicle(old.id); location.hash = 'home'; toast(t('car.deleted')); }
+    if (await confirmDialog({ title: fill(t('car.deleteQ'), vehTitle(old)), text: t('car.deleteText'), confirmText: t('action.delete') })) { ctx.deleteVehicle(old.id); location.hash = 'home'; toast(t('car.deleted')); }
+  });
+}
+
+/* ---------- catalog sheet (from the photo on the details page) ---------- */
+function openCatalogSheet(ctx) {
+  const V = ctx.veh(ctx.S.cur);
+  const root = openSheet({ title: t('catalog.title'), body: `<div id="ct-root" class="mc-stack"></div><p class="mc-caption mc-muted" style="margin:0">${t('catalog.note')}</p>`,
+    footer: `<label class="mc-btn mc-btn--outline">${icon('upload')}<span>${t('catalog.fromDevice')}</span><input type="file" accept="image/*" data-car="photo" hidden></label>` });
+  mountCatalog(root.querySelector('#ct-root'), { make: V.make, model: V.model, color: V.photoCat ? V.photoCat.color : 'silver' }, pick => {
+    const prev = { photo: V.photo, photoCat: V.photoCat };
+    V.photoCat = pick; delete V.photo;
+    if (!ctx.save(['g'])) { Object.assign(V, prev); if (!prev.photo) delete V.photo; toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
+    closeSheet(); ctx.render(); toast(t('car.photoSaved'), { tone: 'success' });
   });
 }
 
@@ -250,6 +308,7 @@ export function initCar(ctx) {
     const b = e.target.closest('[data-car]'); if (!b) return;
     const a = b.dataset.car;
     if (a === 'edit') openVehicleEditor(ctx, ctx.S.cur);
+    else if (a === 'catalog') openCatalogSheet(ctx);
     else if (a === 'doc-add') openDocEditor(ctx);
     else if (a === 'doc-open') openDocViewer(ctx, b.dataset.id);
   });
@@ -262,10 +321,10 @@ export function initCar(ctx) {
   });
   document.addEventListener('change', async e => {
     if (e.target.dataset && e.target.dataset.car === 'photo' && e.target.files[0]) {
-      const V = ctx.veh(ctx.S.cur), prev = V.photo;
-      try { V.photo = await imageToDataURL(e.target.files[0], 900, 0.82); } catch (err) { toast(t('car.imageError'), { tone: 'danger' }); return; }
-      if (!ctx.save(['g'])) { if (prev) V.photo = prev; else delete V.photo; toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
-      ctx.render(); toast(t('car.photoSaved'), { tone: 'success' });
+      const V = ctx.veh(ctx.S.cur), prev = { photo: V.photo, photoCat: V.photoCat };
+      try { V.photo = await imageToDataURL(e.target.files[0], 900, 0.82); delete V.photoCat; } catch (err) { toast(t('car.imageError'), { tone: 'danger' }); return; }
+      if (!ctx.save(['g'])) { if (prev.photo) V.photo = prev.photo; else delete V.photo; if (prev.photoCat) V.photoCat = prev.photoCat; toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
+      closeSheet(); ctx.render(); toast(t('car.photoSaved'), { tone: 'success' });
     }
   });
 }

@@ -681,7 +681,7 @@ function importText(text){
   }catch(e){toast('الملف غير صالح')}}
 }
 function demo(){
-  const v={id:uidg(),name:'تويوتا كامري 2021',plate:'نموذج',fuel:'M91',tank:60,odo0:62000};
+  const v={id:uidg(),make:'toyota',model:'Camry',year:2021,name:'تويوتا Camry',plate:'نموذج',fuel:'M91',tank:60,odo0:62000,photoCat:{make:'toyota',model:'Camry',body:'sedan',color:'silver'}};
   S.vehicles.push(v);S.cur=v.id;const keys=new Set(['g']);
   const push=x=>{x.id=uidg();x.v=v.id;const y=x.d.slice(0,4);(E[y]=E[y]||[]).push(x);keys.add(y)};
   const d=new Date();d.setMonth(d.getMonth()-8);let odo=62000,lastOil=62000,i=0;

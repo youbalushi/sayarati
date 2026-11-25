@@ -53,3 +53,27 @@
   .cd-appbar{padding-inline:var(--space-6)}
   .cd-grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--space-6);padding-block:var(--space-6)}
 }
+
+/* ---------- catalog drawings + picker (ct-) ---------- */
+.mc-carart{width:100%;height:100%;display:block}
+[dir="rtl"] .mc-carart{transform:scaleX(-1)}
+.cd-photo .mc-carart{padding:6% 8% 2%}
+.cd-photo.is-art{background:linear-gradient(180deg,var(--color-surface-sunken),var(--color-surface) 70%)}
+.hm-car__photo .mc-carart,.cd-edit-photo__img .mc-carart,.mc-icontile .mc-carart{padding:4px}
+.cd-photo__actions{position:absolute;inset-block-end:var(--space-3);inset-inline-end:var(--space-3);display:flex;gap:var(--space-2)}
+.cd-photo__actions .mc-btn{--_bg:var(--color-surface);--_bd:transparent;box-shadow:var(--shadow-2)}
+.ct-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
+.ct-colors{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.ct-color{width:40px;height:40px;border-radius:50%;border:2px solid var(--color-border-control);background:var(--c);display:grid;place-items:center;cursor:pointer;color:#fff;padding:0}
+.ct-color[aria-checked="true"]{box-shadow:0 0 0 2px var(--color-bg),0 0 0 4px var(--color-primary)}
+.ct-color[data-ct-color="white"],.ct-color[data-ct-color="silver"],.ct-color[data-ct-color="beige"]{color:#20242C}
+.ct-color:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2)}
+.ct-card{display:grid;gap:2px;padding:var(--space-2) var(--space-2) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);cursor:pointer;text-align:center;color:inherit}
+.ct-card__art{aspect-ratio:2/1;display:block;background:var(--color-surface-sunken);border-radius:var(--radius-sm)}
+.ct-card__name{font-weight:var(--fw-semibold)}
+.ct-card__body{font-size:var(--fs-caption);line-height:var(--lh-caption);color:var(--color-text-secondary)}
+.ct-card.is-current{border-color:var(--color-primary);box-shadow:inset 0 0 0 1px var(--color-primary)}
+@media (hover:hover){.ct-card:hover{border-color:var(--color-border-control)}}
+.ct-card:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+@media (min-width:600px){.ct-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

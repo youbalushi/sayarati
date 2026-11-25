@@ -16,6 +16,12 @@ export const STRINGS = {
     theme: { light: 'فاتح', dark: 'داكن', auto: 'تلقائي' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    catalog: {
+      title: 'كتالوج السيارات', search: 'ابحث عن شركة أو موديل…', makes: 'الشركات', models: 'الموديلات', allMakes: 'كل الشركات', color: 'اللون', none: 'لا توجد نتائج',
+      fromCatalog: 'من الكتالوج', fromDevice: 'رفع صورة من الجهاز', note: 'الرسومات توضيحية حسب شكل السيارة، وليست صورًا رسمية.',
+      bodies: { sedan: 'سيدان', hatch: 'هاتشباك', crossover: 'كروس أوفر', suv: 'دفع رباعي', pickup: 'بيك أب' },
+      colors: { white: 'أبيض', silver: 'فضي', gray: 'رمادي', black: 'أسود', red: 'أحمر', blue: 'أزرق', beige: 'بيج', green: 'أخضر' }
+    },
     car: {
       title: 'تفاصيل السيارة', noPhoto: 'لا توجد صورة', addPhoto: 'إضافة صورة', changePhoto: 'تغيير الصورة', choosePhoto: 'اختر صورة', removePhoto: 'إزالة الصورة',
       plate: 'رقم اللوحة', expenses: 'ملخص المصروفات', allTime: 'منذ البداية', costKm: 'تكلفة الكيلومتر',
@@ -25,9 +31,9 @@ export const STRINGS = {
       docType: 'نوع المستند', docTitle: 'الاسم', docTitlePh: 'مثال: تأمين شامل 2026', docNumber: 'الرقم', expiry: 'ينتهي', docImage: 'صورة المستند', hasImage: 'مع صورة',
       doc: { insurance: 'التأمين', registration: 'الملكية', inspection: 'الفحص الفني', license: 'رخصة القيادة', other: 'مستند آخر' },
       expired: 'منتهي', expiresIn: 'بعد {n} يوم', valid: 'ساري',
-      editTitle: 'تعديل بيانات السيارة', name: 'اسم السيارة', namePh: 'مثال: سيارة العائلة', model: 'الموديل', modelPh: 'مثال: تويوتا كامري', year: 'سنة الصنع',
+      editTitle: 'تعديل بيانات السيارة', make: 'الشركة', other: 'أخرى…', otherMake: 'اسم الشركة', otherModel: 'اسم الموديل', nick: 'اسم مميز', nickHint: 'يظهر بدل الشركة والموديل، مثل «سيارة العائلة».', name: 'اسم السيارة', namePh: 'مثال: سيارة العائلة', model: 'الموديل', modelPh: 'مثال: كامري', year: 'سنة الصنع', choose: 'اختر…',
       fuel: 'نوع الوقود', tank: 'سعة الخزان', odo0: 'العداد عند الإضافة', optional: 'اختياري',
-      errName: 'أدخل اسم السيارة.', errYear: 'سنة الصنع يجب أن تكون بين 1950 و {n}.', deleteCar: 'حذف السيارة وكل سجلاتها',
+      errName: 'اختر الشركة والموديل، أو اكتب اسمًا مميزًا.', errYear: 'سنة الصنع يجب أن تكون بين 1950 و {n}.', deleteCar: 'حذف السيارة وكل سجلاتها',
       deleteQ: 'حذف «{n}»؟', deleteText: 'ستُحذف السيارة مع كل سجلاتها وتذكيراتها ومستنداتها من هذا الجهاز. لا يمكن التراجع.', deleted: 'تم حذف السيارة',
       saved: 'تم حفظ بيانات السيارة', added: 'أُضيفت السيارة', photoSaved: 'تم تحديث الصورة', imageError: 'تعذّر قراءة الصورة. جرّب صورة أخرى.',
       storageFull: 'لم يتم الحفظ: مساحة التخزين في المتصفح ممتلئة. احذف صورًا قديمة أو احفظ نسخة احتياطية ثم حاول مرة أخرى.',
@@ -59,6 +65,12 @@ export const STRINGS = {
     theme: { light: 'Light', dark: 'Dark', auto: 'Auto' },
     lang: { ar: 'العربية', en: 'English' },
     month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    catalog: {
+      title: 'Car catalog', search: 'Search make or model…', makes: 'Makes', models: 'Models', allMakes: 'All makes', color: 'Color', none: 'No results',
+      fromCatalog: 'From catalog', fromDevice: 'Upload from device', note: 'Drawings illustrate the body shape; they are not official photos.',
+      bodies: { sedan: 'Sedan', hatch: 'Hatchback', crossover: 'Crossover', suv: 'SUV', pickup: 'Pickup' },
+      colors: { white: 'White', silver: 'Silver', gray: 'Gray', black: 'Black', red: 'Red', blue: 'Blue', beige: 'Beige', green: 'Green' }
+    },
     car: {
       title: 'Vehicle details', noPhoto: 'No photo', addPhoto: 'Add photo', changePhoto: 'Change photo', choosePhoto: 'Choose photo', removePhoto: 'Remove photo',
       plate: 'Plate number', expenses: 'Expense summary', allTime: 'All time', costKm: 'Cost per km',
@@ -68,9 +80,9 @@ export const STRINGS = {
       docType: 'Document type', docTitle: 'Name', docTitlePh: 'e.g. Comprehensive insurance 2026', docNumber: 'Number', expiry: 'Expires', docImage: 'Document photo', hasImage: 'With photo',
       doc: { insurance: 'Insurance', registration: 'Registration', inspection: 'Inspection', license: 'Driving licence', other: 'Other document' },
       expired: 'Expired', expiresIn: 'In {n} days', valid: 'Valid',
-      editTitle: 'Edit vehicle', name: 'Vehicle name', namePh: 'e.g. Family car', model: 'Model', modelPh: 'e.g. Toyota Camry', year: 'Year',
+      editTitle: 'Edit vehicle', make: 'Make', other: 'Other…', otherMake: 'Make name', otherModel: 'Model name', nick: 'Nickname', nickHint: 'Shown instead of make and model, e.g. “Family car”.', name: 'Vehicle name', namePh: 'e.g. Family car', model: 'Model', modelPh: 'e.g. Camry', year: 'Year', choose: 'Choose…',
       fuel: 'Fuel type', tank: 'Tank capacity', odo0: 'Odometer when added', optional: 'optional',
-      errName: 'Enter the vehicle name.', errYear: 'Year must be between 1950 and {n}.', deleteCar: 'Delete vehicle and all its records',
+      errName: 'Choose a make and model, or enter a nickname.', errYear: 'Year must be between 1950 and {n}.', deleteCar: 'Delete vehicle and all its records',
       deleteQ: 'Delete “{n}”?', deleteText: 'The vehicle and all its records, reminders and documents will be removed from this device. This can’t be undone.', deleted: 'Vehicle deleted',
       saved: 'Vehicle saved', added: 'Vehicle added', photoSaved: 'Photo updated', imageError: 'Couldn’t read that image. Try another one.',
       storageFull: 'Not saved: the browser’s storage is full. Remove old photos or save a backup, then try again.',

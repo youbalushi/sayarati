@@ -2,6 +2,7 @@
 // Pure view: reads the app's existing data through `ctx` (no storage of its own,
 // no new data fields). Actions reuse the app's existing handlers (data-act=…).
 import { t, getLang, getThemePref, setTheme, setLang, esc, icon, iconTile, button, menu, badge, listItem, stat, num, fmt, openSheet, closeSheet } from '../ui.js';
+import { vehTitle, vehSub, vehImage } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const TYPE_ICON = { fuel: 'fuel', service: 'wrench', expense: 'receipt', income: 'wallet' };
@@ -25,7 +26,6 @@ function consumption(ctx, kmpl) {
 }
 const greeting = () => { const h = new Date().getHours(); return t(h >= 4 && h < 12 ? 'home.morning' : 'home.evening'); };
 const longToday = () => new Date().toLocaleDateString(getLang() === 'ar' ? 'ar-OM-u-nu-latn' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-const safePhoto = p => (typeof p === 'string' && /^data:image\/(png|jpe?g|webp);base64,/.test(p) ? p : '');
 
 /* ---------- pieces ---------- */
 function appBar() {
@@ -40,14 +40,14 @@ function appBar() {
 }
 
 function carCard(ctx, V, odo, odoDate) {
-  const photo = safePhoto(V.photo);
-  return `<section class="mc-card hm-car" aria-label="${esc(V.name)}">
+  const img = vehImage(V), title = esc(vehTitle(V)), sub = esc(vehSub(V));
+  return `<section class="mc-card hm-car" aria-label="${title}">
     <div class="hm-car__top">
-      <a class="hm-car__link" href="#car" aria-label="${esc(V.name)} — ${esc(t('car.title'))}">
-      <div class="hm-car__photo${photo ? '' : ' is-empty'}">${photo ? `<img src="${photo}" alt="">` : `${icon('car')}<span class="mc-visually-hidden">${esc(t('home.noPhoto'))}</span>`}</div>
+      <a class="hm-car__link" href="#car" aria-label="${title} — ${esc(t('car.title'))}">
+      <div class="hm-car__photo${img ? '' : ' is-empty'}">${img || `${icon('car')}<span class="mc-visually-hidden">${esc(t('home.noPhoto'))}</span>`}</div>
       <div class="hm-car__id">
-        <h2 class="mc-title hm-car__name">${esc(V.name)}</h2>
-        <div class="hm-car__meta">${[V.model, V.year].filter(Boolean).length ? `<span class="mc-small mc-muted">${[V.model, V.year].filter(Boolean).map(esc).join(' · ')}</span>` : V.plate ? `<span class="mc-small mc-muted">${esc(V.plate)}</span>` : ''}${V.fuel ? badge(V.fuel, 'neutral') : ''}</div>
+        <h2 class="mc-title hm-car__name">${title}</h2>
+        <div class="hm-car__meta">${sub ? `<span class="mc-small mc-muted">${sub}</span>` : `${V.plate ? `<span class="mc-small mc-muted">${esc(V.plate)}</span>` : ''}${V.fuel ? badge(V.fuel, 'neutral') : ''}`}</div>
       </div>${icon('chevron-right')}</a>
       ${button(t('home.switchCar'), { variant: 'tonal', size: 'sm', iconEnd: 'chevron-down', attrs: 'data-home="switch" aria-haspopup="dialog"' })}
     </div>
@@ -137,7 +137,7 @@ export function initHome(ctx) {
 function openSwitcher(ctx) {
   const { S } = ctx;
   const body = `<div class="mc-list">${S.vehicles.map(V => listItem({
-    title: esc(V.name), sub: [V.plate ? esc(V.plate) : '', `${num(ctx.curOdo(V.id))} ${t('unit.km')}`].filter(Boolean).join(' · '),
+    title: esc(vehTitle(V)), sub: [esc(vehSub(V)), V.plate ? esc(V.plate) : '', `${num(ctx.curOdo(V.id))} ${t('unit.km')}`].filter(Boolean).join(' · '),
     lead: 'car', tone: V.id === S.cur ? 'primary' : 'neutral', trail: V.id === S.cur ? icon('check') : '',
     attrs: `data-car="${esc(V.id)}" ${V.id === S.cur ? 'aria-current="true"' : ''}` })).join('')}</div>`;
   const root = openSheet({ title: t('home.chooseCar'), body, footer: button(t('home.addCar'), { variant: 'outline', icon: 'plus', attrs: 'data-addcar' }) });
