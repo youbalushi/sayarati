@@ -158,6 +158,13 @@ for (const theme of THEMES) {
     await p.click(`${sel}[data-s="busy"]`, { force: true }).catch(() => {});
     ok('Buttons', `${theme}/${v}: loading — spinner animates, clicks blocked`, b.pe === 'none' && b.anim === 'mc-spin', JSON.stringify(b));
   }
+  // text color of each variant comes from its token (not inherited from the page)
+  const fg = await p.evaluate(() => {
+    const tok = n => { const x = document.createElement('i'); x.style.color = `var(${n})`; document.body.appendChild(x); const c = getComputedStyle(x).color; x.remove(); return c; };
+    const want = { primary: '--color-on-primary', tonal: '--color-primary-text', ghost: '--color-primary-text', danger: '--color-danger-text', outline: '--color-text', secondary: '--color-text' };
+    return Object.entries(want).map(([v, n]) => ({ v, got: getComputedStyle(document.querySelector(`#qa-btns [data-v="${v}"][data-s="default"]`)).color, want: tok(n) }));
+  });
+  for (const f of fg) ok('Buttons', `${theme}/${f.v}: text uses its variant color`, f.got === f.want, `${f.got} vs ${f.want}`);
   const clicks = await p.evaluate(() => window.__clicks);
   ok('Buttons', `${theme}: disabled + loading buttons fired 0 clicks`, clicks === 0, String(clicks));
   // hover only applies on hover-capable devices

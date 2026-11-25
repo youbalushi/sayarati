@@ -19,7 +19,7 @@ await p.click('[data-act=demo]'); await p.waitForTimeout(300);
 const n0 = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sayarati-v1')).E).flat().length);
 ok('sample data loads', n0 > 20, n0 + ' records');
 
-await p.click('.fab'); await p.waitForTimeout(250); await p.click('.types [data-t=fuel]'); await p.waitForTimeout(250);
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250); await p.click('.types [data-t=fuel]'); await p.waitForTimeout(250);
 await p.fill('#ef input[name=odo]', '80000'); await p.fill('#ef input[name=liters]', '40');
 const cost = await p.inputValue('#ef input[name=cost]');
 ok('fuel form auto-computes total', +cost > 0, cost);
@@ -28,7 +28,7 @@ const n1 = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem(
 ok('adding a fill-up saves a record', n1 === n0 + 1, `${n0} → ${n1}`);
 
 await p.reload(); await p.waitForTimeout(400);
-ok('data persists after reload', (await p.textContent('.chip b')).includes('كامري'));
+ok('data persists after reload', (await p.textContent('.hm-car__name')).includes('كامري'));
 
 for (const tab of ['log', 'remind', 'reports', 'settings']) {
   await p.evaluate(h => { location.hash = h; }, tab); await p.waitForTimeout(250);
@@ -56,8 +56,40 @@ ok('CSV export downloads', csv && /\.csv$/.test(csv.suggestedFilename()), csv &&
 await p.click('[data-act=catadd]'); await p.waitForTimeout(250); await p.fill('#cf input[name=nm]', 'اختبار'); await p.click('#cf button[type=submit]'); await p.waitForTimeout(250);
 ok('add category', await p.evaluate(() => JSON.parse(localStorage.getItem('sayarati-v1')).S.cats.service.includes('اختبار')));
 
-const sheets = await p.evaluate(() => [...document.styleSheets].map(s => s.href || 'inline'));
-ok('app loads none of the new design-system files', !sheets.some(h => /css\/(tokens|components)\.css/.test(h)), sheets.join(','));
+/* ---- home screen (design system) ---- */
+await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(300);
+ok('home: greeting, car card, odometer, 2 stats', await p.evaluate(() => !!document.querySelector('.hm-greet h1') && !!document.querySelector('.hm-car .mc-display') && document.querySelectorAll('.hm .mc-stat').length === 2));
+const odoShown = await p.evaluate(() => document.querySelector('.hm-car .mc-display').textContent.replace(/,/g, ''));
+const odoData = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.cur; return String(Math.max(...Object.values(d.E).flat().filter(x => x.v === v).map(x => +x.odo || 0))); });
+ok('home: odometer equals highest recorded reading', odoShown === odoData, `${odoShown} vs ${odoData}`);
+ok('home: ≤2 reminders and ≤5 recent items', await p.evaluate(() => { const l = document.querySelectorAll('.hm .mc-list'); return l[0].children.length <= 2 && l[1].children.length <= 5; }));
+await p.click('.hm .mc-list [data-act=edit]'); await p.waitForTimeout(250);
+ok('home: tapping an activity opens its edit form', await p.isVisible('#ef'));
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+// switch cars: add a second car, then switch back through the sheet
+await p.click('[data-home=switch]'); await p.waitForTimeout(300); await p.click('[data-addcar]'); await p.waitForTimeout(500);
+await p.fill('#vf input[name=name]', 'Second car'); await p.click('#vf button[type=submit]'); await p.waitForTimeout(300);
+ok('home: new car becomes current', (await p.textContent('.hm-car__name')).includes('Second car'));
+await p.click('[data-home=switch]'); await p.waitForTimeout(300);
+const cars = await p.$$eval('.mc-scrim [data-car]', els => els.length);
+await p.click('.mc-scrim [data-car]:not([aria-current])'); await p.waitForTimeout(300);
+ok('home: switcher lists all cars and switches', cars === 2 && (await p.textContent('.hm-car__name')).includes('كامري'), `${cars} cars`);
+// FAB → add picker
+await p.click('#nav-bottom [data-act=fab]'); await p.waitForTimeout(250);
+ok('home: + opens the add picker', await p.isVisible('.types')); await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelector('#ov') && (document.querySelector('#ov').hidden = true));
+// language + theme via the settings menu
+await p.click('[data-mc-menu=hm-menu]'); await p.click('#hm-menu [data-action=hm-lang][data-value=en]'); await p.waitForTimeout(300);
+ok('home: English switches to LTR', await p.evaluate(() => document.documentElement.dir === 'ltr' && /Odometer/.test(document.querySelector('.hm-odo').textContent)));
+await p.evaluate(() => { location.hash = 'log'; }); await p.waitForTimeout(250);
+ok('legacy screen stays Arabic RTL while in English', await p.evaluate(() => document.getElementById('main').dir === 'rtl'));
+await p.evaluate(() => { location.hash = 'home'; }); await p.waitForTimeout(250);
+await p.click('[data-mc-menu=hm-menu]'); await p.click('#hm-menu [data-action=hm-theme][data-value=dark]'); await p.waitForTimeout(250);
+ok('home: theme menu switches to dark', await p.evaluate(() => document.documentElement.dataset.theme === 'dark'));
+await p.click('[data-mc-menu=hm-menu]'); await p.click('#hm-menu [data-action=hm-lang][data-value=ar]'); await p.waitForTimeout(250);
+ok('home: no horizontal overflow', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+await p.setViewportSize({ width: 1440, height: 900 }); await p.waitForTimeout(300);
+ok('desktop: side rail replaces bottom nav', await p.evaluate(() => getComputedStyle(document.getElementById('nav-rail')).display !== 'none' && getComputedStyle(document.getElementById('nav-bottom')).display === 'none'));
+ok('desktop: two-column home', await p.evaluate(() => getComputedStyle(document.querySelector('.hm-grid')).gridTemplateColumns.split(' ').length === 2));
 await b.close();
 
 let f = 0; for (const r of results) { if (!r.pass) f++; console.log(`${r.pass ? '✓' : '✗'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`); }

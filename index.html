@@ -13,9 +13,16 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="سيارتي">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="preload" href="assets/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/home.css">
+<script>
+/* theme + language before first paint (design system prefs: mc-theme / mc-lang) */
+(function(){var g=function(k){try{return localStorage.getItem(k)}catch(e){return null}};var l=g('mc-lang')||'ar',th=g('mc-theme')||'auto';
+var d=th==='dark'||(th==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;
+r.lang=l==='en'?'en':'ar';r.dir=l==='en'?'ltr':'rtl';r.dataset.theme=d?'dark':'light'})();
+</script>
 <style>
 /* VOICE: practical, confident garage logbook — no ads, no noise
    IDEA: a fuel-pump receipt meeting a car's instrument cluster
@@ -115,12 +122,6 @@ h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;
 .empty svg{width:120px;height:auto;color:var(--red)}
 .empty h1{font-size:28px;line-height:1.15;margin:10px 0 6px;text-wrap:balance}
 .empty p{color:var(--mut);margin:0 0 18px}
-.nav{position:fixed;inset-inline:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
-.nav div{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
-.nav a{display:grid;justify-items:center;gap:2px;padding:8px 0 10px;color:var(--mut);text-decoration:none;font-size:12px;min-height:58px}
-.nav a.on{color:var(--red);font-weight:700}
-.fab{justify-self:center;width:58px;height:58px;border-radius:50%;border:0;background:var(--red);color:#fff;display:grid;place-items:center;cursor:pointer;margin-top:-26px;box-shadow:0 6px 18px color-mix(in srgb,var(--red) 40%,transparent)}
-.fab svg{width:28px;height:28px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
 .ov[hidden]{display:none}
 .ov.on{opacity:1}
@@ -147,23 +148,26 @@ h2 a,.link{font-size:14px;color:var(--red);text-decoration:none;font-weight:500;
 .note{font-size:13px;color:var(--mut);padding:8px 4px}
 @media(max-width:420px){.hero{grid-template-columns:minmax(0,1fr)}.quick .qa{font-size:13px}.cols .v{display:none}}
 @media(prefers-reduced-motion:reduce){.ov,.sheet{transition:none}}
+/* ---- bridge: legacy screens + design-system shell (removed screen by screen) ---- */
+.ov{z-index:45}.toast{z-index:60}
+.app.is-home{max-width:none}
+.app.is-home #main{padding:0}
+.hm h1,.hm h2{display:block}
+@media(min-width:900px){.app.is-home{padding-inline-start:var(--size-rail)}}
 </style>
 </head>
-<body>
+<body class="mc mc-has-rail">
 <div class="app">
   <header class="top" id="top"></header>
   <main id="main"></main>
 </div>
-<nav class="nav"><div>
-  <a href="#home" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>الرئيسية</a>
-  <a href="#log" data-tab="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>السجل</a>
-  <button class="fab" data-act="fab" aria-label="إضافة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-  <a href="#remind" data-tab="remind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg>التذكيرات</a>
-  <a href="#reports" data-tab="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>التقارير</a>
-</div></nav>
+<nav class="mc-bottomnav" id="nav-bottom" aria-label="القائمة الرئيسية"></nav>
+<nav class="mc-rail" id="nav-rail" aria-label="القائمة الرئيسية"></nav>
 <div class="ov" id="ov" hidden><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="body"></div></div></div>
 <div id="toast"></div>
-<script>
+<script type="module">
+import * as UI from './js/ui.js';
+import { renderHome, initHome } from './js/screens/home.js';
 {
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -327,24 +331,10 @@ function remCard(r,st){
 }
 
 /* ---------- screens ---------- */
-function home(){
-  if(!S.vehicles.length)return emptyState();
-  const v=S.cur,st=stats(v),sm=stats(v,today().slice(0,8)+'01');
-  const rem=S.reminders.filter(r=>r.v===v).map(r=>({r,s:rstat(r,st)})).sort((a,b)=>b.s.pct-a.s.pct).slice(0,2);
-  const last=st.it.slice(0,5);
-  const lf=st.lastFuel;
-  return `<section class="card hero">${gauge(st)}
-   <div class="kpis">
-    <div class="kpi" style="border-color:var(--red)"><small>مصروف هذا الشهر</small><b>${money(sm.spend)}</b></div>
-    <div class="kpi" style="border-color:var(--blue)"><small>تكلفة الكيلومتر</small><b>${st.cpk?money(st.cpk):'—'}</b></div>
-    <div class="kpi" style="border-color:var(--ochre)"><small>آخر تعبئة</small><b>${lf?`${money(lf.cost)}`:'—'}</b>${lf?`<small>${fdate(lf.d)}</small>`:''}</div>
-   </div></section>
-   <div class="quick">${['fuel','service','expense','income'].map(t=>`<button class="qa" data-act="add" data-t="${t}"><span style="--c:${T[t].c}">${IC[t]}</span>${T[t].n}</button>`).join('')}</div>
-   <h2>التذكيرات <a href="#remind">الكل</a></h2>
-   ${rem.length?`<div class="list">${rem.map(x=>remCard(x.r,st)).join('')}</div>`:`<div class="card mut">لا توجد تذكيرات بعد. <button class="link" data-act="addrem">أضف تذكير صيانة</button></div>`}
-   <h2>آخر السجلات <a href="#log">عرض الكل</a></h2>
-   ${last.length?`<div class="list">${last.map(row).join('')}</div>`:`<div class="card mut">ابدأ بإضافة أول تعبئة وقود من زر +</div>`}`;
-}
+function home(){return renderHome(homeCtx)}
+const homeCtx={get S(){return S},veh,curOdo,stats,rstat,items,monthStart,
+  selectCar:id=>{S.cur=id;persist(['g']);render()},addCar:()=>openVeh()};
+
 let LF={t:'all',q:''};
 function logList(){
   const q=LF.q.trim();
@@ -491,9 +481,15 @@ let ro=null;
 function render(){
   if(S.vehicles.length&&!veh(S.cur))S.cur=S.vehicles[0].id;
   const t=tab();
-  $('#top').innerHTML=header();
+  const isHome=t==='home';
+  $('#top').hidden=isHome;
+  $('#top').innerHTML=isHome?'':header();
   $('#main').innerHTML=SCR[t]();
-  $$('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.tab===t));
+  // screens not yet redesigned stay Arabic/RTL until their turn
+  for(const el of [$('#top'),$('#main'),$('#ov')]){if(isHome){el.removeAttribute('dir');el.removeAttribute('lang')}else{el.dir='rtl';el.lang='ar'}}
+  $('#ov').dir='rtl';$('#ov').lang='ar';
+  $('.app').classList.toggle('is-home',isHome);
+  renderNav(t);
   drawCons();
 }
 function drawCons(){
@@ -756,6 +752,19 @@ function installBox(){
 async function doInstall(){if(!deferredPrompt)return;deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch(e){}deferredPrompt=null;render()}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+/* ---------- shell navigation (design system) ---------- */
+function renderNav(cur){
+  const items=[['home','house','nav.home'],['log','list','nav.log'],['remind','bell','nav.reminders'],['reports','chart-column','nav.reports']];
+  const a=([k,ic,l])=>`<a class="mc-navitem" href="#${k}" ${k===cur?'aria-current="page"':''}><span class="mc-navitem__pill">${UI.icon(ic)}</span>${UI.esc(UI.t(l))}</a>`;
+  const fab=`<button class="mc-fab" type="button" data-act="fab" aria-label="${UI.esc(UI.t('nav.add'))}">${UI.icon('plus')}</button>`;
+  $('#nav-bottom').innerHTML=`<div class="mc-bottomnav__inner">${a(items[0])}${a(items[1])}${fab}${a(items[2])}${a(items[3])}</div>`;
+  $('#nav-rail').innerHTML=fab+items.map(a).join('');
+  for(const n of [$('#nav-bottom'),$('#nav-rail')])n.setAttribute('aria-label',UI.t('appName'));
+}
+UI.initPrefs();
+initHome(homeCtx);
+document.addEventListener('mc:lang',()=>render());
+document.addEventListener('mc:theme',()=>render());
 loadLocal();render();
 }
 </script>

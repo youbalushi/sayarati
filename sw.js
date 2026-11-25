@@ -1,6 +1,17 @@
 // سيارتي — service worker: يعمل التطبيق بدون إنترنت
-const CACHE = 'sayarati-v1';
-const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
+// Bump CACHE whenever shipped files change.
+const CACHE = 'sayarati-v2';
+const CORE = [
+  './', './index.html', './manifest.webmanifest',
+  './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
+  './css/tokens.css', './css/components.css', './css/home.css',
+  './js/ui.js', './js/i18n.js', './js/screens/home.js',
+  './assets/icons/lucide-sprite.svg',
+  './assets/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2', './assets/fonts/ibm-plex-sans-arabic-arabic-500-normal.woff2',
+  './assets/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2', './assets/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2',
+  './assets/fonts/ibm-plex-sans-latin-400-normal.woff2', './assets/fonts/ibm-plex-sans-latin-500-normal.woff2',
+  './assets/fonts/ibm-plex-sans-latin-600-normal.woff2', './assets/fonts/ibm-plex-sans-latin-700-normal.woff2'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
@@ -12,17 +23,16 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // الصفحة نفسها: الشبكة أولًا (لتصل التحديثات) ثم النسخة المحفوظة
+  if (url.origin !== location.origin) return;
+  // الصفحة: الشبكة أولًا (لتصل التحديثات) ثم النسخة المحفوظة
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put('./index.html', c)); return r; })
       .catch(() => caches.match('./index.html')));
     return;
   }
-  // الخطوط والأيقونات وباقي الملفات: المحفوظ أولًا
-  if (url.origin === location.origin || /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
-    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => {
-      if (r.ok || r.type === 'opaque') { const c = r.clone(); caches.open(CACHE).then(x => x.put(req, c)); }
-      return r;
-    })));
-  }
+  // CSS/JS/الخطوط/الأيقونات: المحفوظ فورًا، مع تحديثه في الخلفية للمرة القادمة
+  e.respondWith(caches.open(CACHE).then(cache => cache.match(req).then(hit => {
+    const net = fetch(req).then(r => { if (r.ok) cache.put(req, r.clone()); return r; }).catch(() => hit);
+    return hit || net;
+  })));
 });
