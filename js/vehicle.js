@@ -68,9 +68,33 @@ export function carArt(body = 'sedan', color = 'silver', { label = '' } = {}) {
 }
 
 const safeImg = p => (typeof p === 'string' && /^data:image\/(png|jpe?g|webp);base64,/.test(p) ? p : '');
-/** An uploaded photo fitted to any frame: shown whole, in its own proportions (never cropped or stretched);
-    the frame's own background (follows light/dark) fills any spare space. */
+/** An uploaded photo fitted to any frame: shown whole, in its own proportions (never cropped or stretched).
+    The frame around it is painted with the photo's own background colour (see edgeColor), so a white-background
+    photo sits in a white frame, a grey one in grey, and so on — in light and dark mode alike. */
 export const photoFit = src => `<img class="ph" src="${src}" alt="">`;
+
+/* ---------- frame colour from the photo's edge ----------
+   Median colour of the photo's outer ring (2 px, on a ≤96 px copy): robust to a stray dark corner.
+   Display only — the stored photo is never changed. Results are cached per photo so re-renders paint at once. */
+const edgeCache = new Map();
+export function edgeColor(img) {
+  const key = img.currentSrc || img.src;
+  if (edgeCache.has(key)) return edgeCache.get(key);
+  const k = Math.min(1, 96 / Math.max(img.naturalWidth, img.naturalHeight)), W = Math.max(2, Math.round(img.naturalWidth * k)), H = Math.max(2, Math.round(img.naturalHeight * k));
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
+  const d = g.getImageData(0, 0, W, H).data, R = [], G = [], B = [];
+  const take = (x, y) => { const o = (y * W + x) * 4; if (d[o + 3] > 24) { R.push(d[o]); G.push(d[o + 1]); B.push(d[o + 2]); } };
+  for (let x = 0; x < W; x++) { take(x, 0); take(x, 1); take(x, H - 2); take(x, H - 1); }
+  for (let y = 2; y < H - 2; y++) { take(0, y); take(1, y); take(W - 2, y); take(W - 1, y); }
+  const med = a => a.sort((p, q) => p - q)[a.length >> 1];
+  const col = R.length ? `rgb(${med(R)}, ${med(G)}, ${med(B)})` : '';
+  edgeCache.set(key, col); return col;
+}
+const paint = img => { if (!img.naturalWidth) return; const col = edgeColor(img); if (col) img.parentElement.style.backgroundColor = col; };
+/** Paint every photo frame in `root` (frames whose photo is still loading are painted by the load listener below). */
+export function tintPhotos(root = document) { root.querySelectorAll('img.ph').forEach(i => { if (i.complete) paint(i); }); }
+document.addEventListener('load', e => { if (e.target instanceof HTMLImageElement && e.target.classList.contains('ph')) paint(e.target); }, true);
 /** The vehicle's image: uploaded photo, else catalog drawing, else '' (caller shows a placeholder). */
 export function vehImage(V) {
   const p = safeImg(V.photo);

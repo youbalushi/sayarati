@@ -243,12 +243,11 @@ await editCar(p); await p.setInputFiles('#ve-file', { name: 'tall.png', mimeType
 ok('photo fit: editor preview shows the whole photo (contain), no blurred copy', await p.evaluate(() => { const ph = document.querySelector('#ve-photo img.ph'); return !!ph && getComputedStyle(ph).objectFit === 'contain' && document.querySelectorAll('#ve-photo img').length === 1; }));
 await p.click('#ve-save'); await p.waitForTimeout(400); await goHome(p);
 ok('photo fit: stored photo keeps its 1:3 shape (nothing cut at upload)', await p.evaluate(async () => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); const v = d.S.vehicles.find(x => x.id === d.S.cur); const i = new Image(); i.src = v.photo; await i.decode(); return Math.abs(i.naturalHeight / i.naturalWidth - 3) < 0.02; }));
-ok('photo fit: Home shows the whole photo inside the 16:9 frame, no blur, frame in the surface colour', await p.evaluate(() => { const ph = document.querySelector('.hm-hero .cd-photo img.ph'), fr = document.querySelector('.hm-hero .cd-photo').getBoundingClientRect();
+ok('photo fit: Home shows the whole photo inside the 16:9 frame, no blur, frame in the photo\'s edge colour', await p.evaluate(() => { const ph = document.querySelector('.hm-hero .cd-photo img.ph'), fr = document.querySelector('.hm-hero .cd-photo').getBoundingClientRect();
   if (!ph || getComputedStyle(ph).objectFit !== 'contain') return false;
   const r = ph.getBoundingClientRect(), k = Math.min(r.width / ph.naturalWidth, r.height / ph.naturalHeight), h = ph.naturalHeight * k, w = ph.naturalWidth * k;
-  const frame = document.querySelector('.hm-hero .cd-photo'), sunken = getComputedStyle(document.documentElement).getPropertyValue('--color-surface-sunken').trim();
-  const probe = document.createElement('i'); probe.style.color = sunken; document.body.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
-  return h <= fr.height + 0.5 && w <= fr.width + 0.5 && frame.querySelectorAll('img').length === 1 && getComputedStyle(ph).filter === 'none' && getComputedStyle(frame).backgroundColor === want; }));
+  const frame = document.querySelector('.hm-hero .cd-photo'), m = getComputedStyle(frame).backgroundColor.match(/\d+/g).map(Number);
+  return h <= fr.height + 0.5 && w <= fr.width + 0.5 && frame.querySelectorAll('img').length === 1 && getComputedStyle(ph).filter === 'none' && m[0] > 180 && m[1] < 90 && m[2] < 90; })); // test photo: red with blue top/bottom bands → red edges
 await editCar(p);
 await p.selectOption('#ve-make', ''); await p.fill('#ve-nick', ''); await p.click('#ve-save'); await p.waitForTimeout(150);
 ok('editor: no make/model and no nickname is rejected', await p.evaluate(() => document.getElementById('ve-make').getAttribute('aria-invalid') === 'true' && !!document.querySelector('#ve-err [role=alert]')));

@@ -2,7 +2,7 @@
 // Reads/writes the existing data through ctx. New optional fields (all backward compatible):
 //   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img, added}]
 import { t, getLang, esc, icon, button, iconButton, field, badge, listItem, menu, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
-import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, photoFit, carArt, mountCatalog } from '../vehicle.js';
+import { MAKES, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, photoFit, tintPhotos, carArt, mountCatalog } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
 const DOC_TYPES = ['insurance', 'registration', 'inspection', 'license', 'other'];
@@ -148,7 +148,7 @@ export function openVehicleEditor(ctx, id = null) {
   root = openSheet({ title: t(old ? 'car.editTitle' : 'home.addCar'), body,
     footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'id="ve-save"' }) });
   const $ = s => root.querySelector(s);
-  const showPhoto = () => { const html = preview(), has = !!photo || (photoCat && inCatalog(...formModel())); $('#ve-photo').className = 'cd-edit-photo__img' + (has ? '' : ' is-empty'); $('#ve-photo').innerHTML = html; $('#ve-rm').hidden = !(photo || photoCat); };
+  const showPhoto = () => { const html = preview(), has = !!photo || (photoCat && inCatalog(...formModel())); $('#ve-photo').className = 'cd-edit-photo__img' + (has ? '' : ' is-empty'); $('#ve-photo').innerHTML = html; $('#ve-rm').hidden = !(photo || photoCat);  tintPhotos($('#ve-photo')); };
   $('#ve-file').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
     try { photo = await imageToDataURL(f, 900, 0.82, { trim: true }); photoCat = null; showPhoto(); } // new car photos: plain margins trimmed
