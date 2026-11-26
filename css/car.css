@@ -78,3 +78,9 @@
 .ct-locked{display:grid;gap:var(--space-2);justify-items:center;text-align:center}
 .ct-locked__art{width:100%;aspect-ratio:2/1;background:linear-gradient(180deg,var(--color-surface-sunken),var(--color-surface) 75%);border-radius:var(--radius-md);padding:4% 8% 0}
 .ct-locked__id{display:grid}
+/* PDF documents: pages drawn as canvases, fitted to the width; editor shows page 1 as the thumbnail */
+.cd-doc-img--pdf{place-items:start center;background:var(--color-surface-sunken)}
+.cd-doc-img--pdf canvas{width:100%;height:auto;display:block}
+.cd-pdf{display:grid;gap:var(--space-2);max-height:60dvh;overflow:auto;border-radius:var(--radius-md);background:var(--color-surface-sunken);padding:var(--space-2)}
+.cd-pdf__page{width:100%;height:auto;display:block;background:#fff;border-radius:var(--radius-sm);box-shadow:0 1px 3px rgb(0 0 0 / .18)}
+.cd-pdf__meta{margin:var(--space-2) 0 0;overflow-wrap:anywhere}

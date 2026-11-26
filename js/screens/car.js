@@ -1,7 +1,8 @@
 // سيارتي · My Car — Home car card + documents section, vehicle editor, document editor/viewer
 // Reads/writes the existing data through ctx. New optional fields (all backward compatible):
-//   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img, added}]
+//   vehicle: model, year, photo (JPEG data URL)      S.docs: [{id, v, type, title, number, expiry, img | pdf {id, name, size}, added}]  (PDF bytes live in IndexedDB, see files.js)
 import { t, getLang, esc, icon, button, iconButton, field, badge, listItem, menu, num, fmt, parseNum, openSheet, closeSheet, confirmDialog, toast } from '../ui.js';
+import { putFile, getFile, isPdf, PDF_MAX, renderPdf, shareDoc, sweepFiles } from '../files.js';
 import { MAKES, MAKE_GROUPS, makeLabel, modelsOf, bodyOf, inCatalog, vehTitle, vehSub, legacyName, vehImage, photoFit, tintPhotos, carArt, mountCatalog } from '../vehicle.js';
 
 const fill = (s, n) => String(s).replace('{n}', n);
@@ -240,34 +241,49 @@ export function openVehicleEditor(ctx, id = null) {
 function openDocEditor(ctx, id = null, presetType = null) {
   const old = id ? (ctx.S.docs || []).find(d => d.id === id) : null, D = old || { type: presetType || 'insurance' };
   const fixed = !old && presetType || (old && ['registration', 'insurance'].includes(old.type));
-  let img = safeImg(D.img);
+  let img = safeImg(D.img), pdf = D.pdf && D.pdf.id ? D.pdf : null, pdfBlob = null; // one file per document: a photo or a PDF
   const body = `<form class="mc-stack" id="de-form" novalidate>
     ${fixed ? `<input type="hidden" id="de-type" value="${esc(D.type)}">` : field({ id: 'de-type', label: t('car.docType'), options: DOC_TYPES.map(k => [k, t('car.doc.' + k)]), value: D.type })}
     ${D.type === 'registration' && fixed ? `<input type="hidden" id="de-title" value="${esc(D.title || '')}">` : field({ id: 'de-title', label: t('car.docTitle'), optional: t('car.optional'), value: D.title || '', placeholder: t(D.type === 'insurance' ? 'car.insTitlePh' : 'car.docTitlePh') })}
     <div class="mc-grid-2">${field({ id: 'de-num', label: t('car.docNumber'), optional: t('car.optional'), value: D.number || '' })}${field({ id: 'de-exp', label: t('car.expiry'), optional: t('car.optional'), type: 'date', value: D.expiry || '' })}</div>
-    <div class="mc-field"><span class="mc-field__label">${t('car.docImage')} <small>(${t('car.optional')})</small></span>
-      <div class="cd-doc-img${img ? '' : ' is-empty'}" id="de-prev">${img ? `<img src="${img}" alt="">` : icon('receipt')}</div>
-      <div class="mc-row"><label class="mc-btn mc-btn--tonal mc-btn--sm">${icon('upload')}<span>${t('car.choosePhoto')}</span><input type="file" accept="image/*" id="de-file" hidden></label>
-        ${button(t('car.removePhoto'), { variant: 'ghost', size: 'sm', attrs: `id="de-rm" ${img ? '' : 'hidden'}` })}</div></div>
+    <div class="mc-field"><span class="mc-field__label">${t('car.docFile')} <small>(${t('car.optional')})</small></span>
+      <div class="cd-doc-img${img ? '' : ' is-empty'}" id="de-prev">${img ? `<img src="${img}" alt="">` : icon(pdf ? 'file-text' : 'receipt')}</div>
+      <div class="mc-caption mc-muted" id="de-fname" ${pdf ? '' : 'hidden'}>${pdf ? esc(pdfLine(pdf)) : ''}</div>
+      <div class="mc-row"><label class="mc-btn mc-btn--tonal mc-btn--sm">${icon('upload')}<span>${t('car.chooseFile')}</span><input type="file" accept="image/*,application/pdf,.pdf" id="de-file" hidden></label>
+        ${button(t('car.removeFile'), { variant: 'ghost', size: 'sm', attrs: `id="de-rm" ${img || pdf ? '' : 'hidden'}` })}</div></div>
     ${old ? `<div class="mc-divider"></div>${button(t('car.deleteDoc'), { variant: 'danger', icon: 'trash-2', block: true, attrs: 'id="de-del"' })}` : ''}
   </form>`;
   const head = old ? (old.title || docName(old.type)) : docName(D.type);
   const root = openSheet({ title: old ? head : `${t('car.addDoc')} · ${head}`, body,
     footer: button(t('action.cancel'), { variant: 'outline', attrs: 'data-mc-close' }) + button(t('action.save'), { variant: 'primary', attrs: 'id="de-save"' }) });
   const $ = s => root.querySelector(s);
+  const prev = $('#de-prev'), fname = $('#de-fname');
+  const showPdf = blob => { prev.className = 'cd-doc-img cd-doc-img--pdf'; prev.innerHTML = '<span class="mc-spinner" aria-hidden="true"></span>'; renderPdf(prev, blob, { maxPages: 1, label: 'PDF' }).catch(() => { prev.className = 'cd-doc-img is-empty'; prev.innerHTML = icon('file-text'); }); };
+  if (pdf) getFile(pdf.id).then(b => b && showPdf(b)).catch(() => {});
   $('#de-file').addEventListener('change', async e => {
-    const f = e.target.files[0]; if (!f) return;
-    try { img = await imageToDataURL(f, 1600, 0.72); $('#de-prev').className = 'cd-doc-img'; $('#de-prev').innerHTML = `<img src="${img}" alt="">`; $('#de-rm').hidden = false; }
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (isPdf(f)) {
+      if (f.size > PDF_MAX) { toast(t('car.pdfTooBig'), { tone: 'danger', duration: 6000 }); return; }
+      pdfBlob = new Blob([f], { type: 'application/pdf' }); pdf = { id: '', name: f.name || 'document.pdf', size: f.size }; img = '';
+      fname.hidden = false; fname.textContent = pdfLine(pdf); $('#de-rm').hidden = false; showPdf(pdfBlob); return;
+    }
+    try { img = await imageToDataURL(f, 1600, 0.72); pdf = null; pdfBlob = null; fname.hidden = true; prev.className = 'cd-doc-img'; prev.innerHTML = `<img src="${img}" alt="">`; $('#de-rm').hidden = false; }
     catch (err) { toast(t('car.imageError'), { tone: 'danger' }); }
   });
-  $('#de-rm').addEventListener('click', () => { img = ''; $('#de-prev').className = 'cd-doc-img is-empty'; $('#de-prev').innerHTML = icon('receipt'); $('#de-rm').hidden = true; });
-  $('#de-save').addEventListener('click', () => {
+  $('#de-rm').addEventListener('click', () => { img = ''; pdf = null; pdfBlob = null; fname.hidden = true; prev.className = 'cd-doc-img is-empty'; prev.innerHTML = icon('receipt'); $('#de-rm').hidden = true; });
+  $('#de-save').addEventListener('click', async () => {
     const nd = { ...(old || {}), id: old ? old.id : ctx.uid(), v: old ? old.v : ctx.S.cur, type: $('#de-type').value, title: $('#de-title').value.trim(), number: $('#de-num').value.trim(), expiry: $('#de-exp').value, added: old ? old.added : today() };
     if (img) nd.img = img; else delete nd.img;
+    if (pdfBlob) {
+      const fid = ctx.uid();
+      try { await putFile(fid, pdfBlob); } catch (e) { toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
+      nd.pdf = { id: fid, name: pdf.name, size: pdf.size };
+    } else if (pdf) nd.pdf = pdf; else delete nd.pdf;
     const before = JSON.stringify(ctx.S.docs || []);
     ctx.S.docs = old ? ctx.S.docs.map(d => (d.id === nd.id ? nd : d)) : [...(ctx.S.docs || []), nd];
     if (!ctx.save(['g'])) { ctx.S.docs = JSON.parse(before); toast(t('car.storageFull'), { tone: 'danger', duration: 6000 }); return; }
     closeSheet(); ctx.render(); toast(t('car.docSaved'), { tone: 'success' });
+    if (old && old.pdf && (!nd.pdf || nd.pdf.id !== old.pdf.id)) sweepFiles(ctx.S.docs); // the replaced PDF is no longer needed
   });
   const del = $('#de-del');
   if (del) del.addEventListener('click', async () => {
@@ -282,14 +298,28 @@ const docName = type => (type === 'registration' ? t('home.ownership') : type ==
 // viewer: the document large, its expiry; the pencil edits or replaces it (delete lives in the editor)
 function openDocViewer(ctx, id) {
   const d = (ctx.S.docs || []).find(x => x.id === id); if (!d) return;
-  const s = docStatus(d), img = safeImg(d.img);
+  const s = docStatus(d), img = safeImg(d.img), pdf = d.pdf && d.pdf.id ? d.pdf : null, name = d.title || docName(d.type);
   const row = (k, v) => (v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : '');
   const root = openSheet({ title: d.title || docName(d.type),
-    actions: iconButton('pencil', t('car.editReplace'), { attrs: 'id="dv-edit"' }),
-    body: `${img ? `<img class="cd-doc-full" src="${img}" alt="${esc(d.title || docName(d.type))}">` : `<div class="cd-doc-img is-empty">${icon('receipt')}</div>`}
+    actions: (img || pdf ? iconButton('share-2', t('car.shareDoc'), { attrs: 'id="dv-share"' }) : '') + iconButton('pencil', t('car.editReplace'), { attrs: 'id="dv-edit"' }),
+    body: `${img ? `<img class="cd-doc-full" src="${img}" alt="${esc(name)}">` : pdf ? `<div class="cd-pdf" id="dv-pdf" aria-busy="true"><div class="cd-doc-img is-empty"><span class="mc-spinner" aria-hidden="true"></span></div></div><p class="mc-caption mc-muted cd-pdf__meta">${esc(pdfLine(pdf))}</p>` : `<div class="cd-doc-img is-empty">${icon('receipt')}</div>`}
       <dl class="cd-facts cd-facts--list">${['registration', 'insurance'].includes(d.type) ? '' : row(t('car.docType'), esc(t('car.doc.' + d.type)))}${row(t('car.docNumber'), d.number ? `<span class="mc-num">${esc(d.number)}</span>` : '')}${row(t('car.expiry'), d.expiry ? `${longDate(d.expiry)} ${s ? badge(s[1], s[0]) : ''}` : '')}</dl>` });
   root.querySelector('#dv-edit').addEventListener('click', () => { closeSheet(true); openDocEditor(ctx, id); });
+  const fileP = pdf ? getFile(pdf.id).catch(() => null) : null;
+  if (pdf) fileP.then(b => { const el = root.querySelector('#dv-pdf'); if (!el) return;
+    if (!b) { el.innerHTML = `<div class="mc-alert mc-tone-warning" role="status">${icon('triangle-alert')}<div>${esc(t('car.pdfMissing'))}</div></div>`; el.removeAttribute('aria-busy'); return; }
+    renderPdf(el, b, { label: name }).then(() => el.removeAttribute('aria-busy')).catch(() => { el.innerHTML = `<div class="mc-alert mc-tone-warning" role="status">${icon('triangle-alert')}<div>${esc(t('car.pdfError'))}</div></div>`; el.removeAttribute('aria-busy'); });
+  });
+  const sh = root.querySelector('#dv-share');
+  if (sh) sh.addEventListener('click', async () => {
+    const V = ctx.veh(d.v), base = [name, V ? vehTitle(V) : ''].filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]+/g, ' ').trim();
+    let r;
+    if (pdf) { const b = await fileP; if (!b) { toast(t('car.pdfMissing'), { tone: 'danger' }); return; } r = await shareDoc({ name: base + '.pdf', blob: b, title: name }); }
+    else r = await shareDoc({ name: base + (/^data:image\/png/.test(img) ? '.png' : '.jpg'), dataURL: img, title: name });
+    if (r === 'downloaded') toast(t('car.docDownloaded'), { tone: 'success' });
+  });
 }
+const pdfLine = p => `PDF · ${p.name || ''} · ${p.size >= 1048576 ? (p.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round((p.size || 0) / 1024)) + ' KB'}`;
 // a folder of documents (insurance, or older types): each opens the viewer; insurance can always take more
 function openDocList(ctx, kind) {
   const V = ctx.veh(ctx.S.cur), ds = docs(ctx, V.id), own = ds.find(d => d.type === 'registration');

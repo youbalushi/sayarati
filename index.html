@@ -192,6 +192,7 @@ import { renderReports, afterRenderReports, initReports } from './js/screens/rep
 import { renderSettings, initSettings } from './js/screens/settings.js';
 import { renderLog, initLog } from './js/screens/log.js';
 import { renderReminders, openCalendarSheet } from './js/screens/reminders.js';
+import { filesForBackup, restoreFiles, sweepFiles, keepStorage } from './js/files.js';
 import { vehTitle, tintPhotos } from './js/vehicle.js';
 {
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -306,7 +307,7 @@ const reportsCtx={get S(){return S},veh,stats,monthStart,today,render:()=>render
 const settingsCtx={get S(){return S},get E(){return E},all,cats,CATS,render:()=>render(),
   persist:keys=>{const ok=saveLocal();if(ok)persist(keys);return ok},
   install:()=>({standalone:standalone(),canPrompt:!!deferredPrompt,ios:/iPhone|iPad|iPod/.test(navigator.userAgent)}),
-  wipe:()=>{const keys=['g',...Object.keys(E)];Object.keys(E).forEach(k=>E[k]=[]);S=defS();persist(keys);location.hash='home';render();UI.toast(UI.t('set.wiped'))}};
+  wipe:()=>{const keys=['g',...Object.keys(E)];Object.keys(E).forEach(k=>E[k]=[]);S=defS();persist(keys);sweepFiles([]);location.hash='home';render();UI.toast(UI.t('set.wiped'))}};
 const logCtx={get S(){return S},get LF(){return LF},items,veh,render:()=>render()};
 const remCtx={get S(){return S},veh,stats,rstat,render:()=>render()};
 const SCR={home,car:home,maint:()=>renderMaint(logCtx),log:()=>renderLog(logCtx),remind:()=>renderReminders(remCtx),reports:()=>renderReports(reportsCtx),settings:()=>renderSettings(settingsCtx)};
@@ -320,9 +321,9 @@ function icsFor(r){
   give('sayarati-reminder-'+d+'.ics',L.join('\r\n'),'text/calendar');
 }
 /* ---------- backup via share sheet (Google Drive) ---------- */
-const backupText=()=>JSON.stringify({app:'sayarati',v:1,S,E});
+const backupText=async()=>{const files=await filesForBackup(S.docs);return JSON.stringify(Object.keys(files).length?{app:'sayarati',v:1,S,E,files}:{app:'sayarati',v:1,S,E})}; // PDFs ride along in the backup
 async function driveSave(){
-  const name='sayarati-backup-'+today()+'.json',text=backupText();
+  const name='sayarati-backup-'+today()+'.json',text=await backupText();
   const file=new File([text],name,{type:'application/json'});
   const done=()=>{S.set.lastDrive=new Date().toISOString();persist(['g']);render()};
   if(navigator.canShare&&navigator.canShare({files:[file]})){
@@ -362,11 +363,12 @@ function csv(){
 function importFile(file){const rd=new FileReader();rd.onload=()=>importText(rd.result);rd.readAsText(file)}
 function importText(text){
   {try{const x=JSON.parse(text);if(!x||!x.S||!Array.isArray(x.S.vehicles)||typeof x.E!=='object')throw 0;
-    UI.confirmDialog({title:UI.t('set.importQ'),text:UI.t('set.importText'),confirmText:UI.t('set.importOk'),tone:'warning',ic:'upload'}).then(yes=>{if(!yes)return;
+    UI.confirmDialog({title:UI.t('set.importQ'),text:UI.t('set.importText'),confirmText:UI.t('set.importOk'),tone:'warning',ic:'upload'}).then(async yes=>{if(!yes)return;
+      if(x.files&&typeof x.files==='object'){try{await restoreFiles(x.files)}catch(e){}}
       const keys=new Set(['g',...Object.keys(E)]);Object.keys(E).forEach(k=>E[k]=[]);
       S=Object.assign(defS(),x.S);S.set=Object.assign(defS().set,x.S.set||{});
       Object.entries(x.E).forEach(([k,v])=>{if(/^\d{4}$/.test(k)&&Array.isArray(v)){E[k]=v;keys.add(k)}});
-      persist([...keys]);render();UI.toast(UI.t('set.imported'),{tone:'success'});});
+      persist([...keys]);render();UI.toast(UI.t('set.imported'),{tone:'success'});sweepFiles(S.docs);});
   }catch(e){UI.toast(UI.t('set.badFile'),{tone:'danger'})}}
 }
 function demo(){
@@ -410,7 +412,7 @@ document.addEventListener('click',e=>{
   else if(a==='icsfile'){const r=S.reminders.find(z=>z.id===id);closeSheet();if(r)icsFor(r)}
   else if(a==='drvsave')driveSave();
   else if(a==='install')doInstall();
-  else if(a==='expjson')give('sayarati-backup-'+today()+'.json',backupText(),'application/json');
+  else if(a==='expjson')backupText().then(x=>give('sayarati-backup-'+today()+'.json',x,'application/json'));
   else if(a==='expcsv')give('sayarati-'+today()+'.csv',csv(),'text/csv');
   else if(a==='demo')demo();
 });
@@ -451,6 +453,7 @@ initLog(logCtx);
 document.addEventListener('mc:lang',()=>render());
 document.addEventListener('mc:theme',()=>render());
 loadLocal();render();
+keepStorage();if(S.vehicles.length)sweepFiles(S.docs); // drop PDFs no document refers to any more
 }
 </script>
 </body>

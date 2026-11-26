@@ -7,7 +7,7 @@ const BASE = process.env.BASE || 'http://localhost:8766';
 const results = [], issues = [];
 const ok = (name, pass, detail = '') => results.push({ name, pass: !!pass, detail });
 
-const b = await chromium.launch();
+const b = await chromium.launch({ env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' } }); // UTF-8 locale so Arabic download names survive
 const p = await b.newPage({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
 p.on('pageerror', e => issues.push('pageerror: ' + e.message));
 p.on('console', m => { if (m.type() === 'error') issues.push('console.error: ' + m.text()); });
@@ -198,6 +198,30 @@ ok('document delete (pencil → delete → confirm)', (await S_()).docs.filter(d
 // an older document of another type stays reachable
 await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')); d.S.docs.push({ id: 'oldlic', v: d.S.cur, type: 'license', title: 'رخصة', added: '2025-01-01' }); localStorage.setItem('sayarati-v1', JSON.stringify(d)); }); await p.reload(); await p.waitForTimeout(400);
 ok('older documents of other types: "Other documents" row lists them', await p.evaluate(() => !!document.querySelector('.hm-docs [data-type=other]')));
+/* ---- PDF documents: upload, in-app pages, share, stored outside localStorage ---- */
+const pdfMaker = await b.newPage(); await pdfMaker.setContent('<h1 style="font:48px sans-serif">صفحة 1 — Page 1</h1><div style="break-after:page"></div><h1 style="font:48px sans-serif">Page 2</h1>');
+const pdfBuf = await pdfMaker.pdf({ format: 'A4' }); await pdfMaker.close();
+await p.click('.hm-docs [data-car=doc-list][data-type=insurance]'); await p.waitForTimeout(350);
+await p.click('.mc-scrim [data-car=doc-add][data-type=insurance]'); await p.waitForTimeout(400);
+ok('pdf: file picker accepts photos and PDF', await p.evaluate(() => /application\/pdf/.test(document.getElementById('de-file').accept) && /image\/\*/.test(document.getElementById('de-file').accept)));
+await p.setInputFiles('#de-file', { name: 'big.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(10 * 1024 * 1024 + 10) }); await p.waitForTimeout(250);
+ok('pdf: larger than 10 MB is refused with a message', await p.evaluate(() => document.getElementById('de-fname').hidden && /10/.test(document.querySelector('.mc-toast')?.textContent || '')));
+await p.fill('#de-title', 'تأمين PDF'); await p.setInputFiles('#de-file', { name: 'policy.pdf', mimeType: 'application/pdf', buffer: pdfBuf }); await p.waitForTimeout(1800);
+ok('pdf: editor shows page 1 + name and size', await p.evaluate(() => !!document.querySelector('#de-prev canvas') && /policy\.pdf/.test(document.getElementById('de-fname').textContent) && !document.getElementById('de-rm').hidden));
+await p.click('#de-save'); await p.waitForTimeout(500);
+const pdfDoc = (await S_()).docs.find(d => d.title === 'تأمين PDF');
+ok('pdf: document keeps only a reference (no bytes in localStorage)', !!pdfDoc && pdfDoc.pdf && pdfDoc.pdf.name === 'policy.pdf' && pdfDoc.pdf.size === pdfBuf.length && !pdfDoc.img && !(await p.evaluate(() => localStorage.getItem('sayarati-v1').includes('application/pdf'))));
+ok('pdf: bytes stored in IndexedDB', await p.evaluate(async id => { const m = await import('./js/files.js'); const f = await m.getFile(id); return !!f && f.size > 1000 && f.type === 'application/pdf'; }, pdfDoc.pdf.id));
+await p.click('.hm-docs [data-car=doc-list][data-type=insurance]'); await p.waitForTimeout(350);
+await p.click('.mc-scrim [data-car=doc-open]:has-text("تأمين PDF")'); await p.waitForTimeout(2200);
+ok('pdf: viewer draws every page inside the app (2 pages) + share and pencil', await p.evaluate(() => document.querySelectorAll('#dv-pdf canvas.cd-pdf__page').length === 2 && !!document.getElementById('dv-share') && !!document.getElementById('dv-edit') && /policy\.pdf/.test(document.querySelector('.cd-pdf__meta').textContent)));
+const [shp] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.click('#dv-share')]);
+ok('pdf: share falls back to a download of the original PDF, named after the document and car', !!shp && /^تأمين PDF - .+\.pdf$/.test(shp.suggestedFilename()) && (await import('node:fs')).readFileSync(await shp.path()).length === pdfBuf.length, shp && shp.suggestedFilename());
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+await p.click('.hm-docs [data-car=doc-open]'); await p.waitForTimeout(350);
+const [shi] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.click('#dv-share')]);
+ok('share: photo documents can be shared too (JPEG)', !!shi && /^ملكية السيارة - .+\.jpg$/.test(shi.suggestedFilename()), shi && shi.suggestedFilename());
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 await p.click('.hm-docs [data-type=other]'); await p.waitForTimeout(350);
 ok('… and opens them', await p.evaluate(() => document.querySelectorAll('.mc-scrim [data-car=doc-open]').length === 1)); await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 /* ---- vehicle editor (Settings → Vehicles) ---- */
@@ -277,7 +301,7 @@ await editCar(p); await p.click('#ve-cat'); await p.waitForTimeout(250); await p
 await carMenu('[data-action=hm-car][aria-checked=false]');
 const [bk2] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.evaluate(() => { location.hash = 'settings'; }).then(() => p.waitForTimeout(250)).then(() => p.click('[data-act=drvsave]'))]);
 const bkText = bk2 ? (await import('node:fs')).readFileSync(await bk2.path(), 'utf8') : '';
-ok('backup includes photos, catalog image, documents', /"photo":"data:image\/jpeg/.test(bkText) && /"photoCat":\{/.test(bkText) && /"img":"data:image\/jpeg/.test(bkText) && /"model":"Coolray"/.test(bkText));
+ok('backup includes photos, catalog image, documents', /"photo":"data:image\/jpeg/.test(bkText) && /"photoCat":\{/.test(bkText) && /"img":"data:image\/jpeg/.test(bkText) && /"model":"Coolray"/.test(bkText) && /"files":\{"[^"]+":"data:application\/pdf;base64,/.test(bkText));
 /* ---- restore into a fresh browser profile ---- */
 const before = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sayarati-v1')).S; return JSON.stringify({ v: d.vehicles.map(x => [x.make, x.model, x.photo || '', JSON.stringify(x.photoCat || null)]), docs: d.docs.map(x => [x.type, x.number, x.img || '']) }); });
 const bkFile = bk2 && await bk2.path();
@@ -290,6 +314,7 @@ ok('restore: vehicles, photos, catalog images and documents identical', after ==
 await q.evaluate(() => { location.hash = 'home'; }); await q.waitForTimeout(300);
 ok('restore: uploaded car photo renders', await q.evaluate(() => !!document.querySelector('.hm-hero .cd-photo img')));
 await q.click('.hm-docs [data-car=doc-open]'); await q.waitForTimeout(350);
+ok('restore: PDF file restored into IndexedDB', await q.evaluate(async () => { const d = JSON.parse(localStorage.getItem('sayarati-v1')).S.docs.find(x => x.pdf); const m = await import('./js/files.js'); const f = d && await m.getFile(d.pdf.id); return !!f && f.size === d.pdf.size; }));
 ok('restore: document image renders', await q.evaluate(() => { const i = document.querySelector('.cd-doc-full'); return !!i && i.naturalWidth > 0; }));
 await q.keyboard.press('Escape'); await q.waitForTimeout(250);
 await q.click('[data-mc-menu=hm-cars]'); await q.waitForTimeout(150); await q.click('#hm-cars [data-action=hm-car][aria-checked=false]'); await q.waitForTimeout(400);
